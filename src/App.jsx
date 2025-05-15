@@ -1,27 +1,49 @@
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import React from "react";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom";
-import LoginForm from "./components/LoginForm";
-import Dashboard from "./components/Dashboard";
+import "./App.css";
+import "bootstrap/dist/css/bootstrap.min.css";
+import Dashboard from "./pages/Dashboard";
+import Login from "./pages/Login";
+import Profile from "./pages/Profile";
+import Header from "./components/Header";
+import Sidebar from "./components/Sidebar";
+import { Toaster } from 'react-hot-toast';
+
+const PrivateRoute = ({ children }) => {
+  const token = localStorage.getItem('token');
+  return token ? children : <Navigate to="/login" />;
+};
 
 const App = () => {
-  const token = localStorage.getItem("authToken");
-
   return (
-    <Router>
+    <BrowserRouter>
+      <Toaster position="top-right" />
       <Routes>
-        <Route path="/login" element={<LoginForm />} />
+        <Route path="/login" element={<Login />} />
         <Route
-          path="/dashboard"
-          element={token ? <Dashboard /> : <Navigate to="/login" />}
+          path="/*"
+          element={
+            <PrivateRoute>
+              <>
+                <Header />
+                <div className="main d-flex">
+                  <div className="sidebarwrapper">
+                    <Sidebar />
+                  </div>
+                  <div className="contentwrapper">
+                    <Routes>
+                      <Route path="/" element={<Navigate to="/dashboard" />} />
+                      <Route path="/dashboard" element={<Dashboard />} />
+                      <Route path="/profile" element={<Profile />} />
+                    </Routes>
+                  </div>
+                </div>
+              </>
+            </PrivateRoute>
+          }
         />
-        <Route path="*" element={<Navigate to="/login" />} />
       </Routes>
-    </Router>
+    </BrowserRouter>
   );
 };
 
