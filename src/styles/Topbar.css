@@ -1,0 +1,41 @@
+.topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #20232a;
+    color: white;
+    padding: 1rem 2rem;
+    position: relative;
+  }
+  
+  .project-name {
+    font-size: 1.2rem;
+    font-weight: bold;
+  }
+  
+  .user-section {
+    position: relative;
+    cursor: pointer;
+  }
+  
+  .dropdown {
+    position: absolute;
+    right: 0;
+    top: 60px;
+    background-color: white;
+    border: 1px solid #ccc;
+    color: black;
+    min-width: 150px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    z-index: 10;
+  }
+  
+  .dropdown-item {
+    padding: 10px;
+    cursor: pointer;
+  }
+  
+  .dropdown-item:hover {
+    background-color: #f0f0f0;
+  }
+  
