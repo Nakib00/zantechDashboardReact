@@ -5,6 +5,9 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import Profile from "./pages/Profile";
+import Products from "./pages/Products";
+import Categories from "./pages/Categories";
+import AddProduct from "./pages/Products/AddProduct";
 import Header from "./components/Header";
 import Sidebar from "./components/Sidebar";
 import { Toaster } from 'react-hot-toast';
@@ -35,6 +38,9 @@ const App = () => {
                       <Route path="/" element={<Navigate to="/dashboard" />} />
                       <Route path="/dashboard" element={<Dashboard />} />
                       <Route path="/profile" element={<Profile />} />
+                      <Route path="/products" element={<Products />} />
+                      <Route path="/products/add" element={<AddProduct />} />
+                      <Route path="/categories" element={<Categories />} />
                     </Routes>
                   </div>
                 </div>

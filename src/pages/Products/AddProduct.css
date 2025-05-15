@@ -1,0 +1,93 @@
+.add-product-container {
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.add-product-header {
+  margin-bottom: 30px;
+}
+
+.add-product-header h2 {
+  color: #2d3748;
+  margin: 0;
+}
+
+.add-product-form {
+  background: white;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #4a5568;
+  font-weight: 500;
+}
+
+.form-control {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+textarea.form-control {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+/* File Input Styling */
+input[type="file"] {
+  padding: 8px;
+  border: 1px dashed #e2e8f0;
+  border-radius: 4px;
+  background-color: #f8fafc;
+}
+
+input[type="file"]:hover {
+  border-color: #4299e1;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .add-product-container {
+    padding: 15px;
+  }
+
+  .add-product-form {
+    padding: 20px;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+} 
