@@ -8,6 +8,7 @@ import Profile from "./pages/Profile";
 import Products from "./pages/Products";
 import Categories from "./pages/Categories";
 import AddProduct from "./pages/Products/AddProduct";
+import ViewProduct from "./pages/Products/ViewProduct";
 import Header from "./components/Header";
 import Sidebar from "./components/Sidebar";
 import { Toaster } from 'react-hot-toast';
@@ -41,6 +42,7 @@ const App = () => {
                       <Route path="/profile" element={<Profile />} />
                       <Route path="/products" element={<Products />} />
                       <Route path="/products/add" element={<AddProduct />} />
+                      <Route path="/products/:id" element={<ViewProduct />} />
                       <Route path="/categories" element={<Categories />} />
                       <Route path="/suppliers" element={<Suppliers />} />
                     </Routes>

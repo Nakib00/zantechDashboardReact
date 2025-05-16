@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaPlus, FaEdit, FaTrash, FaSpinner, FaChevronLeft, FaChevronRight, FaSearch, FaFilter } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaSpinner, FaChevronLeft, FaChevronRight, FaSearch, FaFilter, FaEye } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { Card, Badge, Pagination, Form, InputGroup, Button, Modal } from 'react-bootstrap';
@@ -473,6 +473,14 @@ const Products = () => {
                       </td>
                       <td>
                         <div className="d-flex gap-2">
+                          <button 
+                            className="btn btn-sm btn-outline-primary"
+                            onClick={() => navigate(`/products/${product.id}`)}
+                            title="View"
+                            disabled={loading}
+                          >
+                            <FaEye />
+                          </button>
                           <button 
                             className="btn btn-sm btn-outline-primary"
                             onClick={() => navigate(`/products/edit/${product.id}`)}
