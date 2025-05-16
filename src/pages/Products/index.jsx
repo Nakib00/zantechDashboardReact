@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { FaPlus, FaEdit, FaTrash, FaSpinner, FaChevronLeft, FaChevronRight, FaSearch, FaFilter, FaEye } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaSpinner, FaChevronLeft, FaChevronRight, FaSearch, FaFilter, FaEye, FaPencilAlt, FaChevronDown } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { Card, Badge, Pagination, Form, InputGroup, Button, Modal } from 'react-bootstrap';
+import { Card, Badge, Pagination, Form, InputGroup, Button, Modal, Row, Col, Dropdown } from 'react-bootstrap';
 import axiosInstance from '../../config/axios';
 import Loading from '../../components/Loading';
 
@@ -22,10 +22,23 @@ const Products = () => {
     search: '',
     minPrice: '',
     maxPrice: '',
-    limit: 5
+    limit: 10
   });
   const [showFilters, setShowFilters] = useState(false);
+  const [showQuickEdit, setShowQuickEdit] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    description: '',
+    short_description: '',
+    quantity: '',
+    price: '',
+    discount: ''
+  });
   const navigate = useNavigate();
+  const [searchTimeout, setSearchTimeout] = useState(null);
+  const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -38,6 +51,27 @@ const Products = () => {
     
     loadInitialData();
   }, []);
+
+  useEffect(() => {
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+
+    const timeoutId = setTimeout(() => {
+      if (searchParams.search !== '') {
+        setIsSearching(true);
+        fetchProducts(1);
+      }
+    }, 500); // 500ms debounce
+
+    setSearchTimeout(timeoutId);
+
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [searchParams.search]);
 
   const fetchProducts = async (page = 1) => {
     setLoading(true);
@@ -85,12 +119,8 @@ const Products = () => {
     } finally {
       setLoading(false);
       setTableLoading(false);
+      setIsSearching(false);
     }
-  };
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    fetchProducts(1);
   };
 
   const handleFilterChange = (e) => {
@@ -99,6 +129,22 @@ const Products = () => {
       ...prev,
       [name]: value
     }));
+
+    if (name === 'search') {
+      setPagination(prev => ({
+        ...prev,
+        currentPage: 1
+      }));
+    }
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+    setIsSearching(true);
+    fetchProducts(1);
   };
 
   const handleFilterSubmit = (e) => {
@@ -168,6 +214,73 @@ const Products = () => {
 
   const handlePageChange = (page) => {
     fetchProducts(page);
+  };
+
+  const handleQuickEdit = (product) => {
+    setSelectedProduct(product);
+    setEditForm({
+      name: product.name || '',
+      description: product.description || '',
+      short_description: product.short_description || '',
+      quantity: product.quantity || '',
+      price: product.price || '',
+      discount: product.discount || ''
+    });
+    setShowQuickEdit(true);
+  };
+
+  const handleEditFormChange = (e) => {
+    const { name, value } = e.target;
+    setEditForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleQuickEditSubmit = async (e) => {
+    e.preventDefault();
+    setEditLoading(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        throw new Error('Authentication token not found. Please login again.');
+      }
+
+      const response = await axiosInstance.put(`/products/update/${selectedProduct.id}`, editForm, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const result = response.data;
+
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to update product');
+      }
+
+      // Update the product in the list
+      setProducts(products.map(prod => 
+        prod.id === selectedProduct.id 
+          ? { ...prod, ...editForm }
+          : prod
+      ));
+
+      toast.success('Product updated successfully');
+      setShowQuickEdit(false);
+    } catch (err) {
+      console.error('Error updating product:', err);
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to update product';
+      toast.error(errorMessage);
+      
+      if (err.response?.status === 401) {
+        localStorage.removeItem('token');
+        navigate('/login');
+      }
+    } finally {
+      setEditLoading(false);
+    }
   };
 
   const renderPagination = () => {
@@ -271,7 +384,11 @@ const Products = () => {
               <Form onSubmit={handleSearch} className="d-flex gap-2">
                 <InputGroup>
                   <InputGroup.Text>
-                    {loading ? <FaSpinner className="spinner-border spinner-border-sm" /> : <FaSearch />}
+                    {isSearching ? (
+                      <FaSpinner className="spinner-border spinner-border-sm" />
+                    ) : (
+                      <FaSearch />
+                    )}
                   </InputGroup.Text>
                   <Form.Control
                     type="text"
@@ -280,7 +397,20 @@ const Products = () => {
                     value={searchParams.search}
                     onChange={handleFilterChange}
                     disabled={loading}
+                    className={isSearching ? 'searching' : ''}
                   />
+                  {searchParams.search && !isSearching && (
+                    <Button
+                      variant="outline-secondary"
+                      onClick={() => {
+                        setSearchParams(prev => ({ ...prev, search: '' }));
+                        fetchProducts(1);
+                      }}
+                      disabled={loading}
+                    >
+                      ×
+                    </Button>
+                  )}
                 </InputGroup>
                 <Button 
                   variant="outline-secondary" 
@@ -367,6 +497,127 @@ const Products = () => {
                     </>
                   ) : (
                     'Apply Filters'
+                  )}
+                </Button>
+              </Modal.Footer>
+            </Form>
+          </Modal>
+
+          {/* Quick Edit Modal */}
+          <Modal show={showQuickEdit} onHide={() => !editLoading && setShowQuickEdit(false)} size="lg">
+            <Modal.Header closeButton>
+              <Modal.Title>Quick Edit Product</Modal.Title>
+            </Modal.Header>
+            <Form onSubmit={handleQuickEditSubmit}>
+              <Modal.Body>
+                {editLoading ? (
+                  <div className="text-center py-4">
+                    <Loading />
+                    <p className="text-muted mt-2 mb-0">Updating product...</p>
+                  </div>
+                ) : (
+                  <Row>
+                    <Col md={6}>
+                      <Form.Group className="mb-3">
+                        <Form.Label>Product Name</Form.Label>
+                        <Form.Control
+                          type="text"
+                          name="name"
+                          value={editForm.name}
+                          onChange={handleEditFormChange}
+                          required
+                        />
+                      </Form.Group>
+                    </Col>
+                    <Col md={6}>
+                      <Form.Group className="mb-3">
+                        <Form.Label>Short Description</Form.Label>
+                        <Form.Control
+                          type="text"
+                          name="short_description"
+                          value={editForm.short_description}
+                          onChange={handleEditFormChange}
+                        />
+                      </Form.Group>
+                    </Col>
+                    <Col md={12}>
+                      <Form.Group className="mb-3">
+                        <Form.Label>Description</Form.Label>
+                        <Form.Control
+                          as="textarea"
+                          rows={3}
+                          name="description"
+                          value={editForm.description}
+                          onChange={handleEditFormChange}
+                        />
+                      </Form.Group>
+                    </Col>
+                    <Col md={4}>
+                      <Form.Group className="mb-3">
+                        <Form.Label>Price (৳)</Form.Label>
+                        <Form.Control
+                          type="number"
+                          name="price"
+                          value={editForm.price}
+                          onChange={handleEditFormChange}
+                          min="0"
+                          step="0.01"
+                          required
+                        />
+                      </Form.Group>
+                    </Col>
+                    <Col md={4}>
+                      <Form.Group className="mb-3">
+                        <Form.Label>Quantity</Form.Label>
+                        <Form.Control
+                          type="number"
+                          name="quantity"
+                          value={editForm.quantity}
+                          onChange={handleEditFormChange}
+                          min="0"
+                          required
+                        />
+                      </Form.Group>
+                    </Col>
+                    <Col md={4}>
+                      <Form.Group className="mb-3">
+                        <Form.Label>Discount (%)</Form.Label>
+                        <Form.Control
+                          type="number"
+                          name="discount"
+                          value={editForm.discount}
+                          onChange={handleEditFormChange}
+                          min="0"
+                          max="100"
+                        />
+                      </Form.Group>
+                    </Col>
+                  </Row>
+                )}
+              </Modal.Body>
+              <Modal.Footer>
+                <Button 
+                  variant="secondary" 
+                  onClick={() => setShowQuickEdit(false)}
+                  disabled={editLoading}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  variant="primary" 
+                  type="submit"
+                  disabled={editLoading}
+                  className="d-flex align-items-center gap-2"
+                >
+                  {editLoading ? (
+                    <>
+                      <FaSpinner className="spinner-border spinner-border-sm" />
+                      Updating...
+                    </>
+                  ) : (
+                    <>
+                      <FaPencilAlt /> Update Product
+                    </>
                   )}
                 </Button>
               </Modal.Footer>
@@ -481,14 +732,30 @@ const Products = () => {
                           >
                             <FaEye />
                           </button>
-                          <button 
-                            className="btn btn-sm btn-outline-primary"
-                            onClick={() => navigate(`/products/edit/${product.id}`)}
-                            title="Edit"
-                            disabled={loading}
-                          >
-                            <FaEdit />
-                          </button>
+                          <Dropdown>
+                            <Dropdown.Toggle 
+                              variant="outline-primary" 
+                              size="sm"
+                              disabled={loading}
+                              className="d-flex align-items-center gap-1"
+                            >
+                              <FaEdit /> Edit <FaChevronDown size={10} />
+                            </Dropdown.Toggle>
+                            <Dropdown.Menu>
+                              <Dropdown.Item 
+                                onClick={() => handleQuickEdit(product)}
+                                className="d-flex align-items-center gap-2"
+                              >
+                                <FaPencilAlt size={12} /> Quick Edit
+                              </Dropdown.Item>
+                              <Dropdown.Item 
+                                onClick={() => navigate(`/products/${product.id}`)}
+                                className="d-flex align-items-center gap-2"
+                              >
+                                <FaEdit size={12} /> Full Edit
+                              </Dropdown.Item>
+                            </Dropdown.Menu>
+                          </Dropdown>
                           <button 
                             className="btn btn-sm btn-outline-danger"
                             onClick={() => handleDeleteProduct(product.id)}
@@ -536,6 +803,19 @@ const Products = () => {
           )}
         </Card.Body>
       </Card>
+
+      <style jsx>{`
+        .searching {
+          background-color: #f8f9fa;
+        }
+        .form-control:focus {
+          box-shadow: none;
+          border-color: #dee2e6;
+        }
+        .form-control:focus.searching {
+          background-color: #f8f9fa;
+        }
+      `}</style>
     </div>
   );
 };
