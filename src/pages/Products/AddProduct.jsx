@@ -1,33 +1,66 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+import { FaPlus, FaTimes, FaTag, FaBox, FaBoxes, FaImages, FaDollarSign, FaPercent, FaSave, FaTags } from 'react-icons/fa';
+import axiosInstance from '../../config/axios';
+import Loading from '../../components/Loading';
 import './AddProduct.css';
 
 const AddProduct = () => {
   const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
+  const [isBundle, setIsBundle] = useState(false);
+  const [bundleItems, setBundleItems] = useState([
+    { item_id: '', bundle_quantity: 1, unit_price: 0, name: '', total: 0 }
+  ]);
+  const [selectedTags, setSelectedTags] = useState(['']);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
+    short_description: '',
+    quantity: '',
     price: '',
-    stock: '',
-    category_id: '',
-    image: null
+    discount: '',
+    categories: [],
+    tags: [],
+    images: [],
+    is_bundle: 0,
+    bundls_item: []
   });
+  const [imagePreview, setImagePreview] = useState([]);
+  const [dragActive, setDragActive] = useState(false);
+  const [imageError, setImageError] = useState('');
 
   useEffect(() => {
-    fetchCategories();
+    const loadInitialData = async () => {
+      try {
+        await Promise.all([fetchCategories(), fetchProducts()]);
+      } finally {
+        setPageLoading(false);
+      }
+    };
+    
+    loadInitialData();
   }, []);
 
   const fetchCategories = async () => {
     try {
-      // TODO: Replace with actual API call
-      const response = await fetch('/api/categories');
-      const data = await response.json();
-      setCategories(data);
-    } catch (error) {
+      const response = await axiosInstance.get('/categories');
+      setCategories(response.data.data || []);
+    } catch {
       toast.error('Failed to fetch categories');
+    }
+  };
+
+  const fetchProducts = async () => {
+    try {
+      const response = await axiosInstance.get('/products');
+      setProducts(response.data.data || []);
+    } catch {
+      toast.error('Failed to fetch products');
     }
   };
 
@@ -39,14 +72,160 @@ const AddProduct = () => {
     }));
   };
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setFormData(prev => ({
-        ...prev,
-        image: file
-      }));
+  const validateImage = (file) => {
+    const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif'];
+    const maxSize = 4 * 1024 * 1024; // 4MB in bytes
+
+    if (!validTypes.includes(file.type)) {
+      return 'Invalid file type. Only JPEG, PNG, JPG, and GIF are allowed.';
     }
+
+    if (file.size > maxSize) {
+      return 'File size too large. Maximum size is 4MB.';
+    }
+
+    return null;
+  };
+
+  const handleImageChange = (e) => {
+    const files = Array.from(e.target.files);
+    setImageError('');
+    
+    // Validate each file
+    const errors = files.map(file => validateImage(file)).filter(error => error);
+    if (errors.length > 0) {
+      setImageError(errors[0]);
+      return;
+    }
+
+    // Create preview URLs
+    const previews = files.map(file => URL.createObjectURL(file));
+    setImagePreview(prev => [...prev, ...previews]);
+    
+    setFormData(prev => ({
+      ...prev,
+      images: [...prev.images, ...files]
+    }));
+  };
+
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    setImageError('');
+
+    const files = Array.from(e.dataTransfer.files);
+    
+    // Validate each file
+    const errors = files.map(file => validateImage(file)).filter(error => error);
+    if (errors.length > 0) {
+      setImageError(errors[0]);
+      return;
+    }
+
+    // Create preview URLs
+    const previews = files.map(file => URL.createObjectURL(file));
+    setImagePreview(prev => [...prev, ...previews]);
+    
+    setFormData(prev => ({
+      ...prev,
+      images: [...prev.images, ...files]
+    }));
+  };
+
+  const removeImage = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index)
+    }));
+    
+    // Revoke the preview URL to avoid memory leaks
+    URL.revokeObjectURL(imagePreview[index]);
+    setImagePreview(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Cleanup preview URLs when component unmounts
+  useEffect(() => {
+    return () => {
+      imagePreview.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [imagePreview]);
+
+  const handleBundleToggle = (e) => {
+    const bundleValue = e.target.checked ? 1 : 0;
+    setIsBundle(e.target.checked);
+    setFormData(prev => ({
+      ...prev,
+      is_bundle: bundleValue
+    }));
+  };
+
+  const handleBundleItemChange = (index, field, value) => {
+    const updatedBundleItems = [...bundleItems];
+    updatedBundleItems[index][field] = value;
+    
+    // If item_id changed, update the name and price from the selected product
+    if (field === 'item_id' && value) {
+      const selectedProduct = products.find(product => product.id.toString() === value);
+      if (selectedProduct) {
+        updatedBundleItems[index].name = selectedProduct.name;
+        updatedBundleItems[index].unit_price = parseFloat(selectedProduct.price) || 0;
+      } else {
+        updatedBundleItems[index].name = '';
+        updatedBundleItems[index].unit_price = 0;
+      }
+    }
+    
+    // Recalculate total for this item
+    const quantity = field === 'bundle_quantity' ? parseFloat(value) || 0 : parseFloat(updatedBundleItems[index].bundle_quantity) || 0;
+    const unitPrice = parseFloat(updatedBundleItems[index].unit_price) || 0;
+    updatedBundleItems[index].total = quantity * unitPrice;
+    
+    setBundleItems(updatedBundleItems);
+    
+    // Update the formData
+    setFormData(prev => ({
+      ...prev,
+      bundls_item: updatedBundleItems
+    }));
+  };
+
+  const addBundleItem = () => {
+    setBundleItems([...bundleItems, { item_id: '', bundle_quantity: 1, unit_price: 0, name: '', total: 0 }]);
+  };
+
+  const removeBundleItem = (index) => {
+    const items = [...bundleItems];
+    items.splice(index, 1);
+    setBundleItems(items);
+    
+    // Update the formData
+    setFormData(prev => ({
+      ...prev,
+      bundls_item: items
+    }));
+  };
+
+  const removeTag = (index) => {
+    const updatedTags = [...selectedTags];
+    updatedTags.splice(index, 1);
+    setSelectedTags(updatedTags);
+    
+    // Update formData with non-empty tags
+    setFormData(prev => ({
+      ...prev,
+      tags: updatedTags.filter(tag => tag.trim() !== '')
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -55,139 +234,490 @@ const AddProduct = () => {
 
     try {
       const formDataToSend = new FormData();
-      Object.keys(formData).forEach(key => {
-        formDataToSend.append(key, formData[key]);
+      
+      // Add basic form fields
+      formDataToSend.append('name', formData.name);
+      formDataToSend.append('description', formData.description || '');
+      formDataToSend.append('short_description', formData.short_description || '');
+      formDataToSend.append('quantity', formData.quantity);
+      formDataToSend.append('price', formData.price);
+      formDataToSend.append('discount', formData.discount || 0);
+      formDataToSend.append('is_bundle', formData.is_bundle);
+      
+      // Add categories
+      formData.categories.forEach((category, index) => {
+        formDataToSend.append(`categories[${index}]`, category);
       });
-
-      // TODO: Replace with actual API call
-      const response = await fetch('/api/products', {
-        method: 'POST',
-        body: formDataToSend,
+      
+      // Add tags
+      const filteredTags = selectedTags.filter(tag => tag.trim() !== '');
+      filteredTags.forEach((tag, index) => {
+        formDataToSend.append(`tags[${index}]`, tag);
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to add product');
+      
+      // Add images
+      formData.images.forEach((image, index) => {
+        formDataToSend.append(`images[${index}]`, image);
+      });
+      
+      // Add bundle items if this is a bundle
+      if (isBundle && bundleItems.length > 0) {
+        bundleItems.forEach((item, index) => {
+          if (item.item_id) {
+            formDataToSend.append(`bundls_item[${index}][item_id]`, item.item_id);
+            formDataToSend.append(`bundls_item[${index}][bundle_quantity]`, item.bundle_quantity);
+          }
+        });
       }
+
+      await axiosInstance.post('/products', formDataToSend, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
 
       toast.success('Product added successfully');
       navigate('/products');
     } catch (error) {
-      toast.error(error.message || 'Failed to add product');
+      toast.error(error.response?.data?.message || 'Failed to add product');
     } finally {
       setLoading(false);
     }
   };
 
+  if (pageLoading) {
+    return <Loading />;
+  }
+
   return (
     <div className="add-product-container">
       <div className="add-product-header">
         <h2>Add New Product</h2>
+        <p className="text-muted">Create a new product with details</p>
       </div>
 
       <form onSubmit={handleSubmit} className="add-product-form">
-        <div className="form-group">
-          <label htmlFor="name">Product Name</label>
-          <input
-            type="text"
-            id="name"
-            name="name"
-            value={formData.name}
-            onChange={handleInputChange}
-            className="form-control"
-            required
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="description">Description</label>
-          <textarea
-            id="description"
-            name="description"
-            value={formData.description}
-            onChange={handleInputChange}
-            className="form-control"
-            rows="4"
-            required
-          />
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label htmlFor="price">Price</label>
-            <input
-              type="number"
-              id="price"
-              name="price"
-              value={formData.price}
-              onChange={handleInputChange}
-              className="form-control"
-              min="0"
-              step="0.01"
-              required
-            />
+        {/* Basic Information Card */}
+        <div className="form-card">
+          <div className="form-card-header">
+            <h3><FaBox /> Basic Information</h3>
           </div>
+          <div className="form-card-body">
+            <div className="form-group">
+              <label htmlFor="name">Product Name</label>
+              <input
+                type="text"
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                className="form-control"
+                placeholder="Enter product name"
+                required
+              />
+            </div>
 
-          <div className="form-group">
-            <label htmlFor="stock">Stock</label>
-            <input
-              type="number"
-              id="stock"
-              name="stock"
-              value={formData.stock}
-              onChange={handleInputChange}
-              className="form-control"
-              min="0"
-              required
-            />
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="short_description">Short Description</label>
+                <input
+                  type="text"
+                  id="short_description"
+                  name="short_description"
+                  value={formData.short_description}
+                  onChange={handleInputChange}
+                  className="form-control"
+                  placeholder="Brief description (displayed in listings)"
+                />
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="description">Full Description</label>
+              <textarea
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                className="form-control"
+                rows="4"
+                placeholder="Detailed product description"
+              />
+            </div>
           </div>
         </div>
 
-        <div className="form-group">
-          <label htmlFor="category_id">Category</label>
-          <select
-            id="category_id"
-            name="category_id"
-            value={formData.category_id}
-            onChange={handleInputChange}
-            className="form-control"
-            required
-          >
-            <option value="">Select a category</option>
-            {categories.map(category => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
+        {/* Pricing & Inventory Card */}
+        <div className="form-card">
+          <div className="form-card-header">
+            <h3><FaDollarSign /> Pricing & Inventory</h3>
+          </div>
+          <div className="form-card-body">
+            <div className="form-row three-columns">
+              <div className="form-group">
+                <label htmlFor="price">Price</label>
+                <div className="input-with-icon">
+                  <FaDollarSign className="input-icon" />
+                  <input
+                    type="number"
+                    id="price"
+                    name="price"
+                    value={formData.price}
+                    onChange={handleInputChange}
+                    className="form-control"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="quantity">Quantity</label>
+                <div className="input-with-icon">
+                  <FaBoxes className="input-icon" />
+                  <input
+                    type="number"
+                    id="quantity"
+                    name="quantity"
+                    value={formData.quantity}
+                    onChange={handleInputChange}
+                    className="form-control"
+                    min="0"
+                    placeholder="0"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="discount">Discount (%)</label>
+                <div className="input-with-icon">
+                  <FaPercent className="input-icon" />
+                  <input
+                    type="number"
+                    id="discount"
+                    name="discount"
+                    value={formData.discount}
+                    onChange={handleInputChange}
+                    className="form-control"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="form-group">
-          <label htmlFor="image">Product Image</label>
-          <input
-            type="file"
-            id="image"
-            name="image"
-            onChange={handleImageChange}
-            className="form-control"
-            accept="image/*"
-            required
-          />
+        {/* Categories & Tags Card */}
+        <div className="form-card">
+          <div className="form-card-header">
+            <h3><FaTags /> Categories & Tags</h3>
+          </div>
+          <div className="form-card-body">
+            {/* Categories Selection */}
+            <div className="form-group">
+              <label htmlFor="categories">Categories</label>
+              <div className="category-selection-container">
+                <div className="selected-categories">
+                  {formData.categories.length > 0 ? (
+                    categories
+                      .filter(cat => formData.categories.includes(cat.id.toString()))
+                      .map(cat => (
+                        <div key={cat.id} className="category-chip">
+                          <span>{cat.name}</span>
+                          <button 
+                            type="button" 
+                            className="chip-remove" 
+                            onClick={() => {
+                              setFormData(prev => ({
+                                ...prev,
+                                categories: prev.categories.filter(id => id !== cat.id.toString())
+                              }))
+                            }}
+                          >
+                            <FaTimes />
+                          </button>
+                        </div>
+                      ))
+                  ) : (
+                    <div className="no-categories">No categories selected</div>
+                  )}
+                </div>
+                
+                <div className="category-dropdown">
+                  <select
+                    id="categorySelector"
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value && !formData.categories.includes(value)) {
+                        setFormData(prev => ({
+                          ...prev,
+                          categories: [...prev.categories, value]
+                        }));
+                      }
+                      e.target.value = ''; // Reset select after choosing
+                    }}
+                    className="form-control"
+                  >
+                    <option value="">+ Add category</option>
+                    {categories
+                      .filter(cat => !formData.categories.includes(cat.id.toString()))
+                      .map(category => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+                
+                {formData.categories.length === 0 && (
+                  <div className="form-text error-text">Please select at least one category</div>
+                )}
+              </div>
+            </div>
+
+            {/* Tags Section */}
+            <div className="form-group">
+              <label><FaTag /> Tags</label>
+              
+              <div className="tags-selection">
+                <div className="tags-input-wrapper">
+                  <div className="input-with-icon">
+                    <FaTag className="input-icon" />
+                    <input
+                      type="text"
+                      placeholder="Type tag and press Enter"
+                      className="form-control tag-input-main"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && e.target.value.trim()) {
+                          e.preventDefault();
+                          const newTag = e.target.value.trim();
+                          if (!selectedTags.includes(newTag)) {
+                            setSelectedTags([...selectedTags.filter(tag => tag.trim() !== ''), newTag, '']);
+                          }
+                          e.target.value = '';
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+                
+                <div className="selected-tags-container">
+                  {selectedTags.filter(tag => tag.trim() !== '').map((tag, index) => (
+                    <div key={index} className="tag-chip">
+                      <span>{tag}</span>
+                      <button 
+                        type="button" 
+                        className="chip-remove"
+                        onClick={() => removeTag(index)}
+                      >
+                        <FaTimes />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="tags-hint">
+                  <small className="form-text">Type tags and press Enter to add them. Tags help customers find your product.</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Images Card */}
+        <div className="form-card">
+          <div className="form-card-header">
+            <h3><FaImages /> Product Images</h3>
+          </div>
+          <div className="form-card-body">
+            <div className="form-group">
+              <label 
+                htmlFor="images" 
+                className={`upload-label ${dragActive ? 'drag-active' : ''}`}
+                onDragEnter={handleDrag}
+                onDragLeave={handleDrag}
+                onDragOver={handleDrag}
+                onDrop={handleDrop}
+              >
+                <div className="upload-area">
+                  <FaImages className="upload-icon" />
+                  <div>Drop files here or click to browse</div>
+                  <small>Select multiple images (JPEG, PNG, GIF, max 4MB each)</small>
+                </div>
+                <input
+                  type="file"
+                  id="images"
+                  name="images"
+                  onChange={handleImageChange}
+                  className="file-input"
+                  accept="image/jpeg,image/png,image/jpg,image/gif"
+                  multiple
+                />
+              </label>
+              
+              {imageError && (
+                <div className="error-message">
+                  {imageError}
+                </div>
+              )}
+              
+              {imagePreview.length > 0 && (
+                <div className="image-preview-container">
+                  <div className="selected-files">
+                    <p>{imagePreview.length} file(s) selected</p>
+                  </div>
+                  <div className="image-grid">
+                    {imagePreview.map((preview, index) => (
+                      <div key={index} className="image-preview-item">
+                        <img src={preview} alt={`Preview ${index + 1}`} />
+                        <button
+                          type="button"
+                          className="remove-image-btn"
+                          onClick={() => removeImage(index)}
+                          title="Remove image"
+                        >
+                          <FaTimes />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Bundle Options Card */}
+        <div className="form-card">
+          <div className="form-card-header bundle-header">
+            <div className="bundle-toggle">
+              <h3><FaBoxes /> Bundle Options</h3>
+              <label className="toggle-switch">
+                <input
+                  type="checkbox"
+                  checked={isBundle}
+                  onChange={handleBundleToggle}
+                />
+                <span className="toggle-slider"></span>
+                <span className="toggle-label">{isBundle ? 'This is a bundle' : 'Not a bundle'}</span>
+              </label>
+            </div>
+          </div>
+          
+          {isBundle && (
+            <div className="form-card-body">
+              <p className="info-text">Add products to include in this bundle</p>
+              
+              <div className="bundle-table">
+                <div className="bundle-table-header">
+                  <div className="bundle-header-item product-col">Product</div>
+                  <div className="bundle-header-item qty-col">Quantity</div>
+                  <div className="bundle-header-item price-col">Unit Price</div>
+                  <div className="bundle-header-item total-col">Total</div>
+                  <div className="bundle-header-item action-col"></div>
+                </div>
+                
+                {bundleItems.map((item, index) => (
+                  <div key={index} className="bundle-table-row">
+                    <div className="bundle-cell product-col">
+                      <select
+                        id={`bundle-item-${index}`}
+                        value={item.item_id}
+                        onChange={(e) => handleBundleItemChange(index, 'item_id', e.target.value)}
+                        className="form-control"
+                        required={isBundle}
+                      >
+                        <option value="">Select a product</option>
+                        {products.map(product => (
+                          <option key={product.id} value={product.id}>
+                            {product.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div className="bundle-cell qty-col">
+                      <input
+                        type="number"
+                        id={`quantity-${index}`}
+                        value={item.bundle_quantity}
+                        onChange={(e) => handleBundleItemChange(index, 'bundle_quantity', e.target.value)}
+                        className="form-control"
+                        min="1"
+                        required={isBundle}
+                      />
+                    </div>
+                    
+                    <div className="bundle-cell price-col">
+                      <div className="price-display">
+                        <FaDollarSign className="price-icon" />
+                        {item.unit_price.toFixed(2)}
+                      </div>
+                    </div>
+                    
+                    <div className="bundle-cell total-col">
+                      <div className="price-display total-price">
+                        <FaDollarSign className="price-icon" />
+                        {item.total.toFixed(2)}
+                      </div>
+                    </div>
+                    
+                    <div className="bundle-cell action-col">
+                      <button
+                        type="button"
+                        className="btn btn-icon btn-danger"
+                        onClick={() => removeBundleItem(index)}
+                        disabled={bundleItems.length === 1}
+                        title="Remove item"
+                      >
+                        <FaTimes />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                
+                <div className="bundle-table-footer">
+                  <div className="grand-total">
+                    <span className="grand-total-label">Bundle Total:</span>
+                    <span className="grand-total-amount">
+                      <FaDollarSign className="price-icon" />
+                      {bundleItems.reduce((sum, item) => sum + (item.total || 0), 0).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <button
+                type="button"
+                className="btn btn-outline btn-sm add-bundle-btn"
+                onClick={addBundleItem}
+              >
+                <FaPlus /> Add Another Item
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="form-actions">
           <button
             type="button"
-            className="btn btn-secondary"
+            className="btn btn-light"
             onClick={() => navigate('/products')}
           >
             Cancel
           </button>
           <button
             type="submit"
-            className="btn btn-primary"
+            className="btn btn-primary btn-with-icon"
             disabled={loading}
           >
-            {loading ? 'Adding...' : 'Add Product'}
+            {loading ? 'Adding...' : <><FaSave /> Save Product</>}
           </button>
         </div>
       </form>
@@ -195,4 +725,4 @@ const AddProduct = () => {
   );
 };
 
-export default AddProduct; 
+export default AddProduct;

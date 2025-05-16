@@ -1,8 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import { authService } from '../../services/api';
-import { FaUser, FaEnvelope, FaPhone, FaUserTag, FaCalendarAlt, FaClock } from 'react-icons/fa';
-import { toast } from 'react-hot-toast';
-import './Profile.css';
+import React, { useEffect, useState } from "react";
+import { authService } from "../../services/api";
+import {
+  FaUser,
+  FaEnvelope,
+  FaPhone,
+  FaUserTag,
+  FaCalendarAlt,
+  FaClock,
+} from "react-icons/fa";
+import { toast } from "react-hot-toast";
+import "./Profile.css";
 
 const Profile = () => {
   const [profile, setProfile] = useState(null);
@@ -14,7 +21,7 @@ const Profile = () => {
         const response = await authService.getProfile();
         setProfile(response.data);
       } catch (error) {
-        toast.error(error.message || 'Failed to load profile data');
+        toast.error(error.message || "Failed to load profile data");
       } finally {
         setLoading(false);
       }
@@ -25,19 +32,17 @@ const Profile = () => {
 
   if (loading) {
     return (
-      <div className="profile-loading">
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </div>
+      <div className="loading-container">
+        <div className="loading-text">Zantech</div>
       </div>
     );
   }
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
@@ -76,7 +81,9 @@ const Profile = () => {
                 <FaPhone className="info-icon" />
                 <span>Phone</span>
               </div>
-              <div className="info-value">{profile?.phone || 'Not provided'}</div>
+              <div className="info-value">
+                {profile?.phone || "Not provided"}
+              </div>
             </div>
 
             <div className="info-group">
@@ -96,7 +103,9 @@ const Profile = () => {
                 <FaCalendarAlt className="info-icon" />
                 <span>Member Since</span>
               </div>
-              <div className="info-value">{formatDate(profile?.created_at)}</div>
+              <div className="info-value">
+                {formatDate(profile?.created_at)}
+              </div>
             </div>
 
             <div className="info-group">
@@ -104,7 +113,9 @@ const Profile = () => {
                 <FaClock className="info-icon" />
                 <span>Last Updated</span>
               </div>
-              <div className="info-value">{formatDate(profile?.updated_at)}</div>
+              <div className="info-value">
+                {formatDate(profile?.updated_at)}
+              </div>
             </div>
           </div>
         </div>
@@ -113,4 +124,4 @@ const Profile = () => {
   );
 };
 
-export default Profile; 
+export default Profile;

@@ -10,7 +10,8 @@ import {
   MdPayment,
   MdSettings,
   MdAnalytics,
-  MdStore
+  MdStore,
+  MdBusiness
 } from 'react-icons/md';
 import './Sidebar.css';
 
@@ -23,6 +24,7 @@ const Sidebar = () => {
     { path: '/customers', icon: <MdPeople />, label: 'Customers' },
     { path: '/products', icon: <MdInventory />, label: 'Products' },
     { path: '/categories', icon: <MdCategory />, label: 'Categories' },
+    { path: '/suppliers', icon: <MdBusiness />, label: 'Suppliers' },
     { path: '/shipping', icon: <MdLocalShipping />, label: 'Shipping' },
     { path: '/payments', icon: <MdPayment />, label: 'Payments' },
     { path: '/analytics', icon: <MdAnalytics />, label: 'Analytics' },
