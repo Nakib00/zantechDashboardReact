@@ -4,10 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { Card, Badge, Pagination, Form, InputGroup, Button, Modal } from 'react-bootstrap';
 import axiosInstance from '../../config/axios';
+import Loading from '../../components/Loading';
 
 const Products = () => {
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
   const [pagination, setPagination] = useState({
     currentPage: 1,
     perPage: 5,
@@ -25,10 +27,19 @@ const Products = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchProducts(1);
+    const loadInitialData = async () => {
+      try {
+        await fetchProducts();
+      } finally {
+        setPageLoading(false);
+      }
+    };
+    
+    loadInitialData();
   }, []);
 
   const fetchProducts = async (page = 1) => {
+    setLoading(true);
     try {
       // Build query parameters
       const params = {
@@ -207,12 +218,8 @@ const Products = () => {
     return items;
   };
 
-  if (loading) {
-    return (
-      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '400px' }}>
-        <FaSpinner className="text-primary spin" size={40} />
-      </div>
-    );
+  if (pageLoading) {
+    return <Loading />;
   }
 
   return (
@@ -311,28 +318,26 @@ const Products = () => {
           </Modal>
 
           <div className="table-responsive">
-            <table className="table table-hover align-middle">
-              <thead className="bg-light">
-                <tr>
-                  <th>ID</th>
-                  <th>Image</th>
-                  <th>Name</th>
-                  <th>Description</th>
-                  <th>Price</th>
-                  <th>Stock</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {products.length === 0 ? (
+            {loading ? (
+              <div className="d-flex justify-content-center align-items-center py-5">
+                <Loading />
+              </div>
+            ) : products.length > 0 ? (
+              <table className="table table-hover align-middle">
+                <thead className="bg-light">
                   <tr>
-                    <td colSpan="8" className="text-center py-4">
-                      <p className="text-muted mb-0">No products found</p>
-                    </td>
+                    <th>ID</th>
+                    <th>Image</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Price</th>
+                    <th>Stock</th>
+                    <th>Status</th>
+                    <th>Actions</th>
                   </tr>
-                ) : (
-                  products.map((product) => (
+                </thead>
+                <tbody>
+                  {products.map((product) => (
                     <tr key={product.id}>
                       <td>{product.id}</td>
                       <td>
@@ -408,10 +413,14 @@ const Products = () => {
                         </div>
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div className="text-center py-5">
+                <p className="text-muted mb-0">No products found</p>
+              </div>
+            )}
           </div>
 
           {pagination.totalPages > 1 && (

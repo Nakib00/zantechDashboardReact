@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { FaPlus, FaTimes, FaTag, FaBox, FaBoxes, FaImages, FaDollarSign, FaPercent, FaSave, FaTags } from 'react-icons/fa';
+import { FaPlus, FaTimes, FaTag, FaBox, FaBoxes, FaImages, FaDollarSign, FaPercent, FaSave, FaTags, FaSearch } from 'react-icons/fa';
 import axiosInstance from '../../config/axios';
 import Loading from '../../components/Loading';
 import './AddProduct.css';
+import Select from 'react-select';
 
 const AddProduct = () => {
   const navigate = useNavigate();
@@ -33,6 +34,7 @@ const AddProduct = () => {
   const [imagePreview, setImagePreview] = useState([]);
   const [dragActive, setDragActive] = useState(false);
   const [imageError, setImageError] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -284,6 +286,46 @@ const AddProduct = () => {
       setLoading(false);
     }
   };
+
+  const filteredProducts = products.filter(product => 
+    product.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const formatProductOption = (product) => ({
+    value: product.id,
+    label: (
+      <div className="d-flex align-items-center gap-2">
+        {product.image_paths && product.image_paths.length > 0 ? (
+          <img 
+            src={product.image_paths[0]} 
+            alt={product.name}
+            className="product-option-image"
+            style={{ width: '30px', height: '30px', objectFit: 'cover', borderRadius: '4px' }}
+          />
+        ) : (
+          <div 
+            className="product-option-image-placeholder"
+            style={{ 
+              width: '30px', 
+              height: '30px', 
+              backgroundColor: '#f3f4f6', 
+              borderRadius: '4px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            <FaBox size={14} className="text-muted" />
+          </div>
+        )}
+        <div>
+          <div className="product-option-name">{product.name}</div>
+          <small className="text-muted">৳{product.price}</small>
+        </div>
+      </div>
+    ),
+    product: product
+  });
 
   if (pageLoading) {
     return <Loading />;
@@ -626,20 +668,55 @@ const AddProduct = () => {
                 {bundleItems.map((item, index) => (
                   <div key={index} className="bundle-table-row">
                     <div className="bundle-cell product-col">
-                      <select
-                        id={`bundle-item-${index}`}
-                        value={item.item_id}
-                        onChange={(e) => handleBundleItemChange(index, 'item_id', e.target.value)}
-                        className="form-control"
+                      <Select
+                        value={item.item_id ? formatProductOption(products.find(p => p.id === parseInt(item.item_id))) : null}
+                        onChange={(option) => {
+                          if (option) {
+                            handleBundleItemChange(index, 'item_id', option.value);
+                            handleBundleItemChange(index, 'unit_price', option.product.price);
+                          } else {
+                            handleBundleItemChange(index, 'item_id', '');
+                            handleBundleItemChange(index, 'unit_price', 0);
+                          }
+                        }}
+                        options={filteredProducts.map(formatProductOption)}
+                        placeholder="Search and select a product..."
+                        isClearable
+                        isSearchable
+                        onInputChange={(value) => setSearchTerm(value)}
+                        className="product-select"
+                        classNamePrefix="product-select"
                         required={isBundle}
-                      >
-                        <option value="">Select a product</option>
-                        {products.map(product => (
-                          <option key={product.id} value={product.id}>
-                            {product.name}
-                          </option>
-                        ))}
-                      </select>
+                        styles={{
+                          control: (base) => ({
+                            ...base,
+                            minHeight: '38px',
+                            borderColor: '#e2e8f0',
+                            '&:hover': {
+                              borderColor: '#cbd5e1'
+                            }
+                          }),
+                          option: (base, state) => ({
+                            ...base,
+                            backgroundColor: state.isFocused ? '#f1f5f9' : 'white',
+                            color: '#1e293b',
+                            '&:active': {
+                              backgroundColor: '#e2e8f0'
+                            }
+                          }),
+                          menu: (base) => ({
+                            ...base,
+                            zIndex: 9999
+                          })
+                        }}
+                        components={{
+                          DropdownIndicator: () => (
+                            <div className="px-2">
+                              <FaSearch className="text-muted" />
+                            </div>
+                          )
+                        }}
+                      />
                     </div>
                     
                     <div className="bundle-cell qty-col">
@@ -656,14 +733,14 @@ const AddProduct = () => {
                     
                     <div className="bundle-cell price-col">
                       <div className="price-display">
-                        <FaDollarSign className="price-icon" />
+                        <span className="price-icon">৳</span>
                         {item.unit_price.toFixed(2)}
                       </div>
                     </div>
                     
                     <div className="bundle-cell total-col">
                       <div className="price-display total-price">
-                        <FaDollarSign className="price-icon" />
+                        <span className="price-icon">৳</span>
                         {item.total.toFixed(2)}
                       </div>
                     </div>
@@ -686,7 +763,7 @@ const AddProduct = () => {
                   <div className="grand-total">
                     <span className="grand-total-label">Bundle Total:</span>
                     <span className="grand-total-amount">
-                      <FaDollarSign className="price-icon" />
+                      <span className="price-icon">৳</span>
                       {bundleItems.reduce((sum, item) => sum + (item.total || 0), 0).toFixed(2)}
                     </span>
                   </div>
@@ -724,5 +801,58 @@ const AddProduct = () => {
     </div>
   );
 };
+
+const styles = `
+.product-select {
+  width: 100%;
+}
+
+.product-option-image {
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.product-option-name {
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.product-select__option {
+  padding: 8px 12px;
+}
+
+.product-select__option--is-focused {
+  background-color: #f1f5f9;
+}
+
+.product-select__menu {
+  z-index: 9999;
+}
+
+.product-select__control {
+  min-height: 38px;
+  border-color: #e2e8f0;
+}
+
+.product-select__control:hover {
+  border-color: #cbd5e1;
+}
+
+.product-select__indicator-separator {
+  display: none;
+}
+
+.product-select__dropdown-indicator {
+  padding: 0 8px;
+}
+
+.product-select__clear-indicator {
+  padding: 0 8px;
+}
+`;
+
+const styleSheet = document.createElement("style");
+styleSheet.innerText = styles;
+document.head.appendChild(styleSheet);
 
 export default AddProduct;
