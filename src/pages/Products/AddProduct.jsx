@@ -1,12 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { FaPlus, FaTimes, FaTag, FaBox, FaBoxes, FaImages, FaDollarSign, FaPercent, FaSave, FaTags, FaSearch, FaSpinner } from 'react-icons/fa';
 import axiosInstance from '../../config/axios';
 import Loading from '../../components/Loading';
 import './AddProduct.css';
-import Select from 'react-select';
-import debounce from 'lodash/debounce';
+import AsyncSelect from 'react-select/async';
 
 const AddProduct = () => {
   const navigate = useNavigate();
@@ -35,8 +34,6 @@ const AddProduct = () => {
   const [imagePreview, setImagePreview] = useState([]);
   const [dragActive, setDragActive] = useState(false);
   const [imageError, setImageError] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -289,33 +286,6 @@ const AddProduct = () => {
     }
   };
 
-  // Debounced search function
-  const debouncedSearch = useCallback(
-    debounce((term) => {
-      setSearchTerm(term);
-      setIsSearching(false);
-    }, 300),
-    []
-  );
-
-  // Enhanced search handler
-  const handleSearchChange = (value) => {
-    setIsSearching(true);
-    debouncedSearch(value);
-  };
-
-  // Enhanced product filtering
-  const filteredProducts = products.filter(product => {
-    if (!searchTerm) return true;
-    
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      product.name.toLowerCase().includes(searchLower) ||
-      (product.short_description && product.short_description.toLowerCase().includes(searchLower)) ||
-      (product.description && product.description.toLowerCase().includes(searchLower))
-    );
-  });
-
   const formatProductOption = (product) => ({
     value: product.id,
     label: (
@@ -351,6 +321,21 @@ const AddProduct = () => {
     ),
     product: product
   });
+
+  // Async load options for dynamic search
+  const loadProductOptions = async (inputValue, callback) => {
+    if (!inputValue) {
+      callback([]);
+      return;
+    }
+    try {
+      const response = await axiosInstance.get('/products', { params: { search: inputValue } });
+      const productsData = response.data.data || [];
+      callback(productsData.map(formatProductOption));
+    } catch {
+      callback([]);
+    }
+  };
 
   if (pageLoading) {
     return <Loading />;
@@ -693,7 +678,10 @@ const AddProduct = () => {
                 {bundleItems.map((item, index) => (
                   <div key={index} className="bundle-table-row">
                     <div className="bundle-cell product-col">
-                      <Select
+                      <AsyncSelect
+                        cacheOptions
+                        defaultOptions={products.map(formatProductOption)}
+                        loadOptions={loadProductOptions}
                         value={item.item_id ? formatProductOption(products.find(p => p.id === parseInt(item.item_id))) : null}
                         onChange={(option) => {
                           if (option) {
@@ -704,12 +692,9 @@ const AddProduct = () => {
                             handleBundleItemChange(index, 'unit_price', 0);
                           }
                         }}
-                        options={filteredProducts.map(formatProductOption)}
-                        placeholder={isSearching ? "Searching products..." : "Type to search products..."}
+                        placeholder="Type to search products..."
                         isClearable
                         isSearchable
-                        onInputChange={handleSearchChange}
-                        isLoading={isSearching}
                         className="product-select"
                         classNamePrefix="product-select"
                         required={isBundle}

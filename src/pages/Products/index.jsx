@@ -370,7 +370,7 @@ const Products = () => {
                       </td>
                       <td>
                         <div>
-                          <span className="fw-semibold">${product.price}</span>
+                          <span className="fw-semibold">৳{product.price}</span>
                           {product.discount > 0 && (
                             <Badge bg="danger" className="ms-2">
                               -{product.discount}%
