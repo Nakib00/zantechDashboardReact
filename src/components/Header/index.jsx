@@ -1,90 +1,121 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { FaUserCircle, FaSignOutAlt, FaUser } from 'react-icons/fa';
-import { MdNotifications } from 'react-icons/md';
+import { FaUserCircle, FaSignOutAlt, FaUser, FaBell } from 'react-icons/fa';
 import { Link, useNavigate } from 'react-router-dom';
+import { Dropdown, Badge } from 'react-bootstrap';
 import logo from '../../assets/zantechLogo.png';
-import './Header.css';
 
 const Header = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const dropdownRef = useRef(null);
+  const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
     if (userData) {
       setUser(JSON.parse(userData));
     }
-
-    // Close dropdown when clicking outside
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setShowDropdown(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('user');
     localStorage.removeItem('token');
-    setShowDropdown(false);
     navigate('/login');
   };
 
-  const toggleDropdown = () => {
-    setShowDropdown(!showDropdown);
-  };
+  const CustomToggle = React.forwardRef(({ children, onClick }, ref) => (
+    <div
+      ref={ref}
+      onClick={(e) => {
+        e.preventDefault();
+        onClick(e);
+      }}
+      className="d-flex align-items-center gap-2 cursor-pointer"
+      style={{ cursor: 'pointer' }}
+    >
+      {children}
+    </div>
+  ));
 
   return (
-    <header className="header bg-white shadow-sm">
-      <div className="container-fluid">
-        <div className="row align-items-center py-2">
-          {/* Logo and Brand Name */}
-          <div className="col-md-6">
-            <Link to="/dashboard" className="brand-container">
-              <img src={logo} alt="Zantech Logo" className="logo" />
-              <span className="brand-name">Zantech</span>
-            </Link>
-          </div>
+    <header className="border-bottom">
+      <div className="container-fluid px-4">
+        <div className="d-flex justify-content-between align-items-center h-100">
+          {/* Logo and Brand */}
+          <Link to="/dashboard" className="d-flex align-items-center text-decoration-none">
+            <img src={logo} alt="Zantech Logo" className="logo" />
+            <span className="ms-2 fw-semibold text-primary fs-5">Zantech</span>
+          </Link>
 
           {/* Right Side Items */}
-          <div className="col-md-6">
-            <div className="d-flex justify-content-end align-items-center">
-              {/* Notifications */}
-              <div className="notification-icon me-3 position-relative">
-                <MdNotifications size={24} />
-                <span className="notification-badge">3</span>
-              </div>
+          <div className="d-flex align-items-center gap-4">
+            {/* Notifications */}
+            <Dropdown align="end">
+              <Dropdown.Toggle as={CustomToggle}>
+                <div className="position-relative">
+                  <FaBell className="fs-5 text-secondary" />
+                  {notifications.length > 0 && (
+                    <Badge 
+                      bg="danger" 
+                      pill 
+                      className="position-absolute top-0 start-100 translate-middle"
+                      style={{ fontSize: '0.6rem' }}
+                    >
+                      {notifications.length}
+                    </Badge>
+                  )}
+                </div>
+              </Dropdown.Toggle>
 
-              {/* User Profile with Dropdown */}
-              <div className="user-profile-container" ref={dropdownRef}>
-                <div className="user-profile d-flex align-items-center" onClick={toggleDropdown}>
-                  <FaUserCircle size={32} className="me-2" />
-                  <div className="user-info">
-                    <h6 className="mb-0">{user?.name || 'Guest'}</h6>
+              <Dropdown.Menu className="shadow-sm border-0">
+                {notifications.length > 0 ? (
+                  notifications.map((notification, index) => (
+                    <Dropdown.Item key={index} className="py-2">
+                      <div className="d-flex align-items-center gap-2">
+                        <div className="flex-grow-1">
+                          <p className="mb-0 small">{notification.message}</p>
+                          <small className="text-muted">{notification.time}</small>
+                        </div>
+                      </div>
+                    </Dropdown.Item>
+                  ))
+                ) : (
+                  <Dropdown.Item className="text-center text-muted py-3">
+                    No new notifications
+                  </Dropdown.Item>
+                )}
+              </Dropdown.Menu>
+            </Dropdown>
+
+            {/* User Profile */}
+            <Dropdown align="end">
+              <Dropdown.Toggle as={CustomToggle}>
+                <div className="d-flex align-items-center gap-2">
+                  <div className="rounded-circle bg-light p-1">
+                    <FaUserCircle className="fs-4 text-primary" />
+                  </div>
+                  <div className="d-none d-md-block text-start">
+                    <h6 className="mb-0 fw-semibold">{user?.name || 'Guest'}</h6>
                     <small className="text-muted">{user?.type || 'User'}</small>
                   </div>
                 </div>
+              </Dropdown.Toggle>
 
-                {/* Dropdown Menu */}
-                {showDropdown && (
-                  <div className="profile-dropdown">
-                    <Link to="/profile" className="dropdown-item" onClick={() => setShowDropdown(false)}>
-                      <FaUser className="me-2" />
-                      Profile
-                    </Link>
-                    <button className="dropdown-item" onClick={handleLogout}>
-                      <FaSignOutAlt className="me-2" />
-                      Logout
-                    </button>
+              <Dropdown.Menu className="shadow-sm border-0">
+                <Dropdown.Item as={Link} to="/profile" className="py-2">
+                  <div className="d-flex align-items-center gap-2">
+                    <FaUser className="text-primary" />
+                    <span>Profile</span>
                   </div>
-                )}
-              </div>
-            </div>
+                </Dropdown.Item>
+                <Dropdown.Divider />
+                <Dropdown.Item onClick={handleLogout} className="py-2 text-danger">
+                  <div className="d-flex align-items-center gap-2">
+                    <FaSignOutAlt />
+                    <span>Logout</span>
+                  </div>
+                </Dropdown.Item>
+              </Dropdown.Menu>
+            </Dropdown>
           </div>
         </div>
       </div>
