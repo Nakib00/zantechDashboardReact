@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { FaPlus, FaTimes, FaTag, FaBox, FaBoxes, FaImages, FaDollarSign, FaPercent, FaSave, FaTags, FaSearch } from 'react-icons/fa';
+import { FaPlus, FaTimes, FaTag, FaBox, FaBoxes, FaImages, FaDollarSign, FaPercent, FaSave, FaTags, FaSearch, FaSpinner } from 'react-icons/fa';
 import axiosInstance from '../../config/axios';
 import Loading from '../../components/Loading';
 import './AddProduct.css';
 import Select from 'react-select';
+import debounce from 'lodash/debounce';
 
 const AddProduct = () => {
   const navigate = useNavigate();
@@ -35,6 +36,7 @@ const AddProduct = () => {
   const [dragActive, setDragActive] = useState(false);
   const [imageError, setImageError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -287,40 +289,63 @@ const AddProduct = () => {
     }
   };
 
-  const filteredProducts = products.filter(product => 
-    product.name.toLowerCase().includes(searchTerm.toLowerCase())
+  // Debounced search function
+  const debouncedSearch = useCallback(
+    debounce((term) => {
+      setSearchTerm(term);
+      setIsSearching(false);
+    }, 300),
+    []
   );
+
+  // Enhanced search handler
+  const handleSearchChange = (value) => {
+    setIsSearching(true);
+    debouncedSearch(value);
+  };
+
+  // Enhanced product filtering
+  const filteredProducts = products.filter(product => {
+    if (!searchTerm) return true;
+    
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      product.name.toLowerCase().includes(searchLower) ||
+      (product.short_description && product.short_description.toLowerCase().includes(searchLower)) ||
+      (product.description && product.description.toLowerCase().includes(searchLower))
+    );
+  });
 
   const formatProductOption = (product) => ({
     value: product.id,
     label: (
-      <div className="d-flex align-items-center gap-2">
-        {product.image_paths && product.image_paths.length > 0 ? (
-          <img 
-            src={product.image_paths[0]} 
-            alt={product.name}
-            className="product-option-image"
-            style={{ width: '30px', height: '30px', objectFit: 'cover', borderRadius: '4px' }}
-          />
-        ) : (
-          <div 
-            className="product-option-image-placeholder"
-            style={{ 
-              width: '30px', 
-              height: '30px', 
-              backgroundColor: '#f3f4f6', 
-              borderRadius: '4px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            <FaBox size={14} className="text-muted" />
-          </div>
-        )}
-        <div>
+      <div className="product-option">
+        <div className="product-option-image-container">
+          {product.image_paths && product.image_paths.length > 0 ? (
+            <img 
+              src={product.image_paths[0]} 
+              alt={product.name}
+              className="product-option-image"
+            />
+          ) : (
+            <div className="product-option-image-placeholder">
+              <FaBox size={14} />
+            </div>
+          )}
+        </div>
+        <div className="product-option-details">
           <div className="product-option-name">{product.name}</div>
-          <small className="text-muted">৳{product.price}</small>
+          <div className="product-option-meta">
+            <span className="product-option-price">৳{product.price}</span>
+            {product.quantity > 0 ? (
+              <span className="product-option-stock in-stock">In Stock: {product.quantity}</span>
+            ) : (
+              <span className="product-option-stock out-of-stock">Out of Stock</span>
+            )}
+          </div>
+          {product.short_description && (
+            <div className="product-option-description">{product.short_description}</div>
+          )}
         </div>
       </div>
     ),
@@ -680,39 +705,127 @@ const AddProduct = () => {
                           }
                         }}
                         options={filteredProducts.map(formatProductOption)}
-                        placeholder="Search and select a product..."
+                        placeholder={isSearching ? "Searching products..." : "Type to search products..."}
                         isClearable
                         isSearchable
-                        onInputChange={(value) => setSearchTerm(value)}
+                        onInputChange={handleSearchChange}
+                        isLoading={isSearching}
                         className="product-select"
                         classNamePrefix="product-select"
                         required={isBundle}
+                        noOptionsMessage={() => (
+                          <div className="no-options-message">
+                            <FaSearch className="no-options-icon" />
+                            <p>No products found</p>
+                            <small>Try different keywords or check your spelling</small>
+                          </div>
+                        )}
+                        loadingMessage={() => (
+                          <div className="loading-message">
+                            <FaSpinner className="fa-spin" />
+                            <span>Searching products...</span>
+                          </div>
+                        )}
+                        menuPortalTarget={typeof window !== 'undefined' ? document.body : null}
+                        menuPosition="fixed"
+                        menuShouldBlockScroll={true}
                         styles={{
-                          control: (base) => ({
+                          control: (base, state) => ({
                             ...base,
-                            minHeight: '38px',
-                            borderColor: '#e2e8f0',
+                            minHeight: '42px',
+                            borderColor: state.isFocused ? '#3b82f6' : '#e2e8f0',
+                            boxShadow: state.isFocused ? '0 0 0 1px #3b82f6' : 'none',
                             '&:hover': {
-                              borderColor: '#cbd5e1'
-                            }
+                              borderColor: state.isFocused ? '#3b82f6' : '#cbd5e1'
+                            },
+                            backgroundColor: state.isDisabled ? '#f1f5f9' : 'white',
+                            cursor: state.isDisabled ? 'not-allowed' : 'text'
+                          }),
+                          input: (base) => ({
+                            ...base,
+                            margin: 0,
+                            padding: 0,
+                            color: '#1e293b'
+                          }),
+                          placeholder: (base) => ({
+                            ...base,
+                            color: '#94a3b8'
+                          }),
+                          singleValue: (base) => ({
+                            ...base,
+                            color: '#1e293b'
+                          }),
+                          menu: (base) => ({
+                            ...base,
+                            marginTop: '4px',
+                            backgroundColor: 'white',
+                            borderRadius: '6px',
+                            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+                            zIndex: 9999,
+                            overflow: 'hidden'
+                          }),
+                          menuList: (base) => ({
+                            ...base,
+                            padding: '4px',
+                            maxHeight: '300px'
                           }),
                           option: (base, state) => ({
                             ...base,
                             backgroundColor: state.isFocused ? '#f1f5f9' : 'white',
                             color: '#1e293b',
+                            cursor: 'pointer',
+                            padding: '8px 12px',
+                            borderRadius: '4px',
                             '&:active': {
                               backgroundColor: '#e2e8f0'
                             }
                           }),
-                          menu: (base) => ({
+                          dropdownIndicator: (base) => ({
                             ...base,
-                            zIndex: 9999
-                          })
+                            padding: '0 8px',
+                            color: '#64748b',
+                            '&:hover': {
+                              color: '#3b82f6'
+                            }
+                          }),
+                          clearIndicator: (base) => ({
+                            ...base,
+                            padding: '0 8px',
+                            color: '#64748b',
+                            '&:hover': {
+                              color: '#ef4444'
+                            }
+                          }),
+                          loadingIndicator: (base) => ({
+                            ...base,
+                            color: '#64748b'
+                          }),
+                          noOptionsMessage: (base) => ({
+                            ...base,
+                            padding: '16px',
+                            textAlign: 'center'
+                          }),
+                          loadingMessage: (base) => ({
+                            ...base,
+                            padding: '16px',
+                            textAlign: 'center'
+                          }),
+                          menuPortal: base => ({ ...base, zIndex: 9999 })
                         }}
                         components={{
                           DropdownIndicator: () => (
-                            <div className="px-2">
-                              <FaSearch className="text-muted" />
+                            <div className="select-dropdown-icon">
+                              <FaSearch />
+                            </div>
+                          ),
+                          LoadingIndicator: () => (
+                            <div className="select-loading-icon">
+                              <FaSpinner className="fa-spin" />
+                            </div>
+                          ),
+                          ClearIndicator: () => (
+                            <div className="select-clear-icon">
+                              <FaTimes />
                             </div>
                           )
                         }}
@@ -801,58 +914,5 @@ const AddProduct = () => {
     </div>
   );
 };
-
-const styles = `
-.product-select {
-  width: 100%;
-}
-
-.product-option-image {
-  object-fit: cover;
-  border-radius: 4px;
-}
-
-.product-option-name {
-  font-weight: 500;
-  margin-bottom: 2px;
-}
-
-.product-select__option {
-  padding: 8px 12px;
-}
-
-.product-select__option--is-focused {
-  background-color: #f1f5f9;
-}
-
-.product-select__menu {
-  z-index: 9999;
-}
-
-.product-select__control {
-  min-height: 38px;
-  border-color: #e2e8f0;
-}
-
-.product-select__control:hover {
-  border-color: #cbd5e1;
-}
-
-.product-select__indicator-separator {
-  display: none;
-}
-
-.product-select__dropdown-indicator {
-  padding: 0 8px;
-}
-
-.product-select__clear-indicator {
-  padding: 0 8px;
-}
-`;
-
-const styleSheet = document.createElement("style");
-styleSheet.innerText = styles;
-document.head.appendChild(styleSheet);
 
 export default AddProduct;
