@@ -10,6 +10,7 @@ const Products = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
+  const [tableLoading, setTableLoading] = useState(false);
   const [pagination, setPagination] = useState({
     currentPage: 1,
     perPage: 5,
@@ -40,6 +41,7 @@ const Products = () => {
 
   const fetchProducts = async (page = 1) => {
     setLoading(true);
+    setTableLoading(true);
     try {
       // Build query parameters
       const params = {
@@ -57,6 +59,8 @@ const Products = () => {
         throw new Error(result.message || 'Failed to fetch products');
       }
 
+      await new Promise(resolve => setTimeout(resolve, 300));
+
       setProducts(result.data);
       setPagination({
         currentPage: result.pagination.current_page,
@@ -70,7 +74,6 @@ const Products = () => {
       const errorMessage = err.response?.data?.message || err.message || 'Failed to fetch products';
       toast.error(errorMessage);
       
-      // Reset products and pagination on error
       setProducts([]);
       setPagination({
         currentPage: 1,
@@ -81,6 +84,7 @@ const Products = () => {
       });
     } finally {
       setLoading(false);
+      setTableLoading(false);
     }
   };
 
@@ -117,12 +121,27 @@ const Products = () => {
   const handleDeleteProduct = async (id) => {
     if (window.confirm('Are you sure you want to delete this product?')) {
       try {
-        const response = await axiosInstance.delete(`/products/${id}`);
+        setTableLoading(true); // Show loading state during deletion
+        const token = localStorage.getItem('token'); // Get token from localStorage
+        
+        if (!token) {
+          throw new Error('Authentication token not found. Please login again.');
+        }
+
+        const response = await axiosInstance.delete(`/products/delete/${id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
         const result = response.data;
 
         if (!result.success) {
           throw new Error(result.message || 'Failed to delete product');
         }
+
+        // Add a small delay to make the transition smoother
+        await new Promise(resolve => setTimeout(resolve, 300));
 
         setProducts(products.filter(prod => prod.id !== id));
         toast.success('Product deleted successfully');
@@ -135,6 +154,14 @@ const Products = () => {
         console.error('Error deleting product:', err);
         const errorMessage = err.response?.data?.message || err.message || 'Failed to delete product';
         toast.error(errorMessage);
+        
+        // If token is invalid or expired, redirect to login
+        if (err.response?.status === 401) {
+          localStorage.removeItem('token'); // Clear invalid token
+          navigate('/login'); // Redirect to login page
+        }
+      } finally {
+        setTableLoading(false); // Hide loading state
       }
     }
   };
@@ -229,15 +256,22 @@ const Products = () => {
           <div className="d-flex justify-content-between align-items-center mb-4">
             <div>
               <h4 className="mb-1">Products</h4>
-              <p className="text-muted mb-0">
-                Showing {products.length} of {pagination.totalRows} products
-              </p>
+              {loading ? (
+                <div className="d-flex align-items-center">
+                  <FaSpinner className="spinner-border spinner-border-sm me-2" />
+                  <p className="text-muted mb-0">Loading products...</p>
+                </div>
+              ) : (
+                <p className="text-muted mb-0">
+                  Showing {products.length} of {pagination.totalRows} products
+                </p>
+              )}
             </div>
             <div className="d-flex gap-2">
               <Form onSubmit={handleSearch} className="d-flex gap-2">
                 <InputGroup>
                   <InputGroup.Text>
-                    <FaSearch />
+                    {loading ? <FaSpinner className="spinner-border spinner-border-sm" /> : <FaSearch />}
                   </InputGroup.Text>
                   <Form.Control
                     type="text"
@@ -245,12 +279,14 @@ const Products = () => {
                     name="search"
                     value={searchParams.search}
                     onChange={handleFilterChange}
+                    disabled={loading}
                   />
                 </InputGroup>
                 <Button 
                   variant="outline-secondary" 
                   onClick={() => setShowFilters(true)}
                   title="Filter"
+                  disabled={loading}
                 >
                   <FaFilter />
                 </Button>
@@ -258,69 +294,110 @@ const Products = () => {
               <button 
                 className="btn btn-primary d-flex align-items-center gap-2"
                 onClick={() => navigate('/products/add')}
+                disabled={loading}
               >
-                <FaPlus /> Add Product
+                {loading ? <FaSpinner className="spinner-border spinner-border-sm" /> : <FaPlus />} Add Product
               </button>
             </div>
           </div>
 
           {/* Filter Modal */}
-          <Modal show={showFilters} onHide={() => setShowFilters(false)}>
+          <Modal show={showFilters} onHide={() => !loading && setShowFilters(false)}>
             <Modal.Header closeButton>
               <Modal.Title>Filter Products</Modal.Title>
             </Modal.Header>
             <Form onSubmit={handleFilterSubmit}>
               <Modal.Body>
-                <Form.Group className="mb-3">
-                  <Form.Label>Price Range</Form.Label>
-                  <div className="d-flex gap-2">
-                    <Form.Control
-                      type="number"
-                      placeholder="Min Price"
-                      name="minPrice"
-                      value={searchParams.minPrice}
-                      onChange={handleFilterChange}
-                      min="0"
-                    />
-                    <Form.Control
-                      type="number"
-                      placeholder="Max Price"
-                      name="maxPrice"
-                      value={searchParams.maxPrice}
-                      onChange={handleFilterChange}
-                      min="0"
-                    />
+                {loading ? (
+                  <div className="text-center py-4">
+                    <Loading />
+                    <p className="text-muted mt-2 mb-0">Applying filters...</p>
                   </div>
-                </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Label>Items per page</Form.Label>
-                  <Form.Select
-                    name="limit"
-                    value={searchParams.limit}
-                    onChange={handleFilterChange}
-                  >
-                    <option value="5">5 per page</option>
-                    <option value="10">10 per page</option>
-                    <option value="20">20 per page</option>
-                    <option value="50">50 per page</option>
-                  </Form.Select>
-                </Form.Group>
+                ) : (
+                  <>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Price Range</Form.Label>
+                      <div className="d-flex gap-2">
+                        <Form.Control
+                          type="number"
+                          placeholder="Min Price"
+                          name="minPrice"
+                          value={searchParams.minPrice}
+                          onChange={handleFilterChange}
+                          min="0"
+                          disabled={loading}
+                        />
+                        <Form.Control
+                          type="number"
+                          placeholder="Max Price"
+                          name="maxPrice"
+                          value={searchParams.maxPrice}
+                          onChange={handleFilterChange}
+                          min="0"
+                          disabled={loading}
+                        />
+                      </div>
+                    </Form.Group>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Items per page</Form.Label>
+                      <Form.Select
+                        name="limit"
+                        value={searchParams.limit}
+                        onChange={handleFilterChange}
+                        disabled={loading}
+                      >
+                        <option value="5">5 per page</option>
+                        <option value="10">10 per page</option>
+                        <option value="20">20 per page</option>
+                        <option value="50">50 per page</option>
+                      </Form.Select>
+                    </Form.Group>
+                  </>
+                )}
               </Modal.Body>
               <Modal.Footer>
-                <Button variant="secondary" onClick={handleResetFilters}>
+                <Button variant="secondary" onClick={handleResetFilters} disabled={loading}>
                   Reset Filters
                 </Button>
-                <Button variant="primary" type="submit">
-                  Apply Filters
+                <Button variant="primary" type="submit" disabled={loading}>
+                  {loading ? (
+                    <>
+                      <FaSpinner className="spinner-border spinner-border-sm me-2" />
+                      Applying...
+                    </>
+                  ) : (
+                    'Apply Filters'
+                  )}
                 </Button>
               </Modal.Footer>
             </Form>
           </Modal>
 
-          <div className="table-responsive">
-            {loading ? (
-              <div className="d-flex justify-content-center align-items-center py-5">
+          <div className="table-responsive position-relative">
+            {tableLoading && (
+              <div 
+                className="position-absolute w-100 h-100 d-flex justify-content-center align-items-center"
+                style={{
+                  top: 0,
+                  left: 0,
+                  backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                  zIndex: 1000,
+                  backdropFilter: 'blur(2px)'
+                }}
+              >
+                <div className="text-center">
+                  <Loading />
+                  <p className="text-muted mt-2 mb-0">
+                    {loading ? 'Loading products...' : 'Updating products...'}
+                  </p>
+                </div>
+              </div>
+            )}
+            
+            {loading && !tableLoading ? (
+              <div className="text-center py-5">
                 <Loading />
+                <p className="text-muted mt-3 mb-0">Loading products...</p>
               </div>
             ) : products.length > 0 ? (
               <table className="table table-hover align-middle">
@@ -400,6 +477,7 @@ const Products = () => {
                             className="btn btn-sm btn-outline-primary"
                             onClick={() => navigate(`/products/edit/${product.id}`)}
                             title="Edit"
+                            disabled={loading}
                           >
                             <FaEdit />
                           </button>
@@ -407,8 +485,9 @@ const Products = () => {
                             className="btn btn-sm btn-outline-danger"
                             onClick={() => handleDeleteProduct(product.id)}
                             title="Delete"
+                            disabled={loading}
                           >
-                            <FaTrash />
+                            {loading ? <FaSpinner className="spinner-border spinner-border-sm" /> : <FaTrash />}
                           </button>
                         </div>
                       </td>
@@ -424,7 +503,24 @@ const Products = () => {
           </div>
 
           {pagination.totalPages > 1 && (
-            <div className="d-flex justify-content-center mt-4">
+            <div className="d-flex justify-content-center mt-4 position-relative">
+              {tableLoading && (
+                <div 
+                  className="position-absolute w-100 h-100 d-flex justify-content-center align-items-center"
+                  style={{
+                    top: 0,
+                    left: 0,
+                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                    zIndex: 1000,
+                    backdropFilter: 'blur(2px)'
+                  }}
+                >
+                  <div className="text-center">
+                    <Loading />
+                    <p className="text-muted mt-2 mb-0">Changing page...</p>
+                  </div>
+                </div>
+              )}
               <Pagination className="mb-0">
                 {renderPagination()}
               </Pagination>
