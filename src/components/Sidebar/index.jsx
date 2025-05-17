@@ -14,7 +14,8 @@ import {
   MdBusiness,
   MdChevronLeft,
   MdChevronRight,
-  MdMenu
+  MdMenu,
+  MdPerson
 } from 'react-icons/md';
 import { Nav } from 'react-bootstrap';
 import './Sidebar.css';
@@ -60,6 +61,12 @@ const Sidebar = () => {
           path: '/suppliers', 
           icon: <MdBusiness size={22} />, 
           label: 'Suppliers',
+          badge: null
+        },
+        { 
+          path: '/challens', 
+          icon: <MdPerson size={22} />, 
+          label: 'Challens',
           badge: null
         },
         { 

@@ -13,6 +13,9 @@ import Header from "./components/Header";
 import Sidebar from "./components/Sidebar";
 import { Toaster } from 'react-hot-toast';
 import Suppliers from "./pages/Suppliers";
+import Challen from "./pages/Challen";
+import AddChallan from "./pages/Challen/AddChallan";
+import ViewChallan from "./pages/Challen/ViewChallan";
 
 const PrivateRoute = ({ children }) => {
   const token = localStorage.getItem('token');
@@ -45,6 +48,10 @@ const App = () => {
                       <Route path="/products/:id" element={<ViewProduct />} />
                       <Route path="/categories" element={<Categories />} />
                       <Route path="/suppliers" element={<Suppliers />} />
+                      <Route path="/challens" element={<Challen />} />
+                      <Route path="/challans" element={<Challen />} />
+                      <Route path="/challans/add" element={<AddChallan />} />
+                      <Route path="/challans/:id" element={<ViewChallan />} />
                     </Routes>
                   </div>
                 </div>
