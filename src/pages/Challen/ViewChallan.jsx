@@ -4,6 +4,7 @@ import { FaArrowLeft, FaSpinner, FaDownload } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import axiosInstance from "../../config/axios";
 import { Card, Button, Row, Col, Table, Image } from "react-bootstrap";
+import Loading from "../../components/Loading";
 import "../Categories/Categories.css";
 
 const ViewChallan = () => {
@@ -25,24 +26,17 @@ const ViewChallan = () => {
         throw new Error(response.data.message || "Failed to fetch challan");
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to fetch challan details");
-      navigate('/challans');
+      toast.error(
+        error.response?.data?.message || "Failed to fetch challan details"
+      );
+      navigate("/challans");
     } finally {
       setLoading(false);
     }
   };
 
   if (loading) {
-    return (
-      <div className="categories-container">
-        <Card className="border-0 shadow-sm">
-          <Card.Body className="text-center py-5">
-            <FaSpinner className="spinner-border spinner-border-lg mb-3" />
-            <p>Loading challan details...</p>
-          </Card.Body>
-        </Card>
-      </div>
-    );
+    return <Loading />;
   }
 
   if (!challan) {
@@ -57,7 +51,7 @@ const ViewChallan = () => {
             <div className="d-flex align-items-center gap-3">
               <Button
                 variant="outline-secondary"
-                onClick={() => navigate('/challans')}
+                onClick={() => navigate("/challans")}
                 className="d-flex align-items-center gap-2"
               >
                 <FaArrowLeft /> Back
@@ -78,19 +72,26 @@ const ViewChallan = () => {
                     <strong>Challan ID:</strong> {challan.id}
                   </div>
                   <div className="mb-2">
-                    <strong>Date:</strong> {new Date(challan.Date).toLocaleDateString()}
+                    <strong>Date:</strong>{" "}
+                    {new Date(challan.Date).toLocaleDateString()}
                   </div>
                   <div className="mb-2">
                     <strong>Created By:</strong> {challan.user.name}
                   </div>
                   <div className="mb-2">
-                    <strong>Total Amount:</strong> ৳{parseFloat(challan.total).toLocaleString()}
+                    <strong>Total Amount:</strong> ৳
+                    {parseFloat(challan.total).toLocaleString()}
                   </div>
                   <div className="mb-2">
-                    <strong>Delivery Price:</strong> ৳{parseFloat(challan.delivery_price).toLocaleString()}
+                    <strong>Delivery Price:</strong> ৳
+                    {parseFloat(challan.delivery_price).toLocaleString()}
                   </div>
                   <div>
-                    <strong>Grand Total:</strong> ৳{(parseFloat(challan.total) + parseFloat(challan.delivery_price)).toLocaleString()}
+                    <strong>Grand Total:</strong> ৳
+                    {(
+                      parseFloat(challan.total) +
+                      parseFloat(challan.delivery_price)
+                    ).toLocaleString()}
                   </div>
                 </Card.Body>
               </Card>
@@ -122,7 +123,6 @@ const ViewChallan = () => {
                     <tr>
                       <th>Item Name</th>
                       <th>Buying Price</th>
-                      <th>Price</th>
                       <th>Quantity</th>
                       <th>Total</th>
                     </tr>
@@ -131,12 +131,41 @@ const ViewChallan = () => {
                     {challan.items.map((item, index) => (
                       <tr key={index}>
                         <td>{item.item_name}</td>
-                        <td>৳{parseFloat(item.buying_price || 0).toLocaleString()}</td>
-                        <td>৳{parseFloat(item.price).toLocaleString()}</td>
+                        <td>
+                          ৳{parseFloat(item.buying_price || 0).toLocaleString()}
+                        </td>
                         <td>{item.quantity}</td>
-                        <td>৳{(parseFloat(item.price) * parseInt(item.quantity)).toLocaleString()}</td>
+                        <td>
+                          ৳
+                          {(
+                            parseFloat(item.buying_price) *
+                            parseInt(item.quantity)
+                          ).toLocaleString()}
+                        </td>
                       </tr>
                     ))}
+                    <tr className="table-secondary fw-bold">
+                      <td colSpan="2">
+                        <h5>Total Items (Types)</h5>
+                      </td>
+                      <td>
+                        <h5>{challan.items.length}</h5>
+                      </td>
+                      <td>
+                        <h5>
+                          ৳
+                          {challan.items
+                            .reduce(
+                              (sum, item) =>
+                                sum +
+                                parseFloat(item.buying_price || 0) *
+                                  parseInt(item.quantity),
+                              0
+                            )
+                            .toLocaleString()}
+                        </h5>
+                      </td>
+                    </tr>
                   </tbody>
                 </Table>
               </div>
@@ -151,7 +180,7 @@ const ViewChallan = () => {
                   <Image
                     src={challan.invoice.path}
                     alt="Invoice"
-                    style={{ maxHeight: '200px', objectFit: 'contain' }}
+                    style={{ maxHeight: "200px", objectFit: "contain" }}
                     className="border rounded"
                   />
                   <Button
@@ -172,4 +201,4 @@ const ViewChallan = () => {
   );
 };
 
-export default ViewChallan; 
+export default ViewChallan;
