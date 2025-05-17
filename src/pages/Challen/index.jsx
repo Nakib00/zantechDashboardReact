@@ -1,10 +1,30 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaPlus, FaEdit, FaTrash, FaSearch, FaSpinner, FaChevronLeft, FaChevronRight, FaTimes, FaEye } from "react-icons/fa";
+import {
+  FaPlus,
+  FaEdit,
+  FaTrash,
+  FaSearch,
+  FaSpinner,
+  FaChevronLeft,
+  FaChevronRight,
+  FaTimes,
+  FaEye,
+} from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import axiosInstance from "../../config/axios";
-import { Card, Form, InputGroup, Button, Modal, Pagination, Row, Col, ListGroup } from "react-bootstrap";
-import Select from 'react-select/async';
+import {
+  Card,
+  Form,
+  InputGroup,
+  Button,
+  Modal,
+  Pagination,
+  Row,
+  Col,
+  ListGroup,
+} from "react-bootstrap";
+import Select from "react-select/async";
 import "../Categories/Categories.css";
 
 const Challen = () => {
@@ -18,14 +38,14 @@ const Challen = () => {
   const [searchParams, setSearchParams] = useState({
     search: "",
     page: 1,
-    limit: 10
+    limit: 10,
   });
   const [pagination, setPagination] = useState({
     total_rows: 0,
     current_page: 1,
     per_page: 10,
     total_pages: 1,
-    has_more_pages: false
+    has_more_pages: false,
   });
   const [suppliers, setSuppliers] = useState([]);
 
@@ -64,7 +84,7 @@ const Challen = () => {
       const params = {
         page,
         limit: searchParams.limit,
-        ...(searchParams.search && { search: searchParams.search })
+        ...(searchParams.search && { search: searchParams.search }),
       };
 
       const response = await axiosInstance.get("/challans", { params });
@@ -100,12 +120,12 @@ const Challen = () => {
   const loadItems = async (inputValue) => {
     try {
       const response = await axiosInstance.get("/products", {
-        params: { search: inputValue }
+        params: { search: inputValue },
       });
-      return response.data.data.map(item => ({
+      return response.data.data.map((item) => ({
         value: item.id,
         label: `${item.name} (${item.quantity} in stock)`,
-        buying_price: item.buying_price || 0
+        buying_price: item.buying_price || 0,
       }));
     } catch (err) {
       console.error("Failed to fetch items:", err);
@@ -116,26 +136,26 @@ const Challen = () => {
 
   const handleSearch = (e) => {
     const { value } = e.target;
-    setSearchParams(prev => ({
+    setSearchParams((prev) => ({
       ...prev,
       search: value,
-      page: 1
+      page: 1,
     }));
   };
 
   const handlePageChange = (page) => {
-    setSearchParams(prev => ({
+    setSearchParams((prev) => ({
       ...prev,
-      page
+      page,
     }));
   };
 
   const handleLimitChange = (e) => {
     const limit = parseInt(e.target.value);
-    setSearchParams(prev => ({
+    setSearchParams((prev) => ({
       ...prev,
       limit,
-      page: 1
+      page: 1,
     }));
   };
 
@@ -146,43 +166,56 @@ const Challen = () => {
 
   const handleItemSelect = (selectedOption) => {
     if (selectedOption) {
-      setSelectedItems(prev => [...prev, {
-        id: selectedOption.value,
-        name: selectedOption.label,
-        buying_price: selectedOption.buying_price,
-        quantity: 1
-      }]);
+      setSelectedItems((prev) => [
+        ...prev,
+        {
+          id: selectedOption.value,
+          name: selectedOption.label,
+          buying_price: selectedOption.buying_price,
+          quantity: 1,
+        },
+      ]);
     }
   };
 
   const handleItemRemove = (index) => {
-    setSelectedItems(prev => prev.filter((_, i) => i !== index));
+    setSelectedItems((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleItemChange = (index, field, value) => {
-    setSelectedItems(prev => prev.map((item, i) => 
-      i === index ? { ...item, [field]: value } : item
-    ));
+    setSelectedItems((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
+    );
   };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 4 * 1024 * 1024) { // 4MB limit
+      if (file.size > 4 * 1024 * 1024) {
+        // 4MB limit
         toast.error("File size should be less than 4MB");
         return;
       }
-      if (!['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/svg+xml'].includes(file.type)) {
+      if (
+        ![
+          "image/jpeg",
+          "image/png",
+          "image/jpg",
+          "image/gif",
+          "image/svg+xml",
+        ].includes(file.type)
+      ) {
         toast.error("Invalid file type. Please upload an image file");
         return;
       }
-      setFormData(prev => ({ ...prev, invoice: file }));
+      setFormData((prev) => ({ ...prev, invoice: file }));
     }
   };
 
   const calculateTotal = () => {
-    const itemsTotal = selectedItems.reduce((sum, item) => 
-      sum + (item.buying_price * item.quantity), 0
+    const itemsTotal = selectedItems.reduce(
+      (sum, item) => sum + item.buying_price * item.quantity,
+      0
     );
     return itemsTotal + (parseFloat(formData.delivery_price) || 0);
   };
@@ -197,11 +230,11 @@ const Challen = () => {
     setSubmitting(true);
     try {
       const formDataToSend = new FormData();
-      formDataToSend.append('Date', formData.Date);
-      formDataToSend.append('supplier_id', formData.supplier_id);
-      formDataToSend.append('delivery_price', formData.delivery_price);
-      formDataToSend.append('user_id', localStorage.getItem('userId')); // Assuming userId is stored in localStorage
-      formDataToSend.append('invoice', formData.invoice);
+      formDataToSend.append("Date", formData.Date);
+      formDataToSend.append("supplier_id", formData.supplier_id);
+      formDataToSend.append("delivery_price", formData.delivery_price);
+      formDataToSend.append("user_id", localStorage.getItem("userId")); // Assuming userId is stored in localStorage
+      formDataToSend.append("invoice", formData.invoice);
 
       selectedItems.forEach((item, index) => {
         formDataToSend.append(`item_id[${index}]`, item.id);
@@ -211,8 +244,8 @@ const Challen = () => {
 
       const response = await axiosInstance.post("/challans", formDataToSend, {
         headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+          "Content-Type": "multipart/form-data",
+        },
       });
 
       if (response.data.success) {
@@ -222,10 +255,11 @@ const Challen = () => {
         fetchChallans(1);
       }
     } catch (error) {
-      const errorMessage = error.response?.data?.message || "Failed to create challan";
+      const errorMessage =
+        error.response?.data?.message || "Failed to create challan";
       toast.error(errorMessage);
       if (error.response?.data?.errors) {
-        Object.values(error.response.data.errors).forEach(err => {
+        Object.values(error.response.data.errors).forEach((err) => {
           toast.error(err[0]);
         });
       }
@@ -236,10 +270,10 @@ const Challen = () => {
 
   const resetForm = () => {
     setFormData({
-      Date: new Date().toISOString().split('T')[0],
+      Date: new Date().toISOString().split("T")[0],
       supplier_id: "",
       delivery_price: "",
-      invoice: null
+      invoice: null,
     });
     setSelectedItems([]);
   };
@@ -247,16 +281,22 @@ const Challen = () => {
   const renderPagination = () => {
     const items = [];
     const maxVisiblePages = 5;
-    let startPage = Math.max(1, pagination.current_page - Math.floor(maxVisiblePages / 2));
-    let endPage = Math.min(pagination.total_pages, startPage + maxVisiblePages - 1);
+    let startPage = Math.max(
+      1,
+      pagination.current_page - Math.floor(maxVisiblePages / 2)
+    );
+    let endPage = Math.min(
+      pagination.total_pages,
+      startPage + maxVisiblePages - 1
+    );
 
     if (endPage - startPage + 1 < maxVisiblePages) {
       startPage = Math.max(1, endPage - maxVisiblePages + 1);
     }
 
     items.push(
-      <Pagination.Prev 
-        key="prev" 
+      <Pagination.Prev
+        key="prev"
         onClick={() => handlePageChange(pagination.current_page - 1)}
         disabled={pagination.current_page === 1}
       >
@@ -277,8 +317,8 @@ const Challen = () => {
 
     for (let number = startPage; number <= endPage; number++) {
       items.push(
-        <Pagination.Item 
-          key={number} 
+        <Pagination.Item
+          key={number}
           active={number === pagination.current_page}
           onClick={() => handlePageChange(number)}
         >
@@ -292,8 +332,8 @@ const Challen = () => {
         items.push(<Pagination.Ellipsis key="ellipsis2" disabled />);
       }
       items.push(
-        <Pagination.Item 
-          key={pagination.total_pages} 
+        <Pagination.Item
+          key={pagination.total_pages}
           onClick={() => handlePageChange(pagination.total_pages)}
         >
           {pagination.total_pages}
@@ -302,8 +342,8 @@ const Challen = () => {
     }
 
     items.push(
-      <Pagination.Next 
-        key="next" 
+      <Pagination.Next
+        key="next"
         onClick={() => handlePageChange(pagination.current_page + 1)}
         disabled={!pagination.has_more_pages}
       >
@@ -336,7 +376,7 @@ const Challen = () => {
             <div className="d-flex gap-2">
               <Button
                 variant="primary"
-                onClick={() => navigate('/challans/add')}
+                onClick={() => navigate("/challans/add")}
                 className="d-flex align-items-center gap-2"
               >
                 <FaPlus /> Add New Challan
@@ -360,7 +400,7 @@ const Challen = () => {
                   <Button
                     variant="outline-secondary"
                     onClick={() => {
-                      setSearchParams(prev => ({ ...prev, search: "" }));
+                      setSearchParams((prev) => ({ ...prev, search: "" }));
                       fetchChallans(1);
                     }}
                     disabled={loading}
@@ -409,7 +449,9 @@ const Challen = () => {
                       </button>
                     </td>
                     <td>৳{parseFloat(challan.total).toLocaleString()}</td>
-                    <td>৳{parseFloat(challan.delivery_price).toLocaleString()}</td>
+                    <td>
+                      ৳{parseFloat(challan.delivery_price).toLocaleString()}
+                    </td>
                     <td>
                       <Button
                         variant="outline-primary"
@@ -428,9 +470,7 @@ const Challen = () => {
 
           {pagination.total_pages > 1 && (
             <div className="d-flex justify-content-center mt-4">
-              <Pagination className="mb-0">
-                {renderPagination()}
-              </Pagination>
+              <Pagination className="mb-0">{renderPagination()}</Pagination>
             </div>
           )}
         </Card.Body>
@@ -448,14 +488,23 @@ const Challen = () => {
         <Modal.Body>
           {selectedSupplier && (
             <div>
-              <p><strong>Name:</strong> {selectedSupplier.name}</p>
-              <p><strong>Phone:</strong> {selectedSupplier.phone}</p>
-              <p><strong>Address:</strong> {selectedSupplier.address}</p>
+              <p>
+                <strong>Name:</strong> {selectedSupplier.name}
+              </p>
+              <p>
+                <strong>Phone:</strong> {selectedSupplier.phone}
+              </p>
+              <p>
+                <strong>Address:</strong> {selectedSupplier.address}
+              </p>
             </div>
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowSupplierModal(false)}>
+          <Button
+            variant="secondary"
+            onClick={() => setShowSupplierModal(false)}
+          >
             Close
           </Button>
         </Modal.Footer>
@@ -464,4 +513,4 @@ const Challen = () => {
   );
 };
 
-export default Challen; 
+export default Challen;
