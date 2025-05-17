@@ -34,6 +34,11 @@ const ViewProduct = () => {
   const [selectedImage, setSelectedImage] = useState(0);
   const [showQuickEdit, setShowQuickEdit] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [imageUploadLoading, setImageUploadLoading] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [imageError, setImageError] = useState(null);
+  const [deleteImageLoading, setDeleteImageLoading] = useState(null);
   const [editForm, setEditForm] = useState({
     name: "",
     description: "",
@@ -42,6 +47,17 @@ const ViewProduct = () => {
     price: "",
     discount: "",
   });
+  const [showTagModal, setShowTagModal] = useState(false);
+  const [tagInput, setTagInput] = useState("");
+  const [tagError, setTagError] = useState(null);
+  const [tagLoading, setTagLoading] = useState(false);
+  const [deleteTagLoading, setDeleteTagLoading] = useState(null);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [categoryLoading, setCategoryLoading] = useState(false);
+  const [deleteCategoryLoading, setDeleteCategoryLoading] = useState(null);
+  const [allCategories, setAllCategories] = useState([]);
+  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [categoryError, setCategoryError] = useState(null);
 
   useEffect(() => {
     fetchProduct();
@@ -203,6 +219,358 @@ const ViewProduct = () => {
       }
     }
   };
+
+  const handleImageSelect = (e) => {
+    const files = Array.from(e.target.files);
+    setSelectedFiles(files);
+    setImageError(null);
+  };
+
+  const handleImageUpload = async () => {
+    if (selectedFiles.length === 0) {
+      setImageError("Please select at least one image");
+      return;
+    }
+
+    setImageUploadLoading(true);
+    setImageError(null);
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Authentication token not found. Please login again.");
+      }
+
+      const formData = new FormData();
+      selectedFiles.forEach((file) => {
+        formData.append("images[]", file);
+      });
+
+      const response = await axiosInstance.post(
+        `/products/add-images/${id}`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Failed to upload images");
+      }
+
+      // Refresh product data to get updated images
+      await fetchProduct();
+      setShowImageModal(false);
+      setSelectedFiles([]);
+      toast.success("Images uploaded successfully");
+    } catch (err) {
+      console.error("Error uploading images:", err);
+      const errorMessage =
+        err.response?.data?.message || err.message || "Failed to upload images";
+      setImageError(errorMessage);
+      toast.error(errorMessage);
+
+      if (err.response?.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+      }
+    } finally {
+      setImageUploadLoading(false);
+    }
+  };
+
+  const handleDeleteImage = async (imageId) => {
+    if (!window.confirm("Are you sure you want to delete this image?")) {
+      return;
+    }
+
+    setDeleteImageLoading(imageId);
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Authentication token not found. Please login again.");
+      }
+
+      const response = await axiosInstance.delete(
+        `/products/remove-image/${id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          data: {
+            image_id: imageId
+          }
+        }
+      );
+
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Failed to delete image");
+      }
+
+      // Refresh product data to get updated images
+      await fetchProduct();
+      toast.success("Image deleted successfully");
+    } catch (err) {
+      console.error("Error deleting image:", err);
+      const errorMessage =
+        err.response?.data?.message || err.message || "Failed to delete image";
+      toast.error(errorMessage);
+
+      if (err.response?.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+      }
+    } finally {
+      setDeleteImageLoading(null);
+    }
+  };
+
+  const handleAddTags = async () => {
+    if (!tagInput.trim()) {
+      setTagError("Please enter at least one tag");
+      return;
+    }
+
+    // Split tags by comma and trim whitespace
+    const tags = tagInput
+      .split(",")
+      .map(tag => tag.trim())
+      .filter(tag => tag.length > 0);
+
+    if (tags.length === 0) {
+      setTagError("Please enter at least one valid tag");
+      return;
+    }
+
+    setTagLoading(true);
+    setTagError(null);
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Authentication token not found. Please login again.");
+      }
+
+      const response = await axiosInstance.post(
+        `/products/add-tags/${id}`,
+        { tags },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Failed to add tags");
+      }
+
+      // Refresh product data to get updated tags
+      await fetchProduct();
+      setShowTagModal(false);
+      setTagInput("");
+      toast.success("Tags added successfully");
+    } catch (err) {
+      console.error("Error adding tags:", err);
+      const errorMessage =
+        err.response?.data?.message || err.message || "Failed to add tags";
+      setTagError(errorMessage);
+      toast.error(errorMessage);
+
+      if (err.response?.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+      }
+    } finally {
+      setTagLoading(false);
+    }
+  };
+
+  const handleDeleteTag = async (tagId) => {
+    if (!window.confirm("Are you sure you want to delete this tag?")) {
+      return;
+    }
+
+    setDeleteTagLoading(tagId);
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Authentication token not found. Please login again.");
+      }
+
+      const response = await axiosInstance.delete(
+        `/products/remove-tags/${id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          data: {
+            tag_ids: [tagId]
+          }
+        }
+      );
+
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Failed to delete tag");
+      }
+
+      // Refresh product data to get updated tags
+      await fetchProduct();
+      toast.success("Tag deleted successfully");
+    } catch (err) {
+      console.error("Error deleting tag:", err);
+      const errorMessage =
+        err.response?.data?.message || err.message || "Failed to delete tag";
+      toast.error(errorMessage);
+
+      if (err.response?.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+      }
+    } finally {
+      setDeleteTagLoading(null);
+    }
+  };
+
+  // Add new function to fetch all categories
+  const fetchAllCategories = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Authentication token not found. Please login again.");
+      }
+
+      const response = await axiosInstance.get("/categories", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Failed to fetch categories");
+      }
+
+      setAllCategories(response.data.data);
+    } catch (err) {
+      console.error("Error fetching categories:", err);
+      toast.error("Failed to fetch categories");
+    }
+  };
+
+  // Add new functions for category management
+  const handleAddCategories = async () => {
+    if (selectedCategories.length === 0) {
+      setCategoryError("Please select at least one category");
+      return;
+    }
+
+    setCategoryLoading(true);
+    setCategoryError(null);
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Authentication token not found. Please login again.");
+      }
+
+      const response = await axiosInstance.post(
+        `/products/add-categories/${id}`,
+        { category_id: selectedCategories },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Failed to add categories");
+      }
+
+      // Refresh product data to get updated categories
+      await fetchProduct();
+      setShowCategoryModal(false);
+      setSelectedCategories([]);
+      toast.success("Categories added successfully");
+    } catch (err) {
+      console.error("Error adding categories:", err);
+      const errorMessage =
+        err.response?.data?.message || err.message || "Failed to add categories";
+      setCategoryError(errorMessage);
+      toast.error(errorMessage);
+
+      if (err.response?.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+      }
+    } finally {
+      setCategoryLoading(false);
+    }
+  };
+
+  const handleDeleteCategory = async (categoryId) => {
+    if (!window.confirm("Are you sure you want to remove this category?")) {
+      return;
+    }
+
+    setDeleteCategoryLoading(categoryId);
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Authentication token not found. Please login again.");
+      }
+
+      const response = await axiosInstance.delete(
+        `/products/remove-categories/${id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          data: {
+            category_id: [categoryId]
+          }
+        }
+      );
+
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Failed to remove category");
+      }
+
+      // Refresh product data to get updated categories
+      await fetchProduct();
+      toast.success("Category removed successfully");
+    } catch (err) {
+      console.error("Error removing category:", err);
+      const errorMessage =
+        err.response?.data?.message || err.message || "Failed to remove category";
+      toast.error(errorMessage);
+
+      if (err.response?.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+      }
+    } finally {
+      setDeleteCategoryLoading(null);
+    }
+  };
+
+  // Add useEffect to fetch categories when modal opens
+  useEffect(() => {
+    if (showCategoryModal) {
+      fetchAllCategories();
+    }
+  }, [showCategoryModal]);
 
   if (loading) {
     return (
@@ -389,20 +757,277 @@ const ViewProduct = () => {
         </Form>
       </Modal>
 
+      {/* Add Image Modal */}
+      <Modal
+        show={showImageModal}
+        onHide={() => !imageUploadLoading && setShowImageModal(false)}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Add Product Images</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {imageUploadLoading ? (
+            <div className="text-center py-4">
+              <Loading />
+              <p className="text-muted mt-2 mb-0">Uploading images...</p>
+            </div>
+          ) : (
+            <>
+              <Form.Group className="mb-3">
+                <Form.Label>Select Images</Form.Label>
+                <Form.Control
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={handleImageSelect}
+                  className="mb-2"
+                />
+                <Form.Text className="text-muted">
+                  You can select multiple images. Supported formats: JPEG, PNG, JPG, GIF, SVG (max 4MB each)
+                </Form.Text>
+              </Form.Group>
+              {selectedFiles.length > 0 && (
+                <div className="mt-3">
+                  <h6>Selected Files:</h6>
+                  <ul className="list-unstyled">
+                    {selectedFiles.map((file, index) => (
+                      <li key={index} className="text-muted">
+                        {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {imageError && (
+                <Alert variant="danger" className="mt-3">
+                  {imageError}
+                </Alert>
+              )}
+            </>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => setShowImageModal(false)}
+            disabled={imageUploadLoading}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleImageUpload}
+            disabled={imageUploadLoading || selectedFiles.length === 0}
+            className="d-flex align-items-center gap-2"
+          >
+            {imageUploadLoading ? (
+              <>
+                <Spinner animation="border" size="sm" />
+                Uploading...
+              </>
+            ) : (
+              <>
+                <FaPencilAlt /> Upload Images
+              </>
+            )}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Add Tag Modal */}
+      <Modal
+        show={showTagModal}
+        onHide={() => !tagLoading && setShowTagModal(false)}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Add Product Tags</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {tagLoading ? (
+            <div className="text-center py-4">
+              <Loading />
+              <p className="text-muted mt-2 mb-0">Adding tags...</p>
+            </div>
+          ) : (
+            <>
+              <Form.Group className="mb-3">
+                <Form.Label>Enter Tags</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={3}
+                  placeholder="Enter tags separated by commas (e.g., tag1, tag2, tag3)"
+                  value={tagInput}
+                  onChange={(e) => {
+                    setTagInput(e.target.value);
+                    setTagError(null);
+                  }}
+                />
+                <Form.Text className="text-muted">
+                  Separate multiple tags with commas
+                </Form.Text>
+              </Form.Group>
+              {tagError && (
+                <Alert variant="danger" className="mt-3">
+                  {tagError}
+                </Alert>
+              )}
+            </>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => setShowTagModal(false)}
+            disabled={tagLoading}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleAddTags}
+            disabled={tagLoading || !tagInput.trim()}
+            className="d-flex align-items-center gap-2"
+          >
+            {tagLoading ? (
+              <>
+                <Spinner animation="border" size="sm" />
+                Adding...
+              </>
+            ) : (
+              <>
+                <FaTag /> Add Tags
+              </>
+            )}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Add Category Modal */}
+      <Modal
+        show={showCategoryModal}
+        onHide={() => !categoryLoading && setShowCategoryModal(false)}
+        size="lg"
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Add Product Categories</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {categoryLoading ? (
+            <div className="text-center py-4">
+              <Loading />
+              <p className="text-muted mt-2 mb-0">Adding categories...</p>
+            </div>
+          ) : (
+            <>
+              <Form.Group className="mb-3">
+                <Form.Label>Select Categories</Form.Label>
+                <div className="border rounded p-3" style={{ maxHeight: "300px", overflowY: "auto" }}>
+                  {allCategories.length > 0 ? (
+                    allCategories.map((category) => (
+                      <Form.Check
+                        key={category.id}
+                        type="checkbox"
+                        id={`category-${category.id}`}
+                        label={category.name}
+                        checked={selectedCategories.includes(category.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedCategories([...selectedCategories, category.id]);
+                          } else {
+                            setSelectedCategories(selectedCategories.filter(id => id !== category.id));
+                          }
+                          setCategoryError(null);
+                        }}
+                        className="mb-2"
+                      />
+                    ))
+                  ) : (
+                    <p className="text-muted mb-0">No categories available</p>
+                  )}
+                </div>
+                <Form.Text className="text-muted">
+                  Select one or more categories for this product
+                </Form.Text>
+              </Form.Group>
+              {categoryError && (
+                <Alert variant="danger" className="mt-3">
+                  {categoryError}
+                </Alert>
+              )}
+            </>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => setShowCategoryModal(false)}
+            disabled={categoryLoading}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleAddCategories}
+            disabled={categoryLoading || selectedCategories.length === 0}
+            className="d-flex align-items-center gap-2"
+          >
+            {categoryLoading ? (
+              <>
+                <Spinner animation="border" size="sm" />
+                Adding...
+              </>
+            ) : (
+              <>
+                <FaLayerGroup /> Add Categories
+              </>
+            )}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
       <Row>
         {/* Product Images Section */}
         <Col lg={6} className="mb-4">
           <Card className="border-0 shadow-sm h-100">
             <Card.Body>
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h5 className="mb-0">Product Images</h5>
+                <Button
+                  variant="outline-primary"
+                  size="sm"
+                  onClick={() => setShowImageModal(true)}
+                  className="d-flex align-items-center gap-2"
+                >
+                  <FaPencilAlt /> Add Images
+                </Button>
+              </div>
               <div className="text-center mb-3">
                 {product.images && product.images.length > 0 ? (
-                  <Image
-                    src={product.images[selectedImage].path}
-                    alt={product.name}
-                    fluid
-                    className="rounded"
-                    style={{ maxHeight: "400px", objectFit: "contain" }}
-                  />
+                  <div className="position-relative">
+                    <Image
+                      src={product.images[selectedImage].path}
+                      alt={product.name}
+                      fluid
+                      className="rounded"
+                      style={{ maxHeight: "400px", objectFit: "contain" }}
+                    />
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      className="position-absolute top-0 end-0 m-2"
+                      onClick={() => handleDeleteImage(product.images[selectedImage].id)}
+                      disabled={deleteImageLoading === product.images[selectedImage].id}
+                    >
+                      {deleteImageLoading === product.images[selectedImage].id ? (
+                        <Spinner animation="border" size="sm" />
+                      ) : (
+                        <FaTrash />
+                      )}
+                    </Button>
+                  </div>
                 ) : (
                   <div
                     className="bg-light rounded d-flex align-items-center justify-content-center"
@@ -417,8 +1042,7 @@ const ViewProduct = () => {
                   {product.images.map((image, index) => (
                     <div
                       key={image.id}
-                      className="cursor-pointer"
-                      onClick={() => setSelectedImage(index)}
+                      className="position-relative"
                       style={{
                         width: "80px",
                         height: "80px",
@@ -431,16 +1055,38 @@ const ViewProduct = () => {
                         cursor: "pointer",
                       }}
                     >
-                      <Image
-                        src={image.path}
-                        alt={`${product.name} - ${index + 1}`}
-                        fluid
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
+                      <div
+                        className="w-100 h-100"
+                        onClick={() => setSelectedImage(index)}
+                      >
+                        <Image
+                          src={image.path}
+                          alt={`${product.name} - ${index + 1}`}
+                          fluid
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                          }}
+                        />
+                      </div>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        className="position-absolute top-0 end-0 m-1"
+                        style={{ padding: "0.1rem 0.3rem" }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteImage(image.id);
                         }}
-                      />
+                        disabled={deleteImageLoading === image.id}
+                      >
+                        {deleteImageLoading === image.id ? (
+                          <Spinner animation="border" size="sm" />
+                        ) : (
+                          <FaTrash size={12} />
+                        )}
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -490,40 +1136,94 @@ const ViewProduct = () => {
               {/* Categories Section */}
               {product.categories && product.categories.length > 0 && (
                 <div className="mb-4">
-                  <h5 className="mb-3 d-flex align-items-center gap-2">
-                    <FaLayerGroup /> Categories
-                  </h5>
-                  <div className="d-flex flex-wrap gap-2">
-                    {product.categories.map((category) => (
-                      <Badge
-                        key={category.id}
-                        bg="info"
-                        className="px-3 py-2 fs-6"
-                      >
-                        {category.name}
-                      </Badge>
-                    ))}
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <h5 className="mb-0 d-flex align-items-center gap-2">
+                      <FaLayerGroup /> Categories
+                    </h5>
+                    <Button
+                      variant="outline-primary"
+                      size="sm"
+                      onClick={() => setShowCategoryModal(true)}
+                      className="d-flex align-items-center gap-2"
+                    >
+                      <FaLayerGroup /> Add Categories
+                    </Button>
                   </div>
+                  {product.categories.length > 0 ? (
+                    <div className="d-flex flex-wrap gap-2">
+                      {product.categories.map((category) => (
+                        <Badge
+                          key={category.id}
+                          bg="info"
+                          className="px-3 py-2 fs-6 d-flex align-items-center gap-2"
+                        >
+                          {category.name}
+                          <Button
+                            variant="link"
+                            className="p-0 text-white"
+                            style={{ fontSize: "0.875rem" }}
+                            onClick={() => handleDeleteCategory(category.id)}
+                            disabled={deleteCategoryLoading === category.id}
+                          >
+                            {deleteCategoryLoading === category.id ? (
+                              <Spinner animation="border" size="sm" />
+                            ) : (
+                              <FaTrash size={12} />
+                            )}
+                          </Button>
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted mb-0">No categories added yet</p>
+                  )}
                 </div>
               )}
 
               {/* Tags Section */}
-              {product.tags && product.tags.length > 0 && (
+              {product.tags && (
                 <div className="mb-4">
-                  <h5 className="mb-3 d-flex align-items-center gap-2">
-                    <FaTag /> Tags
-                  </h5>
-                  <div className="d-flex flex-wrap gap-2">
-                    {product.tags.map((tag) => (
-                      <Badge
-                        key={tag.id}
-                        bg="secondary"
-                        className="px-3 py-2 fs-6"
-                      >
-                        {tag.tag}
-                      </Badge>
-                    ))}
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <h5 className="mb-0 d-flex align-items-center gap-2">
+                      <FaTag /> Tags
+                    </h5>
+                    <Button
+                      variant="outline-primary"
+                      size="sm"
+                      onClick={() => setShowTagModal(true)}
+                      className="d-flex align-items-center gap-2"
+                    >
+                      <FaTag /> Add Tags
+                    </Button>
                   </div>
+                  {product.tags.length > 0 ? (
+                    <div className="d-flex flex-wrap gap-2">
+                      {product.tags.map((tag) => (
+                        <Badge
+                          key={tag.id}
+                          bg="secondary"
+                          className="px-3 py-2 fs-6 d-flex align-items-center gap-2"
+                        >
+                          {tag.tag}
+                          <Button
+                            variant="link"
+                            className="p-0 text-white"
+                            style={{ fontSize: "0.875rem" }}
+                            onClick={() => handleDeleteTag(tag.id)}
+                            disabled={deleteTagLoading === tag.id}
+                          >
+                            {deleteTagLoading === tag.id ? (
+                              <Spinner animation="border" size="sm" />
+                            ) : (
+                              <FaTrash size={12} />
+                            )}
+                          </Button>
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted mb-0">No tags added yet</p>
+                  )}
                 </div>
               )}
             </Card.Body>
