@@ -12,6 +12,7 @@ import {
   Modal,
   Form,
   InputGroup,
+  Table,
 } from "react-bootstrap";
 import {
   FaArrowLeft,
@@ -62,7 +63,6 @@ const ViewProduct = () => {
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [categoryError, setCategoryError] = useState(null);
   const [deleteBundleLoading, setDeleteBundleLoading] = useState(null);
-  const [showBundleModal, setShowBundleModal] = useState(false);
   const [bundleLoading, setBundleLoading] = useState(false);
   const [bundleError, setBundleError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -727,7 +727,6 @@ const ViewProduct = () => {
 
       // Refresh product data
       await fetchProduct();
-      setShowBundleModal(false);
       setSelectedItems([]);
       setBundleQuantity({});
       setSearchQuery("");
@@ -927,6 +926,8 @@ const ViewProduct = () => {
         show={showQuickEdit}
         onHide={() => !editLoading && setShowQuickEdit(false)}
         size="lg"
+        centered
+        dialogClassName="modal-dialog-centered"
       >
         <Modal.Header closeButton>
           <Modal.Title>Quick Edit Product</Modal.Title>
@@ -940,7 +941,7 @@ const ViewProduct = () => {
               </div>
             ) : (
               <Row>
-                <Col md={6}>
+                <Col md={12}>
                   <Form.Group className="mb-3">
                     <Form.Label>Product Name</Form.Label>
                     <Form.Control
@@ -952,14 +953,16 @@ const ViewProduct = () => {
                     />
                   </Form.Group>
                 </Col>
-                <Col md={6}>
+                <Col md={12}>
                   <Form.Group className="mb-3">
                     <Form.Label>Short Description</Form.Label>
                     <Form.Control
-                      type="text"
+                      as="textarea"
+                      rows={2}
                       name="short_description"
                       value={editForm.short_description}
                       onChange={handleEditFormChange}
+                      placeholder="Enter a brief description of the product"
                     />
                   </Form.Group>
                 </Col>
@@ -968,10 +971,11 @@ const ViewProduct = () => {
                     <Form.Label>Description</Form.Label>
                     <Form.Control
                       as="textarea"
-                      rows={3}
+                      rows={4}
                       name="description"
                       value={editForm.description}
                       onChange={handleEditFormChange}
+                      placeholder="Enter detailed description of the product"
                     />
                   </Form.Group>
                 </Col>
@@ -1130,6 +1134,7 @@ const ViewProduct = () => {
         show={showTagModal}
         onHide={() => !tagLoading && setShowTagModal(false)}
         centered
+        dialogClassName="modal-dialog-centered"
       >
         <Modal.Header closeButton>
           <Modal.Title>Add Product Tags</Modal.Title>
@@ -1200,6 +1205,7 @@ const ViewProduct = () => {
         onHide={() => !categoryLoading && setShowCategoryModal(false)}
         size="lg"
         centered
+        dialogClassName="modal-dialog-centered"
       >
         <Modal.Header closeButton>
           <Modal.Title>Add Product Categories</Modal.Title>
@@ -1214,7 +1220,7 @@ const ViewProduct = () => {
             <>
               <Form.Group className="mb-3">
                 <Form.Label>Select Categories</Form.Label>
-                <div className="border rounded p-3" style={{ maxHeight: "300px", overflowY: "auto" }}>
+                <div className="border rounded p-3" style={{ maxHeight: "400px", overflowY: "auto" }}>
                   {allCategories.length > 0 ? (
                     allCategories.map((category) => (
                       <Form.Check
@@ -1250,11 +1256,12 @@ const ViewProduct = () => {
             </>
           )}
         </Modal.Body>
-        <Modal.Footer>
+        <Modal.Footer className="justify-content-center">
           <Button
             variant="secondary"
             onClick={() => setShowCategoryModal(false)}
             disabled={categoryLoading}
+            className="px-4"
           >
             Cancel
           </Button>
@@ -1262,7 +1269,7 @@ const ViewProduct = () => {
             variant="primary"
             onClick={handleAddCategories}
             disabled={categoryLoading || selectedCategories.length === 0}
-            className="d-flex align-items-center gap-2"
+            className="d-flex align-items-center gap-2 px-4"
           >
             {categoryLoading ? (
               <>
@@ -1429,99 +1436,99 @@ const ViewProduct = () => {
                   {product.status === "1" ? "Active" : "Inactive"}
                 </Badge>
               </div>
+            </Card.Body>
+          </Card>
 
-              {/* Categories Section */}
-              {product.categories && product.categories.length > 0 && (
-                <div className="mb-4">
-                  <div className="d-flex justify-content-between align-items-center mb-3">
-                    <h5 className="mb-0 d-flex align-items-center gap-2">
-                      <FaLayerGroup /> Categories
-                    </h5>
-                    <Button
-                      variant="outline-primary"
-                      size="sm"
-                      onClick={() => setShowCategoryModal(true)}
-                      className="d-flex align-items-center gap-2"
+          {/* Categories Section - Separate Card */}
+          <Card className="border-0 shadow-sm mb-4">
+            <Card.Body>
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h5 className="mb-0 d-flex align-items-center gap-2">
+                  <FaLayerGroup /> Categories
+                </h5>
+                <Button
+                  variant="outline-primary"
+                  size="sm"
+                  onClick={() => setShowCategoryModal(true)}
+                  className="d-flex align-items-center gap-2"
+                >
+                  <FaLayerGroup /> Add Categories
+                </Button>
+              </div>
+              {product.categories && product.categories.length > 0 ? (
+                <div className="d-flex flex-wrap gap-2">
+                  {product.categories.map((category) => (
+                    <Badge
+                      key={category.id}
+                      bg="info"
+                      className="px-3 py-2 fs-6 d-flex align-items-center gap-2"
                     >
-                      <FaLayerGroup /> Add Categories
-                    </Button>
-                  </div>
-                  {product.categories.length > 0 ? (
-                    <div className="d-flex flex-wrap gap-2">
-                      {product.categories.map((category) => (
-                        <Badge
-                          key={category.id}
-                          bg="info"
-                          className="px-3 py-2 fs-6 d-flex align-items-center gap-2"
-                        >
-                          {category.name}
-                          <Button
-                            variant="link"
-                            className="p-0 text-white"
-                            style={{ fontSize: "0.875rem" }}
-                            onClick={() => handleDeleteCategory(category.id)}
-                            disabled={deleteCategoryLoading === category.id}
-                          >
-                            {deleteCategoryLoading === category.id ? (
-                              <Spinner animation="border" size="sm" />
-                            ) : (
-                              <FaTrash size={12} />
-                            )}
-                          </Button>
-                        </Badge>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-muted mb-0">No categories added yet</p>
-                  )}
+                      {category.name}
+                      <Button
+                        variant="link"
+                        className="p-0 text-white"
+                        style={{ fontSize: "0.875rem" }}
+                        onClick={() => handleDeleteCategory(category.id)}
+                        disabled={deleteCategoryLoading === category.id}
+                      >
+                        {deleteCategoryLoading === category.id ? (
+                          <Spinner animation="border" size="sm" />
+                        ) : (
+                          <FaTrash size={12} />
+                        )}
+                      </Button>
+                    </Badge>
+                  ))}
                 </div>
+              ) : (
+                <p className="text-muted mb-0">No categories added yet</p>
               )}
+            </Card.Body>
+          </Card>
 
-              {/* Tags Section */}
-              {product.tags && (
-                <div className="mb-4">
-                  <div className="d-flex justify-content-between align-items-center mb-3">
-                    <h5 className="mb-0 d-flex align-items-center gap-2">
-                      <FaTag /> Tags
-                    </h5>
-                    <Button
-                      variant="outline-primary"
-                      size="sm"
-                      onClick={() => setShowTagModal(true)}
-                      className="d-flex align-items-center gap-2"
+          {/* Tags Section - Separate Card */}
+          <Card className="border-0 shadow-sm">
+            <Card.Body>
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h5 className="mb-0 d-flex align-items-center gap-2">
+                  <FaTag /> Tags
+                </h5>
+                <Button
+                  variant="outline-primary"
+                  size="sm"
+                  onClick={() => setShowTagModal(true)}
+                  className="d-flex align-items-center gap-2"
+                >
+                  <FaTag /> Add Tags
+                </Button>
+              </div>
+              {product.tags && product.tags.length > 0 ? (
+                <div className="d-flex flex-wrap gap-2">
+                  {product.tags.map((tag) => (
+                    <Badge
+                      key={tag.id}
+                      bg="secondary"
+                      className="px-3 py-2 fs-6 d-flex align-items-center gap-2"
                     >
-                      <FaTag /> Add Tags
-                    </Button>
-                  </div>
-                  {product.tags.length > 0 ? (
-                    <div className="d-flex flex-wrap gap-2">
-                      {product.tags.map((tag) => (
-                        <Badge
-                          key={tag.id}
-                          bg="secondary"
-                          className="px-3 py-2 fs-6 d-flex align-items-center gap-2"
-                        >
-                          {tag.tag}
-                          <Button
-                            variant="link"
-                            className="p-0 text-white"
-                            style={{ fontSize: "0.875rem" }}
-                            onClick={() => handleDeleteTag(tag.id)}
-                            disabled={deleteTagLoading === tag.id}
-                          >
-                            {deleteTagLoading === tag.id ? (
-                              <Spinner animation="border" size="sm" />
-                            ) : (
-                              <FaTrash size={12} />
-                            )}
-                          </Button>
-                        </Badge>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-muted mb-0">No tags added yet</p>
-                  )}
+                      {tag.tag}
+                      <Button
+                        variant="link"
+                        className="p-0 text-white"
+                        style={{ fontSize: "0.875rem" }}
+                        onClick={() => handleDeleteTag(tag.id)}
+                        disabled={deleteTagLoading === tag.id}
+                      >
+                        {deleteTagLoading === tag.id ? (
+                          <Spinner animation="border" size="sm" />
+                        ) : (
+                          <FaTrash size={12} />
+                        )}
+                      </Button>
+                    </Badge>
+                  ))}
                 </div>
+              ) : (
+                <p className="text-muted mb-0">No tags added yet</p>
               )}
             </Card.Body>
           </Card>
@@ -1533,123 +1540,324 @@ const ViewProduct = () => {
         <Card.Body>
           <div className="d-flex justify-content-between align-items-center mb-4">
             <h4 className="mb-0">Bundle Products</h4>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => setShowBundleModal(true)}
-              className="d-flex align-items-center gap-2"
-            >
-              <FaPlus /> Add Bundle Items
-            </Button>
           </div>
-          {product.bundle_items && product.bundle_items.length > 0 ? (
-            <>
-              <Row>
-                {product.bundle_items.map((item, index) => (
-                  <Col key={index} md={6} lg={4} className="mb-4">
-                    <Card className="h-100">
-                      <div className="position-relative">
-                        <Card.Img
-                          variant="top"
-                          src={item.image}
-                          alt={item.name}
-                          style={{ height: "200px", objectFit: "cover" }}
-                        />
-                        {item.discount > 0 && (
-                          <Badge
-                            bg="danger"
-                            className="position-absolute top-0 end-0 m-2"
+
+          {/* Add Bundle Items Section */}
+          <div className="bundle-form-section mb-4">
+            <Card className="border-0 shadow-sm">
+              <Card.Body>
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                  <h5 className="mb-0">Add Bundle Items</h5>
+                </div>
+                
+                {/* Search Section */}
+                <div className="mb-4">
+                  <Form.Group>
+                    <Form.Label className="fw-medium">Search Products</Form.Label>
+                    <InputGroup>
+                      <InputGroup.Text>
+                        <FaSearch />
+                      </InputGroup.Text>
+                      <Form.Control
+                        type="text"
+                        placeholder="Type product name to search..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                      />
+                    </InputGroup>
+                    <Form.Text className="text-muted">
+                      Search for products to add to your bundle
+                    </Form.Text>
+                  </Form.Group>
+                  {searchLoading && (
+                    <div className="text-center mt-3">
+                      <Spinner animation="border" size="sm" />
+                      <span className="ms-2">Searching products...</span>
+                    </div>
+                  )}
+                  {searchResults.length > 0 && (
+                    <div className="mt-3">
+                      <h6 className="mb-2">Search Results</h6>
+                      <div className="border rounded" style={{ maxHeight: "300px", overflowY: "auto" }}>
+                        {searchResults.map((product) => (
+                          <div
+                            key={product.id}
+                            className="p-3 border-bottom d-flex align-items-center justify-content-between hover-bg-light"
+                            style={{ cursor: "pointer" }}
+                            onClick={() => handleSelectProduct(product)}
                           >
-                            -{item.discount}%
-                          </Badge>
-                        )}
-                        <Button
-                          variant="danger"
-                          size="sm"
-                          className="position-absolute top-0 start-0 m-2"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteBundleItem(item.bundle_id);
-                          }}
-                          disabled={deleteBundleLoading === item.bundle_id || updateQuantityLoading === item.bundle_id}
-                          style={{ zIndex: 10 }}
-                        >
-                          {deleteBundleLoading === item.bundle_id ? (
-                            <Spinner animation="border" size="sm" />
-                          ) : (
-                            <FaTrash />
-                          )}
-                        </Button>
-                      </div>
-                      <Card.Body>
-                        <Card.Title className="h6 mb-2">{item.name}</Card.Title>
-                        <div className="d-flex justify-content-between align-items-start">
-                          <div>
-                            <div className="d-flex flex-column">
-                              <div className="d-flex align-items-center gap-2">
-                                <span className="text-muted">Per Item:</span>
-                                <span className="fw-bold">৳{item.price}</span>
-                              </div>
-                              <div className="d-flex align-items-center gap-2">
-                                <span className="text-muted">Total:</span>
-                                <span className="fw-bold text-primary">৳{item.price * item.bundle_quantity}</span>
-                              </div>
-                            </div>
-                            <div className="d-flex align-items-center gap-2 mt-2">
-                              {editingQuantity[item.bundle_id] ? (
-                                <div className="d-flex align-items-center gap-2">
-                                  <Form.Control
-                                    type="number"
-                                    size="sm"
-                                    style={{ width: "70px" }}
-                                    min="1"
-                                    value={editingQuantity[item.bundle_id]}
-                                    onChange={(e) => setEditingQuantity({
-                                      ...editingQuantity,
-                                      [item.bundle_id]: e.target.value
-                                    })}
+                            <div className="d-flex align-items-center gap-3">
+                              {product.images && product.images.length > 0 ? (
+                                <div className="rounded" style={{ width: "50px", height: "50px", overflow: "hidden" }}>
+                                  <Image
+                                    src={product.images[0].path}
+                                    alt={product.name}
+                                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                    className="rounded"
                                   />
-                                  <Button
-                                    variant="success"
-                                    size="sm"
-                                    onClick={() => handleUpdateBundleQuantity(item.bundle_id, editingQuantity[item.bundle_id])}
-                                    disabled={updateQuantityLoading === item.bundle_id}
-                                  >
-                                    {updateQuantityLoading === item.bundle_id ? (
-                                      <Spinner animation="border" size="sm" />
-                                    ) : (
-                                      "Save"
-                                    )}
-                                  </Button>
-                                  <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    onClick={() => setEditingQuantity({})}
-                                    disabled={updateQuantityLoading === item.bundle_id}
-                                  >
-                                    Cancel
-                                  </Button>
                                 </div>
                               ) : (
-                                <div className="d-flex align-items-center gap-2">
-                                  <small className="text-muted">
-                                    Quantity: {item.bundle_quantity}
-                                  </small>
-                                  <Button
-                                    variant="outline-primary"
-                                    size="sm"
-                                    onClick={() => setEditingQuantity({
-                                      ...editingQuantity,
-                                      [item.bundle_id]: item.bundle_quantity
-                                    })}
-                                    disabled={updateQuantityLoading === item.bundle_id}
-                                  >
-                                    <FaPencilAlt size={12} />
-                                  </Button>
+                                <div 
+                                  className="rounded bg-light d-flex align-items-center justify-content-center"
+                                  style={{ width: "50px", height: "50px" }}
+                                >
+                                  <FaShoppingCart className="text-muted" />
                                 </div>
                               )}
+                              <div>
+                                <h6 className="mb-1">{product.name}</h6>
+                                <div className="d-flex gap-3 text-muted small">
+                                  <span>Price: ৳{product.price}</span>
+                                  <span>Stock: {product.quantity}</span>
+                                </div>
+                              </div>
                             </div>
+                            <Button
+                              variant="outline-primary"
+                              size="sm"
+                              className="d-flex align-items-center gap-2"
+                            >
+                              <FaPlus size={12} /> Add
+                            </Button>
                           </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Selected Items Section */}
+                {selectedItems.length > 0 && (
+                  <div className="selected-items-section">
+                    <div className="d-flex justify-content-between align-items-center mb-3">
+                      <h6 className="mb-0">Selected Items ({selectedItems.length})</h6>
+                      <Button
+                        variant="outline-danger"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedItems([]);
+                          setBundleQuantity({});
+                        }}
+                        className="d-flex align-items-center gap-2"
+                      >
+                        <FaTrash size={12} /> Clear All
+                      </Button>
+                    </div>
+                    <div className="table-responsive">
+                      <Table hover className="align-middle mb-0">
+                        <thead>
+                          <tr>
+                            <th style={{ width: "50px" }}>Image</th>
+                            <th>Product</th>
+                            <th style={{ width: "120px" }}>Price</th>
+                            <th style={{ width: "150px" }}>Quantity</th>
+                            <th style={{ width: "100px" }}>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {selectedItems.map((item) => (
+                            <tr key={item.id}>
+                              <td>
+                                {item.images && item.images.length > 0 ? (
+                                  <div className="rounded" style={{ width: "50px", height: "50px", overflow: "hidden" }}>
+                                    <Image
+                                      src={item.images[0].path}
+                                      alt={item.name}
+                                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                      className="rounded"
+                                    />
+                                  </div>
+                                ) : (
+                                  <div 
+                                    className="rounded bg-light d-flex align-items-center justify-content-center"
+                                    style={{ width: "50px", height: "50px" }}
+                                  >
+                                    <FaShoppingCart className="text-muted" />
+                                  </div>
+                                )}
+                              </td>
+                              <td>
+                                <div>
+                                  <div className="fw-medium">{item.name}</div>
+                                  <small className="text-muted">Stock: {item.quantity}</small>
+                                </div>
+                              </td>
+                              <td>৳{item.price}</td>
+                              <td>
+                                <Form.Control
+                                  type="number"
+                                  size="sm"
+                                  min="1"
+                                  max={item.quantity}
+                                  value={bundleQuantity[item.id] || ""}
+                                  onChange={(e) =>
+                                    setBundleQuantity({
+                                      ...bundleQuantity,
+                                      [item.id]: e.target.value,
+                                    })
+                                  }
+                                  placeholder="Qty"
+                                />
+                              </td>
+                              <td>
+                                <Button
+                                  variant="outline-danger"
+                                  size="sm"
+                                  onClick={() => handleRemoveSelectedItem(item.id)}
+                                  className="d-flex align-items-center gap-1"
+                                >
+                                  <FaTrash size={12} />
+                                </Button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot>
+                          <tr>
+                            <td colSpan="2" className="text-end fw-bold">Total:</td>
+                            <td colSpan="3" className="fw-bold text-primary">
+                              ৳{selectedItems.reduce((total, item) => 
+                                total + (item.price * (parseInt(bundleQuantity[item.id]) || 0)), 0
+                              )}
+                            </td>
+                          </tr>
+                        </tfoot>
+                      </Table>
+                    </div>
+
+                    {bundleError && (
+                      <Alert variant="danger" className="mt-3 mb-0">
+                        {bundleError}
+                      </Alert>
+                    )}
+
+                    <div className="d-flex justify-content-end mt-3">
+                      <Button
+                        variant="primary"
+                        onClick={handleAddToBundle}
+                        disabled={bundleLoading || selectedItems.length === 0}
+                        className="d-flex align-items-center gap-2"
+                      >
+                        {bundleLoading ? (
+                          <>
+                            <Spinner animation="border" size="sm" />
+                            Adding...
+                          </>
+                        ) : (
+                          <>
+                            <FaPlus /> Add to Bundle
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </Card.Body>
+            </Card>
+          </div>
+
+          {/* Existing Bundle Items */}
+          {product.bundle_items && product.bundle_items.length > 0 ? (
+            <>
+              <div className="table-responsive">
+                <Table hover className="align-middle">
+                  <thead>
+                    <tr>
+                      <th style={{ width: "60px" }}>Image</th>
+                      <th>Product Name</th>
+                      <th>Price</th>
+                      <th>Quantity</th>
+                      <th>Total</th>
+                      <th style={{ width: "150px" }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {product.bundle_items.map((item) => (
+                      <tr key={item.bundle_id}>
+                        <td>
+                          {item.image ? (
+                            <div className="rounded" style={{ width: "50px", height: "50px", overflow: "hidden" }}>
+                              <Image
+                                src={item.image}
+                                alt={item.name}
+                                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                className="rounded"
+                              />
+                            </div>
+                          ) : (
+                            <div 
+                              className="rounded bg-light d-flex align-items-center justify-content-center"
+                              style={{ width: "50px", height: "50px" }}
+                            >
+                              <FaShoppingCart className="text-muted" />
+                            </div>
+                          )}
+                        </td>
+                        <td>
+                          <div>
+                            <div className="fw-medium">{item.name}</div>
+                            {item.discount > 0 && (
+                              <Badge bg="danger" className="mt-1">
+                                -{item.discount}%
+                              </Badge>
+                            )}
+                          </div>
+                        </td>
+                        <td>৳{item.price}</td>
+                        <td>
+                          {editingQuantity[item.bundle_id] ? (
+                            <div className="d-flex align-items-center gap-2">
+                              <Form.Control
+                                type="number"
+                                size="sm"
+                                style={{ width: "80px" }}
+                                min="1"
+                                value={editingQuantity[item.bundle_id]}
+                                onChange={(e) => setEditingQuantity({
+                                  ...editingQuantity,
+                                  [item.bundle_id]: e.target.value
+                                })}
+                              />
+                              <Button
+                                variant="success"
+                                size="sm"
+                                onClick={() => handleUpdateBundleQuantity(item.bundle_id, editingQuantity[item.bundle_id])}
+                                disabled={updateQuantityLoading === item.bundle_id}
+                              >
+                                {updateQuantityLoading === item.bundle_id ? (
+                                  <Spinner animation="border" size="sm" />
+                                ) : (
+                                  "Save"
+                                )}
+                              </Button>
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => setEditingQuantity({})}
+                                disabled={updateQuantityLoading === item.bundle_id}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="d-flex align-items-center gap-2">
+                              <span>{item.bundle_quantity}</span>
+                              <Button
+                                variant="outline-primary"
+                                size="sm"
+                                onClick={() => setEditingQuantity({
+                                  ...editingQuantity,
+                                  [item.bundle_id]: item.bundle_quantity
+                                })}
+                                disabled={updateQuantityLoading === item.bundle_id}
+                              >
+                                <FaPencilAlt size={12} />
+                              </Button>
+                            </div>
+                          )}
+                        </td>
+                        <td className="fw-bold text-primary">৳{item.price * item.bundle_quantity}</td>
+                        <td>
                           <div className="d-flex gap-2">
                             <Button
                               variant="outline-primary"
@@ -1658,25 +1866,35 @@ const ViewProduct = () => {
                             >
                               View
                             </Button>
+                            <Button
+                              variant="outline-danger"
+                              size="sm"
+                              onClick={() => handleDeleteBundleItem(item.bundle_id)}
+                              disabled={deleteBundleLoading === item.bundle_id || updateQuantityLoading === item.bundle_id}
+                            >
+                              {deleteBundleLoading === item.bundle_id ? (
+                                <Spinner animation="border" size="sm" />
+                              ) : (
+                                <FaTrash />
+                              )}
+                            </Button>
                           </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td colSpan="4" className="text-end fw-bold"><h4>Bundle Total:</h4></td>
+                      <td colSpan="2" className="fw-bold text-primary">
+                        <h4>৳{product.bundle_items.reduce((total, item) => total + (item.price * item.bundle_quantity), 0)}</h4>
+                        <div className="text-muted small">
+                          <h6>Total of {product.bundle_items.length} items</h6>
                         </div>
-                      </Card.Body>
-                    </Card>
-                  </Col>
-                ))}
-              </Row>
-              <div className="mt-4 pt-3 border-top">
-                <div className="d-flex justify-content-end">
-                  <div className="text-end">
-                    <h5 className="mb-2">Bundle Total</h5>
-                    <div className="fs-4 fw-bold text-primary">
-                      ৳{product.bundle_items.reduce((total, item) => total + (item.price * item.bundle_quantity), 0)}
-                    </div>
-                    <small className="text-muted">
-                      Total of {product.bundle_items.length} items
-                    </small>
-                  </div>
-                </div>
+                      </td>
+                    </tr>
+                  </tfoot>
+                </Table>
               </div>
             </>
           ) : (
@@ -1684,161 +1902,6 @@ const ViewProduct = () => {
           )}
         </Card.Body>
       </Card>
-
-      {/* Add Bundle Items Modal */}
-      <Modal
-        show={showBundleModal}
-        onHide={() => !bundleLoading && setShowBundleModal(false)}
-        size="lg"
-        centered
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>Add Bundle Items</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {bundleLoading ? (
-            <div className="text-center py-4">
-              <Loading />
-              <p className="text-muted mt-2 mb-0">Adding bundle items...</p>
-            </div>
-          ) : (
-            <>
-              <Form.Group className="mb-4">
-                <Form.Label>Search Products</Form.Label>
-                <InputGroup>
-                  <InputGroup.Text>
-                    <FaSearch />
-                  </InputGroup.Text>
-                  <Form.Control
-                    type="text"
-                    placeholder="Search products by name..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </InputGroup>
-                {searchLoading && (
-                  <div className="text-center mt-2">
-                    <Spinner animation="border" size="sm" />
-                  </div>
-                )}
-                {searchResults.length > 0 && (
-                  <div
-                    className="border rounded mt-2"
-                    style={{ maxHeight: "200px", overflowY: "auto" }}
-                  >
-                    {searchResults.map((product) => (
-                      <div
-                        key={product.id}
-                        className="p-2 border-bottom d-flex align-items-center gap-3 cursor-pointer hover-bg-light"
-                        style={{ cursor: "pointer" }}
-                        onClick={() => handleSelectProduct(product)}
-                      >
-                        <Image
-                          src={product.images?.[0]?.path || ""}
-                          alt={product.name}
-                          style={{ width: "50px", height: "50px", objectFit: "cover" }}
-                          className="rounded"
-                        />
-                        <div>
-                          <h6 className="mb-0">{product.name}</h6>
-                          <small className="text-muted">
-                            Price: ৳{product.price} | Stock: {product.quantity}
-                          </small>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </Form.Group>
-
-              {selectedItems.length > 0 && (
-                <div className="mb-4">
-                  <h6 className="mb-3">Selected Items</h6>
-                  <div className="border rounded">
-                    {selectedItems.map((item) => (
-                      <div
-                        key={item.id}
-                        className="p-3 border-bottom d-flex align-items-center justify-content-between"
-                      >
-                        <div className="d-flex align-items-center gap-3">
-                          <Image
-                            src={item.images?.[0]?.path || ""}
-                            alt={item.name}
-                            style={{ width: "60px", height: "60px", objectFit: "cover" }}
-                            className="rounded"
-                          />
-                          <div>
-                            <h6 className="mb-0">{item.name}</h6>
-                            <small className="text-muted">
-                              Price: ৳{item.price} | Stock: {item.quantity}
-                            </small>
-                          </div>
-                        </div>
-                        <div className="d-flex align-items-center gap-3">
-                          <Form.Group className="mb-0" style={{ width: "100px" }}>
-                            <Form.Control
-                              type="number"
-                              min="1"
-                              max={item.quantity}
-                              value={bundleQuantity[item.id] || ""}
-                              onChange={(e) =>
-                                setBundleQuantity({
-                                  ...bundleQuantity,
-                                  [item.id]: e.target.value,
-                                })
-                              }
-                              placeholder="Qty"
-                            />
-                          </Form.Group>
-                          <Button
-                            variant="outline-danger"
-                            size="sm"
-                            onClick={() => handleRemoveSelectedItem(item.id)}
-                          >
-                            <FaTrash />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {bundleError && (
-                <Alert variant="danger" className="mt-3">
-                  {bundleError}
-                </Alert>
-              )}
-            </>
-          )}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button
-            variant="secondary"
-            onClick={() => setShowBundleModal(false)}
-            disabled={bundleLoading}
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            onClick={handleAddToBundle}
-            disabled={bundleLoading || selectedItems.length === 0}
-            className="d-flex align-items-center gap-2"
-          >
-            {bundleLoading ? (
-              <>
-                <Spinner animation="border" size="sm" />
-                Adding...
-              </>
-            ) : (
-              <>
-                <FaPlus /> Add to Bundle
-              </>
-            )}
-          </Button>
-        </Modal.Footer>
-      </Modal>
     </div>
   );
 };

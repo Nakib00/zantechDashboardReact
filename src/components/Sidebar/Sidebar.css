@@ -1,16 +1,136 @@
 .sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
   width: 280px;
-  transition: var(--transition-slow);
-  position: relative;
-  border-right: 1px solid var(--border-color);
-  background: white;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
+  height: 100vh;
+  transition: all 0.3s ease;
+  z-index: 1000;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
 }
 
 .sidebar.collapsed {
   width: 80px;
+}
+
+.sidebar-brand {
+  height: 70px;
+  display: flex;
+  align-items: center;
+}
+
+.brand-logo {
+  transition: opacity 0.3s ease;
+}
+
+.brand-text {
+  font-size: 1.25rem;
+  color: #2c3e50;
+}
+
+.sidebar-section-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: #6c757d;
+}
+
+.sidebar-link {
+  position: relative;
+  color: #6c757d;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  border-radius: 8px;
+  margin: 2px 0;
+}
+
+.sidebar-link:hover {
+  background-color: rgba(13, 110, 253, 0.05);
+  color: #0d6efd;
+}
+
+.sidebar-link.active {
+  background-color: #0d6efd;
+  color: white;
+}
+
+.sidebar-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6c757d;
+  transition: all 0.2s ease;
+}
+
+.sidebar-link:hover .sidebar-icon {
+  color: #0d6efd;
+}
+
+.sidebar-link.active .sidebar-icon {
+  color: white;
+}
+
+/* Collapsed state styles */
+.sidebar.collapsed .sidebar-link {
+  padding: 0.75rem !important;
+  justify-content: center;
+}
+
+.sidebar.collapsed .sidebar-link:hover {
+  background-color: rgba(13, 110, 253, 0.05);
+}
+
+.sidebar.collapsed .sidebar-link:hover::after {
+  content: attr(title);
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: #2c3e50;
+  color: white;
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  z-index: 1000;
+  margin-left: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Badge styles */
+.badge {
+  font-size: 0.75rem;
+  padding: 0.25em 0.6em;
+  font-weight: 500;
+}
+
+/* Responsive styles */
+@media (max-width: 991.98px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+  
+  .sidebar.show {
+    transform: translateX(0);
+  }
+  
+  .sidebar.collapsed {
+    transform: translateX(-100%);
+  }
 }
 
 .sidebar-header {
