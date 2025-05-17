@@ -39,6 +39,7 @@ const Products = () => {
   const navigate = useNavigate();
   const [searchTimeout, setSearchTimeout] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [statusToggleLoading, setStatusToggleLoading] = useState({});
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -280,6 +281,59 @@ const Products = () => {
       }
     } finally {
       setEditLoading(false);
+    }
+  };
+
+  const handleStatusToggle = async (productId) => {
+    if (statusToggleLoading[productId]) return; // Prevent multiple clicks
+    
+    try {
+      setStatusToggleLoading(prev => ({ ...prev, [productId]: true }));
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        toast.error('Please login again');
+        navigate('/login');
+        return;
+      }
+
+      // Using the exact API endpoint format provided
+      const response = await axiosInstance.post(`/products/toggle-status/${productId}`, {}, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.data) {
+        throw new Error('No response received from server');
+      }
+
+      // Update the product status in the list
+      setProducts(prevProducts => 
+        prevProducts.map(prod => 
+          prod.id === productId 
+            ? { ...prod, status: prod.status === "1" ? "0" : "1" }
+            : prod
+        )
+      );
+
+      toast.success('Status updated successfully');
+    } catch (err) {
+      console.error('Toggle status error:', {
+        status: err.response?.status,
+        data: err.response?.data,
+        message: err.message
+      });
+
+      if (err.response?.status === 401) {
+        toast.error('Session expired. Please login again');
+        localStorage.removeItem('token');
+        navigate('/login');
+      } else {
+        toast.error(err.response?.data?.message || 'Failed to update status');
+      }
+    } finally {
+      setStatusToggleLoading(prev => ({ ...prev, [productId]: false }));
     }
   };
 
@@ -718,8 +772,16 @@ const Products = () => {
                         <Badge 
                           bg={product.status === "1" ? 'success' : 'secondary'}
                           className="px-2 py-1"
+                          role="button"
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => handleStatusToggle(product.id)}
+                          title="Click to toggle status"
                         >
-                          {product.status === "1" ? 'Active' : 'Inactive'}
+                          {statusToggleLoading[product.id] ? (
+                            <FaSpinner className="spinner-border spinner-border-sm" />
+                          ) : (
+                            product.status === "1" ? 'Active' : 'Inactive'
+                          )}
                         </Badge>
                       </td>
                       <td>

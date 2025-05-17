@@ -11,6 +11,7 @@ import {
   Alert,
   Modal,
   Form,
+  InputGroup,
 } from "react-bootstrap";
 import {
   FaArrowLeft,
@@ -20,6 +21,8 @@ import {
   FaTag,
   FaLayerGroup,
   FaPencilAlt,
+  FaPlus,
+  FaSearch,
 } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import axiosInstance from "../../config/axios";
@@ -58,6 +61,18 @@ const ViewProduct = () => {
   const [allCategories, setAllCategories] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [categoryError, setCategoryError] = useState(null);
+  const [deleteBundleLoading, setDeleteBundleLoading] = useState(null);
+  const [showBundleModal, setShowBundleModal] = useState(false);
+  const [bundleLoading, setBundleLoading] = useState(false);
+  const [bundleError, setBundleError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [selectedItems, setSelectedItems] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [bundleQuantity, setBundleQuantity] = useState({});
+  const [updateQuantityLoading, setUpdateQuantityLoading] = useState(null);
+  const [editingQuantity, setEditingQuantity] = useState({});
+  const [statusLoading, setStatusLoading] = useState(false);
 
   useEffect(() => {
     fetchProduct();
@@ -571,6 +586,281 @@ const ViewProduct = () => {
       fetchAllCategories();
     }
   }, [showCategoryModal]);
+
+  const handleDeleteBundleItem = async (bundleId) => {
+    if (!window.confirm("Are you sure you want to remove this item from the bundle?")) {
+      return;
+    }
+
+    setDeleteBundleLoading(bundleId);
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Authentication token not found. Please login again.");
+      }
+
+      const response = await axiosInstance.delete(
+        `/products/bundles/delete/${bundleId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Failed to delete bundle item");
+      }
+
+      // Refresh product data to get updated bundle items
+      await fetchProduct();
+      toast.success("Bundle item removed successfully");
+    } catch (err) {
+      console.error("Error deleting bundle item:", err);
+      const errorMessage =
+        err.response?.data?.message || err.message || "Failed to delete bundle item";
+      toast.error(errorMessage);
+
+      if (err.response?.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+      }
+    } finally {
+      setDeleteBundleLoading(null);
+    }
+  };
+
+  // Add new function to search products
+  const searchProducts = async (query) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    setSearchLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Authentication token not found. Please login again.");
+      }
+
+      const response = await axiosInstance.get(`/products?search=${query}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Failed to search products");
+      }
+
+      // Filter out the current product and already selected items
+      const filteredProducts = response.data.data.filter(
+        (product) =>
+          product.id !== parseInt(id) &&
+          !selectedItems.some((item) => item.id === product.id)
+      );
+
+      setSearchResults(filteredProducts);
+    } catch (err) {
+      console.error("Error searching products:", err);
+      toast.error("Failed to search products");
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  // Add debounced search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      searchProducts(searchQuery);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Add function to handle adding items to bundle
+  const handleAddToBundle = async () => {
+    if (selectedItems.length === 0) {
+      setBundleError("Please select at least one item");
+      return;
+    }
+
+    // Validate quantities
+    const invalidItems = selectedItems.filter(
+      (item) => !bundleQuantity[item.id] || bundleQuantity[item.id] < 1
+    );
+    if (invalidItems.length > 0) {
+      setBundleError("Please enter valid quantities for all items");
+      return;
+    }
+
+    setBundleLoading(true);
+    setBundleError(null);
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Authentication token not found. Please login again.");
+      }
+
+      const items = selectedItems.map((item) => ({
+        item_id: item.id,
+        bundle_quantity: parseInt(bundleQuantity[item.id]),
+      }));
+
+      const response = await axiosInstance.post(
+        `/products/bundles/${id}`,
+        { items },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Failed to add bundle items");
+      }
+
+      // Refresh product data
+      await fetchProduct();
+      setShowBundleModal(false);
+      setSelectedItems([]);
+      setBundleQuantity({});
+      setSearchQuery("");
+      setSearchResults([]);
+      toast.success("Bundle items added successfully");
+    } catch (err) {
+      console.error("Error adding bundle items:", err);
+      const errorMessage =
+        err.response?.data?.message || err.message || "Failed to add bundle items";
+      setBundleError(errorMessage);
+      toast.error(errorMessage);
+
+      if (err.response?.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+      }
+    } finally {
+      setBundleLoading(false);
+    }
+  };
+
+  // Add function to handle selecting a product
+  const handleSelectProduct = (product) => {
+    if (!selectedItems.some((item) => item.id === product.id)) {
+      setSelectedItems([...selectedItems, product]);
+      setBundleQuantity({ ...bundleQuantity, [product.id]: 1 });
+    }
+    setSearchQuery("");
+    setSearchResults([]);
+  };
+
+  // Add function to remove selected item
+  const handleRemoveSelectedItem = (productId) => {
+    setSelectedItems(selectedItems.filter((item) => item.id !== productId));
+    const newBundleQuantity = { ...bundleQuantity };
+    delete newBundleQuantity[productId];
+    setBundleQuantity(newBundleQuantity);
+  };
+
+  // Add new function to handle quantity update
+  const handleUpdateBundleQuantity = async (bundleId, newQuantity) => {
+    if (!newQuantity || newQuantity < 1) {
+      toast.error("Please enter a valid quantity");
+      return;
+    }
+
+    setUpdateQuantityLoading(bundleId);
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Authentication token not found. Please login again.");
+      }
+
+      const response = await axiosInstance.post(
+        `/products/bundles/update-quantity/${bundleId}`,
+        { quantity: parseInt(newQuantity) },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Failed to update quantity");
+      }
+
+      // Refresh product data to get updated bundle items
+      await fetchProduct();
+      setEditingQuantity({});
+      toast.success("Bundle quantity updated successfully");
+    } catch (err) {
+      console.error("Error updating bundle quantity:", err);
+      const errorMessage =
+        err.response?.data?.message || err.message || "Failed to update quantity";
+      toast.error(errorMessage);
+
+      if (err.response?.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+      }
+    } finally {
+      setUpdateQuantityLoading(null);
+    }
+  };
+
+  // Add new function to handle status toggle
+  const handleToggleStatus = async () => {
+    setStatusLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Authentication token not found. Please login again.");
+      }
+
+      const response = await axiosInstance.post(
+        `/products/toggle-status/${id}`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Failed to toggle status");
+      }
+
+      // Update local product state with new status
+      setProduct(prev => ({
+        ...prev,
+        status: prev.status === "1" ? "0" : "1"
+      }));
+      
+      toast.success(`Product ${product.status === "1" ? "deactivated" : "activated"} successfully`);
+    } catch (err) {
+      console.error("Error toggling status:", err);
+      const errorMessage =
+        err.response?.data?.message || err.message || "Failed to toggle status";
+      toast.error(errorMessage);
+
+      if (err.response?.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+      }
+    } finally {
+      setStatusLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -1128,7 +1418,14 @@ const ViewProduct = () => {
                 <Badge
                   bg={product.status === "1" ? "success" : "secondary"}
                   className="px-3 py-2 fs-6"
+                  role="button"
+                  onClick={handleToggleStatus}
+                  style={{ cursor: statusLoading ? 'not-allowed' : 'pointer' }}
+                  disabled={statusLoading}
                 >
+                  {statusLoading ? (
+                    <Spinner animation="border" size="sm" className="me-1" />
+                  ) : null}
                   {product.status === "1" ? "Active" : "Inactive"}
                 </Badge>
               </div>
@@ -1232,57 +1529,316 @@ const ViewProduct = () => {
       </Row>
 
       {/* Bundle Products Section */}
-      {product.bundle_items && product.bundle_items.length > 0 && (
-        <Card className="border-0 shadow-sm mt-4">
-          <Card.Body>
-            <h4 className="mb-4">Bundle Products</h4>
-            <Row>
-              {product.bundle_items.map((item, index) => (
-                <Col key={index} md={6} lg={4} className="mb-4">
-                  <Card className="h-100">
-                    <div className="position-relative">
-                      <Card.Img
-                        variant="top"
-                        src={item.image}
-                        alt={item.name}
-                        style={{ height: "200px", objectFit: "cover" }}
-                      />
-                      {item.discount > 0 && (
-                        <Badge
-                          bg="danger"
-                          className="position-absolute top-0 end-0 m-2"
-                        >
-                          -{item.discount}%
-                        </Badge>
-                      )}
-                    </div>
-                    <Card.Body>
-                      <Card.Title className="h6 mb-2">{item.name}</Card.Title>
-                      <div className="d-flex justify-content-between align-items-center">
-                        <div>
-                          <span className="fw-bold">৳{item.price}</span>
-                          <small className="text-muted d-block">
-                            Quantity: {item.bundle_quantity}
-                          </small>
-                        </div>
+      <Card className="border-0 shadow-sm mt-4">
+        <Card.Body>
+          <div className="d-flex justify-content-between align-items-center mb-4">
+            <h4 className="mb-0">Bundle Products</h4>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setShowBundleModal(true)}
+              className="d-flex align-items-center gap-2"
+            >
+              <FaPlus /> Add Bundle Items
+            </Button>
+          </div>
+          {product.bundle_items && product.bundle_items.length > 0 ? (
+            <>
+              <Row>
+                {product.bundle_items.map((item, index) => (
+                  <Col key={index} md={6} lg={4} className="mb-4">
+                    <Card className="h-100">
+                      <div className="position-relative">
+                        <Card.Img
+                          variant="top"
+                          src={item.image}
+                          alt={item.name}
+                          style={{ height: "200px", objectFit: "cover" }}
+                        />
+                        {item.discount > 0 && (
+                          <Badge
+                            bg="danger"
+                            className="position-absolute top-0 end-0 m-2"
+                          >
+                            -{item.discount}%
+                          </Badge>
+                        )}
                         <Button
-                          variant="outline-primary"
+                          variant="danger"
                           size="sm"
-                          onClick={() =>
-                            navigate(`/products/${item.product_id}`)
-                          }
+                          className="position-absolute top-0 start-0 m-2"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteBundleItem(item.bundle_id);
+                          }}
+                          disabled={deleteBundleLoading === item.bundle_id || updateQuantityLoading === item.bundle_id}
+                          style={{ zIndex: 10 }}
                         >
-                          View
+                          {deleteBundleLoading === item.bundle_id ? (
+                            <Spinner animation="border" size="sm" />
+                          ) : (
+                            <FaTrash />
+                          )}
                         </Button>
                       </div>
-                    </Card.Body>
-                  </Card>
-                </Col>
-              ))}
-            </Row>
-          </Card.Body>
-        </Card>
-      )}
+                      <Card.Body>
+                        <Card.Title className="h6 mb-2">{item.name}</Card.Title>
+                        <div className="d-flex justify-content-between align-items-start">
+                          <div>
+                            <div className="d-flex flex-column">
+                              <div className="d-flex align-items-center gap-2">
+                                <span className="text-muted">Per Item:</span>
+                                <span className="fw-bold">৳{item.price}</span>
+                              </div>
+                              <div className="d-flex align-items-center gap-2">
+                                <span className="text-muted">Total:</span>
+                                <span className="fw-bold text-primary">৳{item.price * item.bundle_quantity}</span>
+                              </div>
+                            </div>
+                            <div className="d-flex align-items-center gap-2 mt-2">
+                              {editingQuantity[item.bundle_id] ? (
+                                <div className="d-flex align-items-center gap-2">
+                                  <Form.Control
+                                    type="number"
+                                    size="sm"
+                                    style={{ width: "70px" }}
+                                    min="1"
+                                    value={editingQuantity[item.bundle_id]}
+                                    onChange={(e) => setEditingQuantity({
+                                      ...editingQuantity,
+                                      [item.bundle_id]: e.target.value
+                                    })}
+                                  />
+                                  <Button
+                                    variant="success"
+                                    size="sm"
+                                    onClick={() => handleUpdateBundleQuantity(item.bundle_id, editingQuantity[item.bundle_id])}
+                                    disabled={updateQuantityLoading === item.bundle_id}
+                                  >
+                                    {updateQuantityLoading === item.bundle_id ? (
+                                      <Spinner animation="border" size="sm" />
+                                    ) : (
+                                      "Save"
+                                    )}
+                                  </Button>
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => setEditingQuantity({})}
+                                    disabled={updateQuantityLoading === item.bundle_id}
+                                  >
+                                    Cancel
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div className="d-flex align-items-center gap-2">
+                                  <small className="text-muted">
+                                    Quantity: {item.bundle_quantity}
+                                  </small>
+                                  <Button
+                                    variant="outline-primary"
+                                    size="sm"
+                                    onClick={() => setEditingQuantity({
+                                      ...editingQuantity,
+                                      [item.bundle_id]: item.bundle_quantity
+                                    })}
+                                    disabled={updateQuantityLoading === item.bundle_id}
+                                  >
+                                    <FaPencilAlt size={12} />
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="d-flex gap-2">
+                            <Button
+                              variant="outline-primary"
+                              size="sm"
+                              onClick={() => navigate(`/products/${item.item_id}`)}
+                            >
+                              View
+                            </Button>
+                          </div>
+                        </div>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                ))}
+              </Row>
+              <div className="mt-4 pt-3 border-top">
+                <div className="d-flex justify-content-end">
+                  <div className="text-end">
+                    <h5 className="mb-2">Bundle Total</h5>
+                    <div className="fs-4 fw-bold text-primary">
+                      ৳{product.bundle_items.reduce((total, item) => total + (item.price * item.bundle_quantity), 0)}
+                    </div>
+                    <small className="text-muted">
+                      Total of {product.bundle_items.length} items
+                    </small>
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : (
+            <p className="text-muted mb-0">No bundle items added yet</p>
+          )}
+        </Card.Body>
+      </Card>
+
+      {/* Add Bundle Items Modal */}
+      <Modal
+        show={showBundleModal}
+        onHide={() => !bundleLoading && setShowBundleModal(false)}
+        size="lg"
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Add Bundle Items</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {bundleLoading ? (
+            <div className="text-center py-4">
+              <Loading />
+              <p className="text-muted mt-2 mb-0">Adding bundle items...</p>
+            </div>
+          ) : (
+            <>
+              <Form.Group className="mb-4">
+                <Form.Label>Search Products</Form.Label>
+                <InputGroup>
+                  <InputGroup.Text>
+                    <FaSearch />
+                  </InputGroup.Text>
+                  <Form.Control
+                    type="text"
+                    placeholder="Search products by name..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </InputGroup>
+                {searchLoading && (
+                  <div className="text-center mt-2">
+                    <Spinner animation="border" size="sm" />
+                  </div>
+                )}
+                {searchResults.length > 0 && (
+                  <div
+                    className="border rounded mt-2"
+                    style={{ maxHeight: "200px", overflowY: "auto" }}
+                  >
+                    {searchResults.map((product) => (
+                      <div
+                        key={product.id}
+                        className="p-2 border-bottom d-flex align-items-center gap-3 cursor-pointer hover-bg-light"
+                        style={{ cursor: "pointer" }}
+                        onClick={() => handleSelectProduct(product)}
+                      >
+                        <Image
+                          src={product.images?.[0]?.path || ""}
+                          alt={product.name}
+                          style={{ width: "50px", height: "50px", objectFit: "cover" }}
+                          className="rounded"
+                        />
+                        <div>
+                          <h6 className="mb-0">{product.name}</h6>
+                          <small className="text-muted">
+                            Price: ৳{product.price} | Stock: {product.quantity}
+                          </small>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Form.Group>
+
+              {selectedItems.length > 0 && (
+                <div className="mb-4">
+                  <h6 className="mb-3">Selected Items</h6>
+                  <div className="border rounded">
+                    {selectedItems.map((item) => (
+                      <div
+                        key={item.id}
+                        className="p-3 border-bottom d-flex align-items-center justify-content-between"
+                      >
+                        <div className="d-flex align-items-center gap-3">
+                          <Image
+                            src={item.images?.[0]?.path || ""}
+                            alt={item.name}
+                            style={{ width: "60px", height: "60px", objectFit: "cover" }}
+                            className="rounded"
+                          />
+                          <div>
+                            <h6 className="mb-0">{item.name}</h6>
+                            <small className="text-muted">
+                              Price: ৳{item.price} | Stock: {item.quantity}
+                            </small>
+                          </div>
+                        </div>
+                        <div className="d-flex align-items-center gap-3">
+                          <Form.Group className="mb-0" style={{ width: "100px" }}>
+                            <Form.Control
+                              type="number"
+                              min="1"
+                              max={item.quantity}
+                              value={bundleQuantity[item.id] || ""}
+                              onChange={(e) =>
+                                setBundleQuantity({
+                                  ...bundleQuantity,
+                                  [item.id]: e.target.value,
+                                })
+                              }
+                              placeholder="Qty"
+                            />
+                          </Form.Group>
+                          <Button
+                            variant="outline-danger"
+                            size="sm"
+                            onClick={() => handleRemoveSelectedItem(item.id)}
+                          >
+                            <FaTrash />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {bundleError && (
+                <Alert variant="danger" className="mt-3">
+                  {bundleError}
+                </Alert>
+              )}
+            </>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => setShowBundleModal(false)}
+            disabled={bundleLoading}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleAddToBundle}
+            disabled={bundleLoading || selectedItems.length === 0}
+            className="d-flex align-items-center gap-2"
+          >
+            {bundleLoading ? (
+              <>
+                <Spinner animation="border" size="sm" />
+                Adding...
+              </>
+            ) : (
+              <>
+                <FaPlus /> Add to Bundle
+              </>
+            )}
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };
