@@ -108,61 +108,75 @@ const Orders = () => {
   };
 
   const handleStatusChange = async (orderId, newStatus) => {
-    if (updatingStatus[orderId]) return;
-    
-    setUpdatingStatus(prev => ({ ...prev, [orderId]: true }));
+    setUpdatingStatus((prev) => ({ ...prev, [orderId]: true }));
     try {
-      console.log('Updating status for order:', orderId, 'to status:', newStatus);
-      const response = await axiosInstance.post(`/orders/update-status/${orderId}`, {
-        status: parseInt(newStatus)
-      });
+      const response = await axiosInstance.put(
+        `/orders/update-status/${orderId}`,
+        {
+          status: parseInt(newStatus)
+        }
+      );
 
-      console.log('API Response:', response.data);
+      console.log("API Response:", response.data);
 
       if (response.data.success) {
-        toast.success(response.data.message || "Order status updated successfully");
+        toast.success(
+          response.data.message || "Order status updated successfully"
+        );
         // Update the local state with new status
-        setOrders(prev => prev.map(order => 
-          order.order_id === orderId 
-            ? { 
-                ...order, 
-                status: response.data.data.new_status.toString(),
-                status_change_desc: response.data.data.status_change_desc
-              }
-            : order
-        ));
+        setOrders((prev) =>
+          prev.map((order) =>
+            order.order_id === orderId
+              ? {
+                  ...order,
+                  status: response.data.data.new_status.toString(),
+                  status_change_desc: response.data.data.status_change_desc,
+                }
+              : order
+          )
+        );
       } else {
         throw new Error(response.data.message || "Failed to update status");
       }
     } catch (error) {
-      console.error('Status update error details:', {
+      console.error("Status update error details:", {
         message: error.message,
         response: error.response?.data,
         status: error.response?.status,
-        headers: error.response?.headers
+        headers: error.response?.headers,
       });
-      
+
       // Show more specific error message based on the error type
       if (error.response) {
         // The request was made and the server responded with a status code
         // that falls out of the range of 2xx
-        toast.error(error.response.data?.message || `Error ${error.response.status}: ${error.response.statusText}`);
+        toast.error(
+          error.response.data?.message ||
+            `Error ${error.response.status}: ${error.response.statusText}`
+        );
       } else if (error.request) {
         // The request was made but no response was received
-        toast.error("No response received from server. Please check your internet connection.");
+        toast.error(
+          "No response received from server. Please check your internet connection."
+        );
       } else {
         // Something happened in setting up the request that triggered an Error
-        toast.error(error.message || "Something went wrong while updating the status");
+        toast.error(
+          error.message || "Something went wrong while updating the status"
+        );
       }
     } finally {
-      setUpdatingStatus(prev => ({ ...prev, [orderId]: false }));
+      setUpdatingStatus((prev) => ({ ...prev, [orderId]: false }));
     }
   };
 
   const renderPagination = () => {
     const items = [];
     const maxPages = 5;
-    let startPage = Math.max(1, pagination.current_page - Math.floor(maxPages / 2));
+    let startPage = Math.max(
+      1,
+      pagination.current_page - Math.floor(maxPages / 2)
+    );
     let endPage = Math.min(pagination.last_page, startPage + maxPages - 1);
 
     if (endPage - startPage + 1 < maxPages) {
@@ -243,7 +257,11 @@ const Orders = () => {
             <div className="d-flex gap-3">
               <InputGroup style={{ width: "300px" }}>
                 <InputGroup.Text>
-                  {isSearching ? <FaSpinner className="spinner" /> : <FaSearch />}
+                  {isSearching ? (
+                    <FaSpinner className="spinner" />
+                  ) : (
+                    <FaSearch />
+                  )}
                 </InputGroup.Text>
                 <Form.Control
                   type="text"
@@ -303,19 +321,23 @@ const Orders = () => {
                     <td>
                       <Form.Select
                         value={order.status?.toString() || "0"}
-                        onChange={(e) => handleStatusChange(order.order_id, e.target.value)}
+                        onChange={(e) =>
+                          handleStatusChange(order.order_id, e.target.value)
+                        }
                         disabled={updatingStatus[order.order_id]}
                         size="sm"
                         style={{ width: "auto", minWidth: "120px" }}
                       >
-                        <option value="0">Processing</option>
+                        <option value="0">On Processing</option>
                         <option value="1">Completed</option>
                         <option value="2">On Hold</option>
                         <option value="3">Cancelled</option>
                         <option value="4">Refunded</option>
                       </Form.Select>
                     </td>
-                    <td>{new Date(order.order_placed_date_time).toLocaleString()}</td>
+                    <td>
+                      {new Date(order.order_placed_date_time).toLocaleString()}
+                    </td>
                     <td>
                       <Button
                         variant="outline-primary"
@@ -343,4 +365,4 @@ const Orders = () => {
   );
 };
 
-export default Orders; 
+export default Orders;
