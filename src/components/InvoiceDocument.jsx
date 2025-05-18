@@ -164,7 +164,6 @@ const InvoiceDocument = ({ orderData }) => {
                 <span>${getCustomerName()}</span>
                 <span>${getCustomerAddress()}</span>
                 <span>${getCustomerPhone()}</span>
-                <span class="text-muted" style="font-size: 12px; color: #666;">Using customer's address as shipping address</span>
                 `
             }
           </div>

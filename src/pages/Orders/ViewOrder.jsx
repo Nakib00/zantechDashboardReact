@@ -847,9 +847,6 @@ const ViewOrder = () => {
                       <div className="mb-2">
                         <strong>Address:</strong> {getCustomerAddress()}
                       </div>
-                      <div className="text-muted">
-                        <small>Using customer's address as shipping address</small>
-                      </div>
                     </>
                   )}
                 </Col>
