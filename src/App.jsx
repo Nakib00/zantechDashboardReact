@@ -24,6 +24,8 @@ import Customers from "./pages/Customers";
 import ViewCustomer from './pages/Customers/ViewCustomer';
 import Transitions from './pages/Transitions';
 import Activity from './pages/Activity';
+import Orders from './pages/Orders';
+import ViewOrder from './pages/Orders/ViewOrder';
 
 const PrivateRoute = ({ children }) => {
   const token = localStorage.getItem('token');
@@ -68,6 +70,8 @@ const App = () => {
                       <Route path="/ratings" element={<Ratings />} />
                       <Route path="/transitions" element={<Transitions />} />
                       <Route path="/activity" element={<Activity />} />
+                      <Route path="/orders" element={<Orders />} />
+                      <Route path="/orders/:id" element={<ViewOrder />} />
                     </Routes>
                   </div>
                 </div>
