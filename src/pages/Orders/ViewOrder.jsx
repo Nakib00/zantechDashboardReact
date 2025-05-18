@@ -17,6 +17,7 @@ import {
   FaUniversity,
   FaMobileAlt,
   FaSave,
+  FaFileInvoice,
 } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import axiosInstance from "../../config/axios";
@@ -33,6 +34,7 @@ import {
 import Loading from "../../components/Loading";
 import "../Categories/Categories.css";
 import Select from "react-select/async";
+import InvoiceDocument from '../../components/InvoiceDocument';
 
 const ViewOrder = () => {
   const { id } = useParams();
@@ -49,7 +51,6 @@ const ViewOrder = () => {
   const [isAddingItems, setIsAddingItems] = useState(false);
   const [selectedItems, setSelectedItems] = useState([]);
   const [addingItemsLoading, setAddingItemsLoading] = useState(false);
-  const [products, setProducts] = useState([]);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [emailInput, setEmailInput] = useState("");
   const [sendingEmails, setSendingEmails] = useState(false);
@@ -57,6 +58,7 @@ const ViewOrder = () => {
   const [updatingPaymentStatus, setUpdatingPaymentStatus] = useState(false);
   const [updatingPaidAmount, setUpdatingPaidAmount] = useState(false);
   const [editingPaidAmount, setEditingPaidAmount] = useState(null);
+  const [generatingInvoice, setGeneratingInvoice] = useState(false);
 
   useEffect(() => {
     fetchOrder();
@@ -141,22 +143,22 @@ const ViewOrder = () => {
 
   const getStatusLabel = (status) => {
     const statusMap = {
-      0: "Processing",
-      1: "Completed",
-      2: "On Hold",
-      3: "Cancelled",
-      4: "Refunded",
+      "0": "Processing",
+      "1": "Completed",
+      "2": "On Hold",
+      "3": "Cancelled",
+      "4": "Refunded",
     };
     return statusMap[status?.toString()] || "Unknown";
   };
 
   const getStatusBadge = (status) => {
     const statusMap = {
-      0: { label: "Processing", variant: "info" },
-      1: { label: "Completed", variant: "success" },
-      2: { label: "On Hold", variant: "secondary" },
-      3: { label: "Cancelled", variant: "danger" },
-      4: { label: "Refunded", variant: "danger" },
+      "0": { label: "Processing", variant: "info" },
+      "1": { label: "Completed", variant: "success" },
+      "2": { label: "On Hold", variant: "secondary" },
+      "3": { label: "Cancelled", variant: "danger" },
+      "4": { label: "Refunded", variant: "danger" },
     };
 
     const statusStr = status?.toString();
@@ -167,38 +169,11 @@ const ViewOrder = () => {
     return <span className={`badge bg-${variant}`}>{label}</span>;
   };
 
-  const getPaymentStatusBadge = (status) => {
-    const statusMap = {
-      0: { label: "Unpaid", variant: "warning" },
-      1: { label: "Paid by Cash", variant: "success" },
-      2: { label: "Failed", variant: "danger" },
-      3: { label: "Paid by Bank", variant: "info" },
-      4: { label: "Paid by Mobile Bank", variant: "primary" },
-    };
-
-    const { label, variant } = statusMap[status] || {
-      label: "Unknown",
-      variant: "secondary",
-    };
-    return (
-      <Badge
-        bg={variant}
-        className="d-flex align-items-center gap-1"
-        style={{ width: "fit-content" }}
-      >
-        {status === "1" && <FaMoneyBillWave size={12} />}
-        {status === "3" && <FaUniversity size={12} />}
-        {status === "4" && <FaMobileAlt size={12} />}
-        {label}
-      </Badge>
-    );
-  };
-
   const getPaymentType = (type) => {
     const types = {
-      1: "Cash on Delivery",
-      2: "Mobile Banking",
-      3: "Card",
+      "1": "Cash on Delivery",
+      "2": "Mobile Banking",
+      "3": "Card",
     };
     return types[type] || "Unknown";
   };
@@ -288,34 +263,6 @@ const ViewOrder = () => {
   const startEditingQuantity = (item) => {
     setEditingItem(item.product_id);
     setQuantityInput(item.quantity.toString());
-  };
-
-  // Load products for dropdown
-  const loadItems = async (inputValue) => {
-    try {
-      const response = await axiosInstance.get("/products", {
-        params: {
-          search: inputValue,
-        },
-      });
-
-      if (response.data.success) {
-        const formattedProducts = response.data.data.map((product) => ({
-          value: product.id,
-          label: product.name,
-          price: product.price,
-          image: product.images?.[0]?.url || null,
-          quantity: product.quantity || 0,
-        }));
-        setProducts(formattedProducts);
-        return formattedProducts;
-      }
-      return [];
-    } catch (error) {
-      console.error("Error loading products:", error);
-      toast.error("Failed to load products");
-      return [];
-    }
   };
 
   const handleItemSelect = (selectedOption) => {
@@ -510,6 +457,40 @@ const ViewOrder = () => {
     }
   };
 
+  const handleGenerateInvoice = () => {
+    if (generatingInvoice || !orderData) return;
+
+    setGeneratingInvoice(true);
+    try {
+      // Create a new window for printing
+      const printWindow = window.open('', '_blank');
+
+      // Generate invoice HTML content using the component
+      const invoiceContent = InvoiceDocument({ orderData });
+
+      // Write the content to the new window
+      printWindow.document.write(invoiceContent);
+      printWindow.document.close();
+
+      // Wait for content to load then print
+      printWindow.onload = function() {
+        // Adding a small timeout to ensure all styles and images are loaded before printing
+        setTimeout(() => {
+          printWindow.print();
+          // Close the window after printing (optional)
+          // printWindow.close();
+        }, 500);
+      };
+
+      toast.success("Invoice generated successfully");
+    } catch (error) {
+      console.error("Invoice generation error:", error);
+      toast.error("Failed to generate invoice");
+    } finally {
+      setGeneratingInvoice(false);
+    }
+  };
+
   if (loading) {
     return <Loading />;
   }
@@ -542,6 +523,22 @@ const ViewOrder = () => {
             <h2 className="mb-0">Order Details</h2>
             <div className="d-flex gap-2">
               <Button
+                variant="outline-success"
+                onClick={handleGenerateInvoice}
+                disabled={generatingInvoice}
+                className="d-flex align-items-center gap-2"
+              >
+                {generatingInvoice ? (
+                  <>
+                    <FaSpinner className="spinner-border spinner-border-sm" /> Generating...
+                  </>
+                ) : (
+                  <>
+                    <FaFileInvoice /> Generate Invoice
+                  </>
+                )}
+              </Button>
+              <Button
                 variant="outline-info"
                 onClick={() => setShowEmailModal(true)}
                 className="d-flex align-items-center gap-2"
@@ -561,10 +558,7 @@ const ViewOrder = () => {
                 <option value="3">Cancelled</option>
                 <option value="4">Refunded</option>
               </Form.Select>
-              <Button
-                variant="outline-primary"
-                onClick={() => navigate("/orders")}
-              >
+              <Button variant="outline-primary" onClick={() => navigate("/orders")}>
                 <FaArrowLeft className="me-2" /> Back to Orders
               </Button>
             </div>
@@ -955,7 +949,6 @@ const ViewOrder = () => {
                     <Select
                       cacheOptions
                       defaultOptions
-                      loadOptions={loadItems}
                       onChange={handleItemSelect}
                       placeholder="Search and select items..."
                       noOptionsMessage={() => "No items found"}
