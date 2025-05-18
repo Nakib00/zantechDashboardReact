@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FaSearch, FaSpinner, FaEye, FaTimes } from "react-icons/fa";
+import { FaSearch, FaSpinner, FaEye, FaTimes, FaPlus } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import axiosInstance from "../../config/axios";
@@ -255,6 +255,13 @@ const Orders = () => {
           <div className="d-flex justify-content-between align-items-center mb-4">
             <h2 className="mb-0">Orders</h2>
             <div className="d-flex gap-3">
+              <Button 
+                variant="primary" 
+                onClick={() => navigate('/orders/create')}
+                className="d-flex align-items-center gap-2"
+              >
+                <FaPlus /> Create Order
+              </Button>
               <InputGroup style={{ width: "300px" }}>
                 <InputGroup.Text>
                   {isSearching ? (

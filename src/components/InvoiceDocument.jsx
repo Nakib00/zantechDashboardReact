@@ -8,6 +8,25 @@ const InvoiceDocument = ({ orderData }) => {
   const { order, user, shipping_address, order_items, payments, coupon } =
     orderData;
 
+  // Helper functions to get customer information
+  const getCustomerName = () => {
+    if (user?.name) return user.name;
+    if (order.user_name) return order.user_name;
+    return 'N/A';
+  };
+
+  const getCustomerPhone = () => {
+    if (user?.phone) return user.phone;
+    if (order.user_phone) return order.user_phone;
+    return 'N/A';
+  };
+
+  const getCustomerAddress = () => {
+    if (user?.address) return user.address;
+    if (order.address) return order.address;
+    return 'N/A';
+  };
+
   // Get the current date and time (this is the invoice generation date)
   const invoiceGeneratedDate = new Date().toLocaleString();
 
@@ -125,25 +144,30 @@ const InvoiceDocument = ({ orderData }) => {
         <div class="address-section">
           <div class="bill-to">
             <strong>Bill To</strong>
-            <span>${user.name}</span>
-            <span>${shipping_address.address}</span>
-            <span>${user.phone}</span>
+            <span>${getCustomerName()}</span>
+            <span>${getCustomerAddress()}</span>
+            <span>${getCustomerPhone()}</span>
           </div>
 
-          ${
-            shipping_address
-              ? `
           <div class="shipping-to">
             <strong>Shipping Address</strong>
-            <span>${shipping_address.f_name} ${shipping_address.l_name}</span>
-            <span>${shipping_address.address}</span>
-            <span>${shipping_address.city}</span>
-            <span>${shipping_address.zip}</span>
-            <span>${shipping_address.phone}</span>
+            ${
+              shipping_address
+                ? `
+                <span>${shipping_address.f_name} ${shipping_address.l_name}</span>
+                <span>${shipping_address.address}</span>
+                <span>${shipping_address.city}</span>
+                <span>${shipping_address.zip}</span>
+                <span>${shipping_address.phone}</span>
+                `
+                : `
+                <span>${getCustomerName()}</span>
+                <span>${getCustomerAddress()}</span>
+                <span>${getCustomerPhone()}</span>
+                <span class="text-muted" style="font-size: 12px; color: #666;">Using customer's address as shipping address</span>
+                `
+            }
           </div>
-          `
-              : ""
-          }
         </div>
 
         <div class="section-title">Order Summary</div>

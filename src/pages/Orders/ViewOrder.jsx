@@ -512,8 +512,28 @@ const ViewOrder = () => {
     );
   }
 
-  const { order, user, shipping_address, coupon, order_items, payments } =
-    orderData;
+  const { order, user, shipping_address, coupon, order_items, payments } = orderData;
+
+  // Helper function to get customer name
+  const getCustomerName = () => {
+    if (user?.name) return user.name;
+    if (order.user_name) return order.user_name;
+    return 'N/A';
+  };
+
+  // Helper function to get customer phone
+  const getCustomerPhone = () => {
+    if (user?.phone) return user.phone;
+    if (order.user_phone) return order.user_phone;
+    return 'N/A';
+  };
+
+  // Helper function to get customer address
+  const getCustomerAddress = () => {
+    if (user?.address) return user.address;
+    if (order.address) return order.address;
+    return 'N/A';
+  };
 
   return (
     <div className="categories-container">
@@ -755,36 +775,57 @@ const ViewOrder = () => {
               <Row>
                 <Col md={6}>
                   <div className="mb-2">
-                    <strong>Name:</strong> {user.name}
+                    <strong>Name:</strong> {getCustomerName()}
                   </div>
+                  {user?.email && (
+                    <div className="mb-2">
+                      <strong>Email:</strong> {user.email}
+                    </div>
+                  )}
                   <div className="mb-2">
-                    <strong>Email:</strong> {user.email}
-                  </div>
-                  <div className="mb-2">
-                    <strong>Phone:</strong> {user.phone}
+                    <strong>Phone:</strong> {getCustomerPhone()}
                   </div>
                   <div>
-                    <strong>Address:</strong> {user.address}
+                    <strong>Address:</strong> {getCustomerAddress()}
                   </div>
                 </Col>
                 <Col md={6}>
                   <h6 className="mb-3">Shipping Address</h6>
-                  <div className="mb-2">
-                    <strong>Name:</strong> {shipping_address.f_name}{" "}
-                    {shipping_address.l_name}
-                  </div>
-                  <div className="mb-2">
-                    <strong>Phone:</strong> {shipping_address.phone}
-                  </div>
-                  <div className="mb-2">
-                    <strong>Address:</strong> {shipping_address.address}
-                  </div>
-                  <div className="mb-2">
-                    <strong>City:</strong> {shipping_address.city}
-                  </div>
-                  <div>
-                    <strong>ZIP:</strong> {shipping_address.zip}
-                  </div>
+                  {shipping_address ? (
+                    <>
+                      <div className="mb-2">
+                        <strong>Name:</strong> {shipping_address.f_name}{" "}
+                        {shipping_address.l_name}
+                      </div>
+                      <div className="mb-2">
+                        <strong>Phone:</strong> {shipping_address.phone}
+                      </div>
+                      <div className="mb-2">
+                        <strong>Address:</strong> {shipping_address.address}
+                      </div>
+                      <div className="mb-2">
+                        <strong>City:</strong> {shipping_address.city}
+                      </div>
+                      <div>
+                        <strong>ZIP:</strong> {shipping_address.zip}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="mb-2">
+                        <strong>Name:</strong> {getCustomerName()}
+                      </div>
+                      <div className="mb-2">
+                        <strong>Phone:</strong> {getCustomerPhone()}
+                      </div>
+                      <div className="mb-2">
+                        <strong>Address:</strong> {getCustomerAddress()}
+                      </div>
+                      <div className="text-muted">
+                        <small>Using customer's address as shipping address</small>
+                      </div>
+                    </>
+                  )}
                 </Col>
               </Row>
             </Card.Body>

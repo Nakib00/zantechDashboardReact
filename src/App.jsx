@@ -26,6 +26,7 @@ import Transitions from './pages/Transitions';
 import Activity from './pages/Activity';
 import Orders from './pages/Orders';
 import ViewOrder from './pages/Orders/ViewOrder';
+import CreateOrder from './pages/Orders/CreateOrder';
 
 const PrivateRoute = ({ children }) => {
   const token = localStorage.getItem('token');
@@ -71,6 +72,7 @@ const App = () => {
                       <Route path="/transitions" element={<Transitions />} />
                       <Route path="/activity" element={<Activity />} />
                       <Route path="/orders" element={<Orders />} />
+                      <Route path="/orders/create" element={<CreateOrder />} />
                       <Route path="/orders/:id" element={<ViewOrder />} />
                     </Routes>
                   </div>
