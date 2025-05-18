@@ -39,6 +39,9 @@ const Challen = () => {
     search: "",
     page: 1,
     limit: 10,
+    date: "",
+    start_date: "",
+    end_date: "",
   });
   const [pagination, setPagination] = useState({
     total_rows: 0,
@@ -59,7 +62,7 @@ const Challen = () => {
     }
 
     const timeoutId = setTimeout(() => {
-      if (searchParams.search !== "") {
+      if (searchParams.search !== "" || searchParams.date !== "" || searchParams.start_date !== "" || searchParams.end_date !== "") {
         setIsSearching(true);
         fetchChallans(1);
       }
@@ -72,7 +75,7 @@ const Challen = () => {
         clearTimeout(timeoutId);
       }
     };
-  }, [searchParams.search]);
+  }, [searchParams.search, searchParams.date, searchParams.start_date, searchParams.end_date]);
 
   useEffect(() => {
     fetchSuppliers();
@@ -85,6 +88,9 @@ const Challen = () => {
         page,
         limit: searchParams.limit,
         ...(searchParams.search && { search: searchParams.search }),
+        ...(searchParams.date && { date: searchParams.date }),
+        ...(searchParams.start_date && { start_date: searchParams.start_date }),
+        ...(searchParams.end_date && { end_date: searchParams.end_date }),
       };
 
       const response = await axiosInstance.get("/challans", { params });
@@ -354,6 +360,35 @@ const Challen = () => {
     return items;
   };
 
+  const handleDateFilter = (type, value) => {
+    if (type === 'date') {
+      setSearchParams((prev) => ({
+        ...prev,
+        date: value,
+        start_date: "",
+        end_date: "",
+        page: 1,
+      }));
+    } else {
+      setSearchParams((prev) => ({
+        ...prev,
+        date: "",
+        [type]: value,
+        page: 1,
+      }));
+    }
+  };
+
+  const clearDateFilters = () => {
+    setSearchParams((prev) => ({
+      ...prev,
+      date: "",
+      start_date: "",
+      end_date: "",
+      page: 1,
+    }));
+  };
+
   if (loading && challans.length === 0) {
     return (
       <div className="loading-container">
@@ -373,7 +408,45 @@ const Challen = () => {
                 Showing {challans.length} of {pagination.total_rows} challans
               </p>
             </div>
-            <div className="d-flex gap-2">
+            <div className="d-flex gap-3 align-items-center">
+              <div className="d-flex flex-column align-items-start">
+                <small className="text-muted mb-1">Single Date</small>
+                <Form.Control
+                  type="date"
+                  value={searchParams.date}
+                  onChange={(e) => handleDateFilter("date", e.target.value)}
+                  style={{ width: "150px" }}
+                />
+              </div>
+              <div className="d-flex flex-column align-items-start">
+                <small className="text-muted mb-1">Date Range</small>
+                <div className="d-flex gap-2">
+                  <Form.Control
+                    type="date"
+                    value={searchParams.start_date}
+                    onChange={(e) => handleDateFilter("start_date", e.target.value)}
+                    placeholder="Start Date"
+                    style={{ width: "150px" }}
+                  />
+                  <Form.Control
+                    type="date"
+                    value={searchParams.end_date}
+                    onChange={(e) => handleDateFilter("end_date", e.target.value)}
+                    placeholder="End Date"
+                    style={{ width: "150px" }}
+                  />
+                </div>
+              </div>
+              {(searchParams.date || searchParams.start_date || searchParams.end_date) && (
+                <Button
+                  variant="outline-secondary"
+                  onClick={clearDateFilters}
+                  className="d-flex align-items-center gap-1"
+                  style={{ marginTop: '22px' }}
+                >
+                  <FaTimes /> Clear
+                </Button>
+              )}
               <Button
                 variant="primary"
                 onClick={() => navigate("/challans/add")}

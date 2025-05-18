@@ -4,6 +4,7 @@ import { Card, Button, Row, Col, Spinner, Form, InputGroup, Table } from "react-
 import { FaArrowLeft, FaEye, FaDownload, FaEdit, FaSpinner as FaSpinnerAlt, FaUpload, FaTimes } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import axiosInstance from "../../config/axios";
+import Loading from "../../components/Loading";
 import "./Expenses.css";
 
 const styles = `
@@ -201,11 +202,7 @@ const ViewExpense = () => {
   };
 
   if (loading) {
-    return (
-      <div className="loading-container">
-        <div className="loading-text">Loading...</div>
-      </div>
-    );
+    return <Loading />;
   }
 
   if (!expense) {
