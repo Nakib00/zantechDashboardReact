@@ -18,7 +18,8 @@ import {
   MdPerson,
   MdAttachMoney,
   MdLocalOffer,
-  MdStar
+  MdStar,
+  MdSwapHoriz
 } from 'react-icons/md';
 import { Nav } from 'react-bootstrap';
 import './Sidebar.css';
@@ -49,6 +50,12 @@ const Sidebar = () => {
       title: 'Management',
       items: [
         { 
+          path: '/orders', 
+          icon: <MdShoppingCart size={22} />, 
+          label: 'Orders',
+          badge: null
+        },
+        { 
           path: '/products', 
           icon: <MdInventory size={22} />, 
           label: 'Products',
@@ -61,21 +68,9 @@ const Sidebar = () => {
           badge: null
         },
         { 
-          path: '/suppliers', 
-          icon: <MdBusiness size={22} />, 
-          label: 'Suppliers',
-          badge: null
-        },
-        { 
-          path: '/challens', 
-          icon: <MdPerson size={22} />, 
-          label: 'Challens',
-          badge: null
-        },
-        { 
-          path: '/expenses', 
-          icon: <MdAttachMoney size={22} />, 
-          label: 'Expenses',
+          path: '/transitions', 
+          icon: <MdSwapHoriz size={22} />, 
+          label: 'Transitions',
           badge: null
         },
         { 
@@ -91,38 +86,60 @@ const Sidebar = () => {
           badge: null
         },
         { 
-          path: '/orders', 
-          icon: <MdShoppingCart size={22} />, 
-          label: 'Orders',
-          badge: 'New'
-        },
-      ]
-    },
-    {
-      title: 'Users & Services',
-      items: [
-        { 
           path: '/customers', 
           icon: <MdPeople size={22} />, 
           label: 'Customers',
           badge: null
         },
+      ]
+    },
+    {
+      title: 'Inventory',
+      items: [
         { 
-          path: '/shipping', 
-          icon: <MdLocalShipping size={22} />, 
-          label: 'Shipping',
+          path: '/suppliers', 
+          icon: <MdBusiness size={22} />, 
+          label: 'Suppliers',
           badge: null
         },
         { 
-          path: '/payments', 
-          icon: <MdPayment size={22} />, 
-          label: 'Payments',
+          path: '/challans', 
+          icon: <MdPerson size={22} />, 
+          label: 'Challans',
           badge: null
         },
         { 
-          path: '/store', 
-          icon: <MdStore size={22} />, 
-          label: 'Store',
+          path: '/expenses', 
+          icon: <MdAttachMoney size={22} />, 
+          label: 'Expenses',
+          badge: null
+        },
+      ]
+    },
+    {
+      title: 'Activity',
+      items: [
+        { 
+          path: '/activity', 
+          icon: <MdMenu size={22} />, 
+          label: 'Activity',
+          badge: null
+        },
+      ]
+    },
+    {
+      title: 'Reports',
+      items: [
+        { 
+          path: '/reports/sales', 
+          icon: <MdAttachMoney size={22} />, 
+          label: 'Sales',
+          badge: null
+        },
+        { 
+          path: '/reports/daily', 
+          icon: <MdAnalytics size={22} />, 
+          label: 'Daily',
           badge: null
         },
       ]
@@ -131,9 +148,15 @@ const Sidebar = () => {
       title: 'Settings',
       items: [
         { 
-          path: '/settings', 
+          path: '/settings/hero', 
           icon: <MdSettings size={22} />, 
-          label: 'Settings',
+          label: 'Hero Section',
+          badge: null
+        },
+        { 
+          path: '/settings/documents', 
+          icon: <MdSettings size={22} />, 
+          label: 'Documents',
           badge: null
         },
       ]
