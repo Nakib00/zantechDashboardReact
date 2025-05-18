@@ -21,12 +21,14 @@ import {
   MdStar,
   MdSwapHoriz
 } from 'react-icons/md';
-import { Nav } from 'react-bootstrap';
+import { Nav, Badge } from 'react-bootstrap';
+import { useOrderContext } from '../../context/OrderContext';
 import './Sidebar.css';
 
 const Sidebar = () => {
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
+  const { statusSummary } = useOrderContext();
 
   const menuItems = [
     {
@@ -53,7 +55,11 @@ const Sidebar = () => {
           path: '/orders', 
           icon: <MdShoppingCart size={22} />, 
           label: 'Orders',
-          badge: null
+          badge: statusSummary.processing > 0 ? (
+            <Badge bg="danger" pill className="ms-2">
+              {statusSummary.processing}
+            </Badge>
+          ) : null
         },
         { 
           path: '/products', 

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { FaSearch, FaSpinner, FaEye, FaTimes, FaPlus } from "react-icons/fa";
+import { FaSearch, FaSpinner, FaEye, FaTimes, FaPlus, FaCalendarAlt } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import axiosInstance from "../../config/axios";
-import { Card, Form, InputGroup, Button, Pagination } from "react-bootstrap";
+import { Card, Form, InputGroup, Button, Pagination, Row, Col } from "react-bootstrap";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import Loading from "../../components/Loading";
 import "../Categories/Categories.css";
 
@@ -15,6 +17,8 @@ const Orders = () => {
     search: "",
     page: 1,
     limit: 10,
+    startDate: null,
+    endDate: null,
   });
   const [pagination, setPagination] = useState({
     total: 0,
@@ -27,10 +31,11 @@ const Orders = () => {
   const [searchTimeout, setSearchTimeout] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState({});
+  const [filterStatus, setFilterStatus] = useState("");
 
   useEffect(() => {
     fetchOrders();
-  }, [searchParams.page, searchParams.limit]);
+  }, [searchParams.page, searchParams.limit, searchParams.startDate, searchParams.endDate]);
 
   useEffect(() => {
     if (searchTimeout) {
@@ -60,6 +65,12 @@ const Orders = () => {
         page,
         limit: searchParams.limit,
         ...(searchParams.search && { search: searchParams.search }),
+        ...(searchParams.startDate && { 
+          start_date: searchParams.startDate.toISOString().split('T')[0] 
+        }),
+        ...(searchParams.endDate && { 
+          end_date: searchParams.endDate.toISOString().split('T')[0] 
+        }),
       };
 
       const response = await axiosInstance.get("/orders", { params });
@@ -74,6 +85,7 @@ const Orders = () => {
         setPagination(result.pagination);
       }
     } catch (error) {
+      console.error("Error fetching orders:", error);
       toast.error(error.response?.data?.message || "Failed to fetch orders");
       setOrders([]);
     } finally {
@@ -106,6 +118,38 @@ const Orders = () => {
       page: 1,
     }));
   };
+
+  const handleFilterStatusChange = (e) => {
+    setFilterStatus(e.target.value);
+  };
+
+  const handleDateChange = (dates) => {
+    const [start, end] = dates;
+    if (start && end && start > end) {
+      toast.error("Start date cannot be after end date");
+      return;
+    }
+    
+    setSearchParams(prev => ({
+      ...prev,
+      startDate: start,
+      endDate: end,
+      page: 1
+    }));
+  };
+
+  const clearDateFilter = () => {
+    setSearchParams(prev => ({
+      ...prev,
+      startDate: null,
+      endDate: null,
+      page: 1
+    }));
+  };
+
+  const filteredOrders = filterStatus
+    ? orders.filter(order => order.status?.toString() === filterStatus)
+    : orders;
 
   const handleStatusChange = async (orderId, newStatus) => {
     setUpdatingStatus((prev) => ({ ...prev, [orderId]: true }));
@@ -262,6 +306,38 @@ const Orders = () => {
               >
                 <FaPlus /> Create Order
               </Button>
+              <div className="d-flex align-items-center gap-2">
+                <InputGroup>
+                  <InputGroup.Text>
+                    <FaCalendarAlt />
+                  </InputGroup.Text>
+                  <DatePicker
+                    selected={searchParams.startDate}
+                    onChange={handleDateChange}
+                    startDate={searchParams.startDate}
+                    endDate={searchParams.endDate}
+                    selectsRange
+                    className="form-control"
+                    placeholderText="Select date range"
+                    dateFormat="yyyy-MM-dd"
+                    isClearable
+                    onClear={clearDateFilter}
+                    maxDate={new Date()}
+                    showMonthDropdown
+                    showYearDropdown
+                    dropdownMode="select"
+                  />
+                </InputGroup>
+                {(searchParams.startDate || searchParams.endDate) && (
+                  <Button
+                    variant="outline-secondary"
+                    onClick={clearDateFilter}
+                    className="d-flex align-items-center gap-1"
+                  >
+                    <FaTimes /> Clear Dates
+                  </Button>
+                )}
+              </div>
               <InputGroup style={{ width: "300px" }}>
                 <InputGroup.Text>
                   {isSearching ? (
@@ -288,6 +364,18 @@ const Orders = () => {
                   </Button>
                 )}
               </InputGroup>
+              <Form.Select
+                style={{ width: "auto" }}
+                value={filterStatus}
+                onChange={handleFilterStatusChange}
+              >
+                <option value="">All Statuses</option>
+                <option value="0">On Processing</option>
+                <option value="1">Completed</option>
+                <option value="2">On Hold</option>
+                <option value="3">Cancelled</option>
+                <option value="4">Refunded</option>
+              </Form.Select>
               <Form.Select
                 style={{ width: "auto" }}
                 value={searchParams.limit}
@@ -317,7 +405,7 @@ const Orders = () => {
                 </tr>
               </thead>
               <tbody>
-                {orders.map((order) => (
+                {filteredOrders.map((order) => (
                   <tr key={order.order_id}>
                     <td>{order.order_id}</td>
                     <td>{order.invoice_code}</td>

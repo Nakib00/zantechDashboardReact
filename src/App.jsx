@@ -27,6 +27,7 @@ import Activity from './pages/Activity';
 import Orders from './pages/Orders';
 import ViewOrder from './pages/Orders/ViewOrder';
 import CreateOrder from './pages/Orders/CreateOrder';
+import { OrderProvider } from './context/OrderContext';
 
 const PrivateRoute = ({ children }) => {
   const token = localStorage.getItem('token');
@@ -37,51 +38,53 @@ const App = () => {
   return (
     <BrowserRouter>
       <Toaster position="top-right" />
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route
-          path="/*"
-          element={
-            <PrivateRoute>
-              <>
-                <Header />
-                <div className="main d-flex">
-                  <div className="sidebarwrapper">
-                    <Sidebar />
+      <OrderProvider>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route
+            path="/*"
+            element={
+              <PrivateRoute>
+                <>
+                  <Header />
+                  <div className="main d-flex">
+                    <div className="sidebarwrapper">
+                      <Sidebar />
+                    </div>
+                    <div className="contentwrapper">
+                      <Routes>
+                        <Route path="/" element={<Navigate to="/dashboard" />} />
+                        <Route path="/dashboard" element={<Dashboard />} />
+                        <Route path="/profile" element={<Profile />} />
+                        <Route path="/products" element={<Products />} />
+                        <Route path="/products/add" element={<AddProduct />} />
+                        <Route path="/products/:id" element={<ViewProduct />} />
+                        <Route path="/categories" element={<Categories />} />
+                        <Route path="/suppliers" element={<Suppliers />} />
+                        <Route path="/customers" element={<Customers />} />
+                        <Route path="/customers/:id" element={<ViewCustomer />} />
+                        <Route path="/challens" element={<Challen />} />
+                        <Route path="/challans" element={<Challen />} />
+                        <Route path="/challans/add" element={<AddChallan />} />
+                        <Route path="/challans/:id" element={<ViewChallan />} />
+                        <Route path="/expenses" element={<Expenses />} />
+                        <Route path="/expenses/:id" element={<ViewExpense />} />
+                        <Route path="/coupons" element={<Coupons />} />
+                        <Route path="/ratings" element={<Ratings />} />
+                        <Route path="/transitions" element={<Transitions />} />
+                        <Route path="/activity" element={<Activity />} />
+                        <Route path="/orders" element={<Orders />} />
+                        <Route path="/orders/create" element={<CreateOrder />} />
+                        <Route path="/orders/:id" element={<ViewOrder />} />
+                      </Routes>
+                    </div>
                   </div>
-                  <div className="contentwrapper">
-                    <Routes>
-                      <Route path="/" element={<Navigate to="/dashboard" />} />
-                      <Route path="/dashboard" element={<Dashboard />} />
-                      <Route path="/profile" element={<Profile />} />
-                      <Route path="/products" element={<Products />} />
-                      <Route path="/products/add" element={<AddProduct />} />
-                      <Route path="/products/:id" element={<ViewProduct />} />
-                      <Route path="/categories" element={<Categories />} />
-                      <Route path="/suppliers" element={<Suppliers />} />
-                      <Route path="/customers" element={<Customers />} />
-                      <Route path="/customers/:id" element={<ViewCustomer />} />
-                      <Route path="/challens" element={<Challen />} />
-                      <Route path="/challans" element={<Challen />} />
-                      <Route path="/challans/add" element={<AddChallan />} />
-                      <Route path="/challans/:id" element={<ViewChallan />} />
-                      <Route path="/expenses" element={<Expenses />} />
-                      <Route path="/expenses/:id" element={<ViewExpense />} />
-                      <Route path="/coupons" element={<Coupons />} />
-                      <Route path="/ratings" element={<Ratings />} />
-                      <Route path="/transitions" element={<Transitions />} />
-                      <Route path="/activity" element={<Activity />} />
-                      <Route path="/orders" element={<Orders />} />
-                      <Route path="/orders/create" element={<CreateOrder />} />
-                      <Route path="/orders/:id" element={<ViewOrder />} />
-                    </Routes>
-                  </div>
-                </div>
-              </>
-            </PrivateRoute>
-          }
-        />
-      </Routes>
+                </>
+              </PrivateRoute>
+            }
+          />
+        </Routes>
+      </OrderProvider>
     </BrowserRouter>
   );
 };
