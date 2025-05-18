@@ -17,7 +17,8 @@ import {
   MdMenu,
   MdPerson,
   MdAttachMoney,
-  MdLocalOffer
+  MdLocalOffer,
+  MdStar
 } from 'react-icons/md';
 import { Nav } from 'react-bootstrap';
 import './Sidebar.css';
@@ -81,6 +82,12 @@ const Sidebar = () => {
           path: '/coupons', 
           icon: <MdLocalOffer size={22} />, 
           label: 'Coupons',
+          badge: null
+        },
+        { 
+          path: '/ratings', 
+          icon: <MdStar size={22} />, 
+          label: 'Ratings',
           badge: null
         },
         { 
