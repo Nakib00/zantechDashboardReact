@@ -491,6 +491,32 @@ const ViewOrder = () => {
     }
   };
 
+  const loadProducts = async (inputValue) => {
+    try {
+      const response = await axiosInstance.get('/products', {
+        params: {
+          search: inputValue,
+          limit: 10
+        }
+      });
+
+      if (response.data.success) {
+        return response.data.data.map(product => ({
+          value: product.id,
+          label: product.name,
+          price: product.price,
+          image: product.image,
+          quantity: product.quantity
+        }));
+      }
+      return [];
+    } catch (error) {
+      console.error('Error loading products:', error);
+      toast.error('Failed to load products');
+      return [];
+    }
+  };
+
   if (loading) {
     return <Loading />;
   }
@@ -990,6 +1016,7 @@ const ViewOrder = () => {
                     <Select
                       cacheOptions
                       defaultOptions
+                      loadOptions={loadProducts}
                       onChange={handleItemSelect}
                       placeholder="Search and select items..."
                       noOptionsMessage={() => "No items found"}
@@ -1012,8 +1039,7 @@ const ViewOrder = () => {
                           <div>
                             <div>{option.label}</div>
                             <small className="text-muted">
-                              Price: ৳
-                              {parseFloat(option.price).toLocaleString()} |
+                              Price: ৳{parseFloat(option.price).toLocaleString()} |
                               Available: {option.quantity}
                             </small>
                           </div>
