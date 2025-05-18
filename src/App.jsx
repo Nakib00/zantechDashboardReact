@@ -16,6 +16,8 @@ import Suppliers from "./pages/Suppliers";
 import Challen from "./pages/Challen";
 import AddChallan from "./pages/Challen/AddChallan";
 import ViewChallan from "./pages/Challen/ViewChallan";
+import Expenses from "./pages/Expenses";
+import ViewExpense from "./pages/Expenses/ViewExpense";
 
 const PrivateRoute = ({ children }) => {
   const token = localStorage.getItem('token');
@@ -52,6 +54,8 @@ const App = () => {
                       <Route path="/challans" element={<Challen />} />
                       <Route path="/challans/add" element={<AddChallan />} />
                       <Route path="/challans/:id" element={<ViewChallan />} />
+                      <Route path="/expenses" element={<Expenses />} />
+                      <Route path="/expenses/:id" element={<ViewExpense />} />
                     </Routes>
                   </div>
                 </div>

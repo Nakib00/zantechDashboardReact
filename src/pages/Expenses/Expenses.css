@@ -1,0 +1,676 @@
+.expenses-container {
+  padding: 24px;
+  height: 100%;
+  background-color: #f8f9fa;
+}
+
+.expenses-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  background: white;
+  padding: 16px 24px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.expenses-header h2 {
+  margin: 0;
+  color: #2d3748;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.expenses-table {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.expenses-table th {
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #dee2e6;
+  color: #495057;
+  font-weight: 600;
+  padding: 12px 16px;
+  font-size: 0.875rem;
+}
+
+.expenses-table td {
+  vertical-align: middle;
+  padding: 12px 16px;
+  font-size: 0.875rem;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.expenses-table tr:hover {
+  background-color: #f8f9fa;
+}
+
+.expense-amount {
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.expense-description {
+  max-width: 300px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.expense-prove-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-decoration: none;
+}
+
+.expense-prove-link:hover {
+  text-decoration: none;
+}
+
+.expense-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.expense-actions button {
+  padding: 4px 8px;
+}
+
+.expense-actions button:hover {
+  transform: translateY(-1px);
+}
+
+/* Modal Styles */
+.expense-modal .modal-content {
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.expense-modal .modal-header {
+  border-bottom: 1px solid #edf2f7;
+  padding: 16px 24px;
+}
+
+.expense-modal .modal-body {
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+}
+
+.expense-modal .modal-footer {
+  border-top: 1px solid #edf2f7;
+  padding: 16px 24px;
+}
+
+.expense-modal .form-label {
+  font-weight: 500;
+  color: #4a5568;
+  margin-bottom: 8px;
+}
+
+.expense-modal .form-control {
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  padding: 8px 12px;
+}
+
+.expense-modal .form-control:focus {
+  border-color: #4299e1;
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+/* Loading Spinner */
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+  .expenses-header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+
+  .expenses-header button {
+    width: 100%;
+  }
+
+  .expense-description {
+    max-width: 200px;
+  }
+
+  .expense-actions {
+    flex-direction: column;
+  }
+
+  .expense-actions button {
+    width: 100%;
+  }
+}
+
+/* Search and Filter Styles */
+.search-container {
+  position: relative;
+  width: 100%;
+  max-width: 300px;
+}
+
+.search-input {
+  padding-right: 40px;
+}
+
+.search-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #a0aec0;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.search-clear:hover {
+  color: #4a5568;
+}
+
+/* Pagination Styles */
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+.pagination {
+  margin-bottom: 0;
+}
+
+.pagination .page-item .page-link {
+  color: #4a5568;
+  border: 1px solid #e2e8f0;
+  padding: 8px 12px;
+  margin: 0 2px;
+  border-radius: 4px;
+}
+
+.pagination .page-item.active .page-link {
+  background-color: #4299e1;
+  border-color: #4299e1;
+  color: white;
+}
+
+.pagination .page-item:not(.active) .page-link:hover {
+  background-color: #edf2f7;
+  border-color: #e2e8f0;
+}
+
+/* File Upload Styles */
+.file-upload-container {
+  border: 2px dashed #e2e8f0;
+  border-radius: 8px;
+  padding: 24px;
+  text-align: center;
+  background-color: #f8fafc;
+  transition: all 0.2s ease;
+}
+
+.file-upload-container:hover {
+  border-color: #4299e1;
+  background-color: #ebf8ff;
+}
+
+.file-upload-container input[type="file"] {
+  display: none;
+}
+
+.file-upload-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: #4299e1;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.file-upload-label:hover {
+  background-color: #3182ce;
+}
+
+.file-upload-text {
+  margin-top: 8px;
+  color: #718096;
+  font-size: 0.875rem;
+}
+
+/* Amount Input Styles */
+.amount-input-container {
+  position: relative;
+}
+
+.amount-input-container::before {
+  content: "৳";
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #4a5568;
+  font-weight: 500;
+}
+
+.amount-input {
+  padding-left: 28px !important;
+}
+
+/* View Expense Styles */
+.expense-details {
+  background: white;
+  border-radius: 8px;
+  padding: 24px;
+}
+
+.detail-group {
+  margin-bottom: 24px;
+}
+
+.detail-label {
+  display: block;
+  font-size: 0.875rem;
+  color: #718096;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.detail-value {
+  font-size: 1rem;
+  color: #2d3748;
+  padding: 8px 12px;
+  background-color: #f8fafc;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.proves-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.prove-item {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.prove-preview {
+  aspect-ratio: 16/9;
+  background: #edf2f7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.prove-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.prove-file {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: #4a5568;
+  padding: 16px;
+}
+
+.prove-actions {
+  padding: 12px;
+  display: flex;
+  gap: 8px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.prove-actions button {
+  flex: 1;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .proves-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+  
+  .expense-details {
+    padding: 16px;
+  }
+  
+  .detail-value {
+    font-size: 0.875rem;
+  }
+}
+
+/* File Upload Styles */
+.selected-files,
+.existing-proves {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.selected-files h6,
+.existing-proves h6 {
+  color: #4a5568;
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+.selected-files-list,
+.existing-proves-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.selected-file-item,
+.existing-prove-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.file-name,
+.prove-name {
+  font-size: 0.875rem;
+  color: #4a5568;
+  max-width: 70%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.prove-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.remove-file-btn,
+.remove-prove-btn,
+.view-prove-btn {
+  padding: 4px 8px;
+}
+
+.remove-file-btn:hover,
+.remove-prove-btn:hover {
+  background-color: #fed7d7;
+  border-color: #f56565;
+  color: #c53030;
+}
+
+.view-prove-btn:hover {
+  background-color: #ebf8ff;
+  border-color: #4299e1;
+  color: #2b6cb0;
+}
+
+@media (max-width: 768px) {
+  .selected-file-item,
+  .existing-prove-item {
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .file-name,
+  .prove-name {
+    max-width: 100%;
+  }
+
+  .prove-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+/* Proof Section Styles */
+.proof-section {
+  background-color: #f8fafc;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.proof-section-header {
+  margin-bottom: 16px;
+}
+
+.proof-section-header h6 {
+  color: #2d3748;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+/* Existing Proves Styles */
+.existing-proves {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* Important for flex child scrolling */
+  margin-top: 16px;
+}
+
+.existing-proves h6 {
+  color: #2d3748;
+  font-weight: 600;
+  font-size: 0.875rem;
+  margin-bottom: 12px;
+}
+
+.existing-proves-list {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 8px; /* Add padding for scrollbar */
+  margin-right: -8px; /* Counter the padding */
+  padding-bottom: 12px; /* Add padding at the bottom */
+}
+
+.existing-prove-item {
+  display: flex;
+  flex-direction: column; /* Stack preview and info vertically */
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 12px; /* Space between items */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* More prominent shadow */
+  transition: transform 0.2s ease-in-out; /* Add subtle hover effect */
+}
+
+.existing-prove-item:hover {
+    transform: translateY(-3px); /* Lift card on hover */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); /* Enhance shadow on hover */
+}
+
+.prove-preview {
+  width: 100%; /* Make preview take full width of its container */
+  min-height: 150px; /* Increase minimum height for larger preview */
+  aspect-ratio: 16/9;
+  background: #edf2f7; /* Placeholder background */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-bottom: 1px solid #e2e8f0; /* Separator */
+  flex-shrink: 0; /* Prevent shrinking */
+}
+
+.prove-image {
+  display: block; /* Ensure image is a block element */
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Cover the preview area */
+}
+
+.prove-file {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: #4a5568;
+  padding: 16px;
+}
+
+.prove-info {
+  padding: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  width: 100%; /* Ensure info takes full width */
+  flex-wrap: wrap; /* Allow items to wrap on smaller width */
+  background-color: #f8fafc; /* Slightly different background for info */
+}
+
+.prove-name {
+  font-size: 0.9rem; /* Slightly larger font */
+  color: #2d3748; /* Darker color */
+  font-weight: 500; /* Semi-bold font */
+  flex-grow: 1; /* Allow name to take available space */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-right: 8px; /* Add some space before actions */
+}
+
+.prove-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0; /* Prevent shrinking */
+}
+
+/* Selected Files Styles */
+.selected-files {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.selected-files h6 {
+  color: #2d3748;
+  font-weight: 600;
+  font-size: 0.875rem;
+  margin-bottom: 12px;
+}
+
+.selected-files-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.selected-file-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8fafc;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.file-name {
+  font-size: 0.875rem;
+  color: #4a5568;
+  max-width: 70%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Scrollbar Styles */
+.existing-proves-list::-webkit-scrollbar,
+.selected-files-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.existing-proves-list::-webkit-scrollbar-track,
+.selected-files-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.existing-proves-list::-webkit-scrollbar-thumb,
+.selected-files-list::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 3px;
+}
+
+.existing-proves-list::-webkit-scrollbar-thumb:hover,
+.selected-files-list::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+  .expense-modal .modal-body {
+    max-height: none;
+  }
+
+  .proof-section {
+    border-top: 1px solid #e2e8f0;
+    margin-top: 16px;
+  }
+
+  .existing-prove-item {
+    flex-direction: column; /* Stack items vertically on mobile */
+    margin-bottom: 8px;
+  }
+
+  .prove-info {
+    flex-direction: column;
+    align-items: flex-start;
+    padding-top: 8px;
+  }
+
+  .prove-name {
+    max-width: 100%;
+    margin-right: 0;
+    margin-bottom: 8px; /* Add space below name */
+  }
+
+  .prove-actions {
+    width: 100%;
+    justify-content: flex-end;
+    margin-top: 0;
+  }
+} 
