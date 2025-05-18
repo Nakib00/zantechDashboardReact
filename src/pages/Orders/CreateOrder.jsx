@@ -478,7 +478,7 @@ const CreateOrder = () => {
           {formData.coupon_id && (
             <div className="d-flex justify-content-between mb-2 text-success">
               <span>Coupon Discount</span>
-              <span>-৳{(formData.product_subtotal * (coupons.find(c => c.id === formData.coupon_id)?.discount || 0) / 100).toLocaleString()}</span>
+              <span>-৳{(coupons.find(c => c.id === formData.coupon_id)?.amount || 0).toLocaleString()}</span>
             </div>
           )}
           <hr />
@@ -757,7 +757,7 @@ const CreateOrder = () => {
                         <option value="">Select coupon</option>
                         {coupons.map(coupon => (
                           <option key={coupon.id} value={coupon.id}>
-                            {coupon.code} - {coupon.discount}% off
+                            {coupon.code} - {coupon.amount} off
                           </option>
                         ))}
                       </Form.Select>
