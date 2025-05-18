@@ -20,6 +20,8 @@ import Expenses from "./pages/Expenses";
 import ViewExpense from "./pages/Expenses/ViewExpense";
 import Coupons from "./pages/Coupons";
 import Ratings from "./pages/Ratings";
+import Customers from "./pages/Customers";
+import ViewCustomer from './pages/Customers/ViewCustomer';
 
 const PrivateRoute = ({ children }) => {
   const token = localStorage.getItem('token');
@@ -52,6 +54,8 @@ const App = () => {
                       <Route path="/products/:id" element={<ViewProduct />} />
                       <Route path="/categories" element={<Categories />} />
                       <Route path="/suppliers" element={<Suppliers />} />
+                      <Route path="/customers" element={<Customers />} />
+                      <Route path="/customers/:id" element={<ViewCustomer />} />
                       <Route path="/challens" element={<Challen />} />
                       <Route path="/challans" element={<Challen />} />
                       <Route path="/challans/add" element={<AddChallan />} />
