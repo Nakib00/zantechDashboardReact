@@ -18,7 +18,7 @@ const Expenses = () => {
     to: 5
   });
   const [searchParams, setSearchParams] = useState({
-    limit: 5,
+    limit: 10,
     page: 1,
     date: "",
     start_date: "",
