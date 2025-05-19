@@ -399,6 +399,8 @@ const Orders = () => {
                   <th>Phone</th>
                   <th>Email</th>
                   <th>Total Amount</th>
+                  <th>Paid Amount</th>
+                  <th>Due Amount</th>
                   <th>Status</th>
                   <th>Order Date</th>
                   <th>Actions</th>
@@ -413,6 +415,8 @@ const Orders = () => {
                     <td>{order.user_phone}</td>
                     <td>{order.user_email}</td>
                     <td>৳{parseFloat(order.total_amount).toLocaleString()}</td>
+                    <td>৳{parseFloat(order.paid_amount || 0).toLocaleString()}</td>
+                    <td>৳{parseFloat(order.due_amount || 0).toLocaleString()}</td>
                     <td>
                       <Form.Select
                         value={order.status?.toString() || "0"}

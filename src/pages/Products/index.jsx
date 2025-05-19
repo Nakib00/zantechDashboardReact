@@ -692,6 +692,8 @@ const Products = () => {
                     <th>Name</th>
                     <th>Description</th>
                     <th>Price</th>
+                    <th>Paid</th>
+                    <th>Due</th>
                     <th>Stock</th>
                     <th>Status</th>
                     <th>Actions</th>
@@ -738,6 +740,12 @@ const Products = () => {
                             </Badge>
                           )}
                         </div>
+                      </td>
+                      <td>
+                        <span className="fw-semibold text-success">৳{parseFloat(product.paid_amount || 0).toLocaleString()}</span>
+                      </td>
+                      <td>
+                        <span className="fw-semibold text-danger">৳{parseFloat(product.due_amount || 0).toLocaleString()}</span>
                       </td>
                       <td>
                         <Badge 
