@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Card,
@@ -28,6 +28,7 @@ import {
 import { toast } from "react-hot-toast";
 import axiosInstance from "../../config/axios";
 import Loading from "../../components/Loading";
+import JoditEditor from 'jodit-react';
 
 const ViewProduct = () => {
   const { id } = useParams();
@@ -36,7 +37,6 @@ const ViewProduct = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedImage, setSelectedImage] = useState(0);
-  const [showQuickEdit, setShowQuickEdit] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
   const [imageUploadLoading, setImageUploadLoading] = useState(false);
@@ -49,7 +49,7 @@ const ViewProduct = () => {
     short_description: "",
     quantity: "",
     price: "",
-    discount: "",
+    discount: "0",
   });
   const [showTagModal, setShowTagModal] = useState(false);
   const [tagInput, setTagInput] = useState("");
@@ -73,6 +73,34 @@ const ViewProduct = () => {
   const [updateQuantityLoading, setUpdateQuantityLoading] = useState(null);
   const [editingQuantity, setEditingQuantity] = useState({});
   const [statusLoading, setStatusLoading] = useState(false);
+  const [showImagePreview, setShowImagePreview] = useState(false);
+  const editorRef = useRef(null);
+
+  const editorConfig = useMemo(() => ({
+    readonly: false,
+    placeholder: 'Start typing your product description...',
+    height: 400,
+    toolbar: true,
+    spellcheck: true,
+    language: 'en',
+    toolbarButtonSize: 'medium',
+    buttons: [
+      'source', '|',
+      'bold', 'italic', 'underline', 'strikethrough', '|',
+      'font', 'fontsize', 'brush', 'paragraph', '|',
+      'image', 'table', 'link', '|',
+      'align', '|',
+      'ul', 'ol', '|',
+      'symbol', 'fullsize', 'print', 'about'
+    ],
+    uploader: {
+      insertImageAsBase64URI: true
+    },
+    removeButtons: ['about'],
+    showCharsCounter: true,
+    showWordsCounter: true,
+    showXPathInStatusbar: false
+  }), []);
 
   useEffect(() => {
     fetchProduct();
@@ -87,20 +115,23 @@ const ViewProduct = () => {
         short_description: product.short_description || "",
         quantity: product.quantity || "",
         price: product.price || "",
-        discount: product.discount || "",
+        discount: product.discount || "0",
       });
     }
   }, [product]);
-
-  const handleQuickEdit = () => {
-    setShowQuickEdit(true);
-  };
 
   const handleEditFormChange = (e) => {
     const { name, value } = e.target;
     setEditForm((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: value === "" ? (name === "discount" ? "0" : value) : value,
+    }));
+  };
+
+  const handleEditorChange = (newContent) => {
+    setEditForm(prev => ({
+      ...prev,
+      description: newContent
     }));
   };
 
@@ -138,7 +169,6 @@ const ViewProduct = () => {
       }));
 
       toast.success("Product updated successfully");
-      setShowQuickEdit(false);
     } catch (err) {
       console.error("Error updating product:", err);
       const errorMessage =
@@ -903,153 +933,725 @@ const ViewProduct = () => {
         >
           <FaArrowLeft /> Back to Products
         </Button>
-        <div className="d-flex gap-2">
-          <Button
-            variant="primary"
-            onClick={handleQuickEdit}
-            className="d-flex align-items-center gap-2"
-          >
-            <FaPencilAlt /> Quick Edit
-          </Button>
-          <Button
-            variant="danger"
-            onClick={handleDelete}
-            className="d-flex align-items-center gap-2"
-          >
-            <FaTrash /> Delete Product
-          </Button>
-        </div>
+        <Button
+          variant="outline-danger"
+          size="sm"
+          onClick={handleDelete}
+          className="d-flex align-items-center gap-2"
+        >
+          <FaTrash /> Delete Product
+        </Button>
       </div>
 
-      {/* Quick Edit Modal */}
-      <Modal
-        show={showQuickEdit}
-        onHide={() => !editLoading && setShowQuickEdit(false)}
-        size="lg"
-        centered
-        dialogClassName="modal-dialog-centered"
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>Quick Edit Product</Modal.Title>
-        </Modal.Header>
-        <Form onSubmit={handleQuickEditSubmit}>
-          <Modal.Body>
-            {editLoading ? (
-              <div className="text-center py-4">
-                <Loading />
-                <p className="text-muted mt-2 mb-0">Updating product...</p>
+      <Row>
+        {/* Product Details Section */}
+        <Col lg={12}>
+          <Card className="border-0 shadow-sm mb-4">
+            <Card.Body>
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h2 className="mb-0">{product.name}</h2>
+                <div className="d-flex gap-2">
+                  <Badge
+                    bg={product.quantity > 0 ? "success" : "danger"}
+                    className="px-3 py-2 fs-6"
+                  >
+                    {product.quantity > 0
+                      ? `${product.quantity} in stock`
+                      : "Out of stock"}
+                  </Badge>
+                  <Badge
+                    bg={product.status === "1" ? "success" : "secondary"}
+                    className="px-3 py-2 fs-6"
+                    role="button"
+                    onClick={handleToggleStatus}
+                    style={{ cursor: statusLoading ? 'not-allowed' : 'pointer' }}
+                    disabled={statusLoading}
+                  >
+                    {statusLoading ? (
+                      <Spinner animation="border" size="sm" className="me-1" />
+                    ) : null}
+                    {product.status === "1" ? "Active" : "Inactive"}
+                  </Badge>
+                </div>
               </div>
-            ) : (
-              <Row>
-                <Col md={12}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Product Name</Form.Label>
-                    <Form.Control
-                      type="text"
-                      name="name"
-                      value={editForm.name}
-                      onChange={handleEditFormChange}
-                      required
-                    />
-                  </Form.Group>
-                </Col>
-                <Col md={12}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Short Description</Form.Label>
-                    <Form.Control
-                      as="textarea"
-                      rows={2}
-                      name="short_description"
-                      value={editForm.short_description}
-                      onChange={handleEditFormChange}
-                      placeholder="Enter a brief description of the product"
-                    />
-                  </Form.Group>
-                </Col>
-                <Col md={12}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Description</Form.Label>
-                    <Form.Control
-                      as="textarea"
-                      rows={4}
-                      name="description"
-                      value={editForm.description}
-                      onChange={handleEditFormChange}
-                      placeholder="Enter detailed description of the product"
-                    />
-                  </Form.Group>
-                </Col>
-                <Col md={4}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Price (৳)</Form.Label>
-                    <Form.Control
-                      type="number"
-                      name="price"
-                      value={editForm.price}
-                      onChange={handleEditFormChange}
-                      min="0"
-                      step="0.01"
-                      required
-                    />
-                  </Form.Group>
-                </Col>
-                <Col md={4}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Quantity</Form.Label>
-                    <Form.Control
-                      type="number"
-                      name="quantity"
-                      value={editForm.quantity}
-                      onChange={handleEditFormChange}
-                      min="0"
-                      required
-                    />
-                  </Form.Group>
-                </Col>
-                <Col md={4}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Discount (%)</Form.Label>
-                    <Form.Control
-                      type="number"
-                      name="discount"
-                      value={editForm.discount}
-                      onChange={handleEditFormChange}
-                      min="0"
-                      max="100"
-                    />
-                  </Form.Group>
-                </Col>
-              </Row>
-            )}
-          </Modal.Body>
-          <Modal.Footer>
-            <Button
-              variant="secondary"
-              onClick={() => setShowQuickEdit(false)}
-              disabled={editLoading}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              type="submit"
-              disabled={editLoading}
-              className="d-flex align-items-center gap-2"
-            >
-              {editLoading ? (
+
+              <Form onSubmit={handleQuickEditSubmit} className="mb-4">
+                {editLoading ? (
+                  <div className="text-center py-4">
+                    <Loading />
+                    <p className="text-muted mt-2 mb-0">Updating product...</p>
+                  </div>
+                ) : (
+                  <div className="border rounded p-3 bg-light">
+                    <Row>
+                      <Col md={12}>
+                        <Form.Group className="mb-3">
+                          <Form.Label>Product Name</Form.Label>
+                          <Form.Control
+                            type="text"
+                            name="name"
+                            value={editForm.name}
+                            onChange={handleEditFormChange}
+                            required
+                          />
+                        </Form.Group>
+                      </Col>
+                      <Col md={12}>
+                        <Form.Group className="mb-3">
+                          <Form.Label>Short Description</Form.Label>
+                          <Form.Control
+                            as="textarea"
+                            rows={2}
+                            name="short_description"
+                            value={editForm.short_description}
+                            onChange={handleEditFormChange}
+                            placeholder="Enter a brief description of the product"
+                          />
+                        </Form.Group>
+                      </Col>
+                      <Col md={12}>
+                        <Form.Group className="mb-3">
+                          <Form.Label>Description</Form.Label>
+                          <JoditEditor
+                            ref={editorRef}
+                            value={editForm.description}
+                            config={editorConfig}
+                            tabIndex={1}
+                            onBlur={handleEditorChange}
+                            onChange={handleEditorChange}
+                          />
+                        </Form.Group>
+                      </Col>
+                      <Col md={4}>
+                        <Form.Group className="mb-3">
+                          <Form.Label>Price (৳)</Form.Label>
+                          <Form.Control
+                            type="number"
+                            name="price"
+                            value={editForm.price}
+                            onChange={handleEditFormChange}
+                            min="0"
+                            step="0.01"
+                            required
+                          />
+                        </Form.Group>
+                      </Col>
+                      <Col md={4}>
+                        <Form.Group className="mb-3">
+                          <Form.Label>Quantity</Form.Label>
+                          <Form.Control
+                            type="number"
+                            name="quantity"
+                            value={editForm.quantity}
+                            onChange={handleEditFormChange}
+                            min="0"
+                            required
+                          />
+                        </Form.Group>
+                      </Col>
+                      <Col md={4}>
+                        <Form.Group className="mb-3">
+                          <Form.Label>Discount (%)</Form.Label>
+                          <Form.Control
+                            type="number"
+                            name="discount"
+                            value={editForm.discount || "0"}
+                            onChange={handleEditFormChange}
+                            min="0"
+                            max="100"
+                            placeholder="0"
+                          />
+                          <Form.Text className="text-muted">
+                            Enter 0 if no discount
+                          </Form.Text>
+                        </Form.Group>
+                      </Col>
+                      <Col md={12} className="text-end">
+                        <Button
+                          variant="primary"
+                          type="submit"
+                          className="d-flex align-items-center gap-2"
+                        >
+                          {editLoading ? (
+                            <>
+                              <Spinner animation="border" size="sm" />
+                              Updating...
+                            </>
+                          ) : (
+                            <>
+                              <FaPencilAlt /> Update Product
+                            </>
+                          )}
+                        </Button>
+                      </Col>
+                    </Row>
+                  </div>
+                )}
+              </Form>
+
+              <div className="d-flex align-items-center gap-3 mb-4">
+                <h4 className="mb-0">৳{product.price}</h4>
+                {product.discount > 0 && (
+                  <Badge bg="danger" className="fs-6">
+                    -{product.discount}%
+                  </Badge>
+                )}
+              </div>
+            </Card.Body>
+          </Card>
+
+          {/* Product Images Section */}
+          <Card className="border-0 shadow-sm mb-4">
+            <Card.Body>
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h5 className="mb-0">Product Images</h5>
+                <Button
+                  variant="outline-primary"
+                  size="sm"
+                  onClick={() => setShowImageModal(true)}
+                  className="d-flex align-items-center gap-2"
+                >
+                  <FaPencilAlt /> Add Images
+                </Button>
+              </div>
+
+              {product.images && product.images.length > 0 ? (
+                <div className="table-responsive">
+                  <Table hover className="align-middle mb-0">
+                    <thead>
+                      <tr>
+                        <th style={{ width: "80px" }}>Image</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {product.images.map((image, index) => (
+                        <tr key={image.id}>
+                          <td>
+                            <div 
+                              className="rounded cursor-pointer"
+                              style={{ 
+                                width: "60px", 
+                                height: "60px", 
+                                overflow: "hidden",
+                                cursor: "pointer"
+                              }}
+                              onClick={() => {
+                                setSelectedImage(index);
+                                setShowImagePreview(true);
+                              }}
+                            >
+                              <Image
+                                src={image.path}
+                                alt={`${product.name} - ${index + 1}`}
+                                fluid
+                                style={{
+                                  width: "100%",
+                                  height: "100%",
+                                  objectFit: "cover",
+                                }}
+                                className="rounded"
+                              />
+                            </div>
+                          </td>
+                          <td>
+                            <Button
+                              variant="outline-danger"
+                              size="sm"
+                              onClick={() => handleDeleteImage(image.id)}
+                              disabled={deleteImageLoading === image.id}
+                              className="d-flex align-items-center gap-1"
+                            >
+                              {deleteImageLoading === image.id ? (
+                                <Spinner animation="border" size="sm" />
+                              ) : (
+                                <>
+                                  <FaTrash size={12} /> Delete
+                                </>
+                              )}
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </Table>
+                </div>
+              ) : (
+                <div
+                  className="bg-light rounded d-flex align-items-center justify-content-center"
+                  style={{ height: "100px" }}
+                >
+                  <span className="text-muted">No image available</span>
+                </div>
+              )}
+            </Card.Body>
+          </Card>
+
+          {/* Categories Section */}
+          <Card className="border-0 shadow-sm mb-4">
+            <Card.Body>
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h5 className="mb-0 d-flex align-items-center gap-2">
+                  <FaLayerGroup /> Categories
+                </h5>
+                <Button
+                  variant="outline-primary"
+                  size="sm"
+                  onClick={() => setShowCategoryModal(true)}
+                  className="d-flex align-items-center gap-2"
+                >
+                  <FaLayerGroup /> Add Categories
+                </Button>
+              </div>
+              {product.categories && product.categories.length > 0 ? (
+                <div className="d-flex flex-wrap gap-2">
+                  {product.categories.map((category) => (
+                    <Badge
+                      key={category.id}
+                      bg="info"
+                      className="px-3 py-2 fs-6 d-flex align-items-center gap-2"
+                    >
+                      {category.name}
+                      <Button
+                        variant="link"
+                        className="p-0 text-white"
+                        style={{ fontSize: "0.875rem" }}
+                        onClick={() => handleDeleteCategory(category.id)}
+                        disabled={deleteCategoryLoading === category.id}
+                      >
+                        {deleteCategoryLoading === category.id ? (
+                          <Spinner animation="border" size="sm" />
+                        ) : (
+                          <FaTrash size={12} />
+                        )}
+                      </Button>
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted mb-0">No categories added yet</p>
+              )}
+            </Card.Body>
+          </Card>
+
+          {/* Tags Section */}
+          <Card className="border-0 shadow-sm mb-4">
+            <Card.Body>
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h5 className="mb-0 d-flex align-items-center gap-2">
+                  <FaTag /> Tags
+                </h5>
+                <Button
+                  variant="outline-primary"
+                  size="sm"
+                  onClick={() => setShowTagModal(true)}
+                  className="d-flex align-items-center gap-2"
+                >
+                  <FaTag /> Add Tags
+                </Button>
+              </div>
+              {product.tags && product.tags.length > 0 ? (
+                <div className="d-flex flex-wrap gap-2">
+                  {product.tags.map((tag) => (
+                    <Badge
+                      key={tag.id}
+                      bg="secondary"
+                      className="px-3 py-2 fs-6 d-flex align-items-center gap-2"
+                    >
+                      {tag.tag}
+                      <Button
+                        variant="link"
+                        className="p-0 text-white"
+                        style={{ fontSize: "0.875rem" }}
+                        onClick={() => handleDeleteTag(tag.id)}
+                        disabled={deleteTagLoading === tag.id}
+                      >
+                        {deleteTagLoading === tag.id ? (
+                          <Spinner animation="border" size="sm" />
+                        ) : (
+                          <FaTrash size={12} />
+                        )}
+                      </Button>
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted mb-0">No tags added yet</p>
+              )}
+            </Card.Body>
+          </Card>
+
+          {/* Bundle Products Section */}
+          <Card className="border-0 shadow-sm">
+            <Card.Body>
+              <div className="d-flex justify-content-between align-items-center mb-4">
+                <h4 className="mb-0">Bundle Products</h4>
+              </div>
+
+              {/* Add Bundle Items Section */}
+              <div className="bundle-form-section mb-4">
+                <Card className="border-0 shadow-sm">
+                  <Card.Body>
+                    <div className="d-flex justify-content-between align-items-center mb-3">
+                      <h5 className="mb-0">Add Bundle Items</h5>
+                    </div>
+                    
+                    {/* Search Section */}
+                    <div className="mb-4">
+                      <Form.Group>
+                        <Form.Label className="fw-medium">Search Products</Form.Label>
+                        <InputGroup>
+                          <InputGroup.Text>
+                            <FaSearch />
+                          </InputGroup.Text>
+                          <Form.Control
+                            type="text"
+                            placeholder="Type product name to search..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                          />
+                        </InputGroup>
+                        <Form.Text className="text-muted">
+                          Search for products to add to your bundle
+                        </Form.Text>
+                      </Form.Group>
+                      {searchLoading && (
+                        <div className="text-center mt-3">
+                          <Spinner animation="border" size="sm" />
+                          <span className="ms-2">Searching products...</span>
+                        </div>
+                      )}
+                      {searchResults.length > 0 && (
+                        <div className="mt-3">
+                          <h6 className="mb-2">Search Results</h6>
+                          <div className="border rounded" style={{ maxHeight: "300px", overflowY: "auto" }}>
+                            {searchResults.map((product) => (
+                              <div
+                                key={product.id}
+                                className="p-3 border-bottom d-flex align-items-center justify-content-between hover-bg-light"
+                                style={{ cursor: "pointer" }}
+                                onClick={() => handleSelectProduct(product)}
+                              >
+                                <div className="d-flex align-items-center gap-3">
+                                  {product.images && product.images.length > 0 ? (
+                                    <div className="rounded" style={{ width: "50px", height: "50px", overflow: "hidden" }}>
+                                      <Image
+                                        src={product.images[0].path}
+                                        alt={product.name}
+                                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                        className="rounded"
+                                      />
+                                    </div>
+                                  ) : (
+                                    <div 
+                                      className="rounded bg-light d-flex align-items-center justify-content-center"
+                                      style={{ width: "50px", height: "50px" }}
+                                    >
+                                      <FaShoppingCart className="text-muted" />
+                                    </div>
+                                  )}
+                                  <div>
+                                    <h6 className="mb-1">{product.name}</h6>
+                                    <div className="d-flex gap-3 text-muted small">
+                                      <span>Price: ৳{product.price}</span>
+                                      <span>Stock: {product.quantity}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                                <Button
+                                  variant="outline-primary"
+                                  size="sm"
+                                  className="d-flex align-items-center gap-2"
+                                >
+                                  <FaPlus size={12} /> Add
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Selected Items Section */}
+                    {selectedItems.length > 0 && (
+                      <div className="selected-items-section">
+                        <div className="d-flex justify-content-between align-items-center mb-3">
+                          <h6 className="mb-0">Selected Items ({selectedItems.length})</h6>
+                          <Button
+                            variant="outline-danger"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedItems([]);
+                              setBundleQuantity({});
+                            }}
+                            className="d-flex align-items-center gap-2"
+                          >
+                            <FaTrash size={12} /> Clear All
+                          </Button>
+                        </div>
+                        <div className="table-responsive">
+                          <Table hover className="align-middle mb-0">
+                            <thead>
+                              <tr>
+                                <th style={{ width: "50px" }}>Image</th>
+                                <th>Product</th>
+                                <th style={{ width: "120px" }}>Price</th>
+                                <th style={{ width: "150px" }}>Quantity</th>
+                                <th style={{ width: "100px" }}>Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {selectedItems.map((item) => (
+                                <tr key={item.id}>
+                                  <td>
+                                    {item.images && item.images.length > 0 ? (
+                                      <div className="rounded" style={{ width: "50px", height: "50px", overflow: "hidden" }}>
+                                        <Image
+                                          src={item.images[0].path}
+                                          alt={item.name}
+                                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                          className="rounded"
+                                        />
+                                      </div>
+                                    ) : (
+                                      <div 
+                                        className="rounded bg-light d-flex align-items-center justify-content-center"
+                                        style={{ width: "50px", height: "50px" }}
+                                      >
+                                        <FaShoppingCart className="text-muted" />
+                                      </div>
+                                    )}
+                                  </td>
+                                  <td>
+                                    <div>
+                                      <div className="fw-medium">{item.name}</div>
+                                      <small className="text-muted">Stock: {item.quantity}</small>
+                                    </div>
+                                  </td>
+                                  <td>৳{item.price}</td>
+                                  <td>
+                                    <Form.Control
+                                      type="number"
+                                      size="sm"
+                                      min="1"
+                                      max={item.quantity}
+                                      value={bundleQuantity[item.id] || ""}
+                                      onChange={(e) =>
+                                        setBundleQuantity({
+                                          ...bundleQuantity,
+                                          [item.id]: e.target.value,
+                                        })
+                                      }
+                                      placeholder="Qty"
+                                    />
+                                  </td>
+                                  <td>
+                                    <Button
+                                      variant="outline-danger"
+                                      size="sm"
+                                      onClick={() => handleRemoveSelectedItem(item.id)}
+                                      className="d-flex align-items-center gap-1"
+                                    >
+                                      <FaTrash size={12} />
+                                    </Button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                            <tfoot>
+                              <tr>
+                                <td colSpan="2" className="text-end fw-bold">Total:</td>
+                                <td colSpan="3" className="fw-bold text-primary">
+                                  ৳{selectedItems.reduce((total, item) => 
+                                    total + (item.price * (parseInt(bundleQuantity[item.id]) || 0)), 0
+                                  )}
+                                </td>
+                              </tr>
+                            </tfoot>
+                          </Table>
+                        </div>
+
+                        {bundleError && (
+                          <Alert variant="danger" className="mt-3 mb-0">
+                            {bundleError}
+                          </Alert>
+                        )}
+
+                        <div className="d-flex justify-content-end mt-3">
+                          <Button
+                            variant="primary"
+                            onClick={handleAddToBundle}
+                            disabled={bundleLoading || selectedItems.length === 0}
+                            className="d-flex align-items-center gap-2"
+                          >
+                            {bundleLoading ? (
+                              <>
+                                <Spinner animation="border" size="sm" />
+                                Adding...
+                              </>
+                            ) : (
+                              <>
+                                <FaPlus /> Add to Bundle
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </Card.Body>
+                </Card>
+              </div>
+
+              {/* Existing Bundle Items */}
+              {product.bundle_items && product.bundle_items.length > 0 ? (
                 <>
-                  <Spinner animation="border" size="sm" />
-                  Updating...
+                  <div className="table-responsive">
+                    <Table hover className="align-middle">
+                      <thead>
+                        <tr>
+                          <th style={{ width: "60px" }}>Image</th>
+                          <th>Product Name</th>
+                          <th>Price</th>
+                          <th>Quantity</th>
+                          <th>Total</th>
+                          <th style={{ width: "150px" }}>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {product.bundle_items.map((item) => (
+                          <tr key={item.bundle_id}>
+                            <td>
+                              {item.image ? (
+                                <div className="rounded" style={{ width: "50px", height: "50px", overflow: "hidden" }}>
+                                  <Image
+                                    src={item.image}
+                                    alt={item.name}
+                                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                    className="rounded"
+                                  />
+                                </div>
+                              ) : (
+                                <div 
+                                  className="rounded bg-light d-flex align-items-center justify-content-center"
+                                  style={{ width: "50px", height: "50px" }}
+                                >
+                                  <FaShoppingCart className="text-muted" />
+                                </div>
+                              )}
+                            </td>
+                            <td>
+                              <div>
+                                <div className="fw-medium">{item.name}</div>
+                                {item.discount > 0 && (
+                                  <Badge bg="danger" className="mt-1">
+                                    -{item.discount}%
+                                  </Badge>
+                                )}
+                              </div>
+                            </td>
+                            <td>৳{item.price}</td>
+                            <td>
+                              {editingQuantity[item.bundle_id] ? (
+                                <div className="d-flex align-items-center gap-2">
+                                  <Form.Control
+                                    type="number"
+                                    size="sm"
+                                    style={{ width: "80px" }}
+                                    min="1"
+                                    value={editingQuantity[item.bundle_id]}
+                                    onChange={(e) => setEditingQuantity({
+                                      ...editingQuantity,
+                                      [item.bundle_id]: e.target.value
+                                    })}
+                                  />
+                                  <Button
+                                    variant="success"
+                                    size="sm"
+                                    onClick={() => handleUpdateBundleQuantity(item.bundle_id, editingQuantity[item.bundle_id])}
+                                    disabled={updateQuantityLoading === item.bundle_id}
+                                  >
+                                    {updateQuantityLoading === item.bundle_id ? (
+                                      <Spinner animation="border" size="sm" />
+                                    ) : (
+                                      "Save"
+                                    )}
+                                  </Button>
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => setEditingQuantity({})}
+                                    disabled={updateQuantityLoading === item.bundle_id}
+                                  >
+                                    Cancel
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div className="d-flex align-items-center gap-2">
+                                  <span>{item.bundle_quantity}</span>
+                                  <Button
+                                    variant="outline-primary"
+                                    size="sm"
+                                    onClick={() => setEditingQuantity({
+                                      ...editingQuantity,
+                                      [item.bundle_id]: item.bundle_quantity
+                                    })}
+                                    disabled={updateQuantityLoading === item.bundle_id}
+                                  >
+                                    <FaPencilAlt size={12} />
+                                  </Button>
+                                </div>
+                              )}
+                            </td>
+                            <td className="fw-bold text-primary">৳{item.price * item.bundle_quantity}</td>
+                            <td>
+                              <div className="d-flex gap-2">
+                                <Button
+                                  variant="outline-primary"
+                                  size="sm"
+                                  onClick={() => navigate(`/products/${item.item_id}`)}
+                                >
+                                  View
+                                </Button>
+                                <Button
+                                  variant="outline-danger"
+                                  size="sm"
+                                  onClick={() => handleDeleteBundleItem(item.bundle_id)}
+                                  disabled={deleteBundleLoading === item.bundle_id || updateQuantityLoading === item.bundle_id}
+                                >
+                                  {deleteBundleLoading === item.bundle_id ? (
+                                    <Spinner animation="border" size="sm" />
+                                  ) : (
+                                    <FaTrash />
+                                  )}
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr>
+                          <td colSpan="4" className="text-end fw-bold"><h4>Bundle Total:</h4></td>
+                          <td colSpan="2" className="fw-bold text-primary">
+                            <h4>৳{product.bundle_items.reduce((total, item) => total + (item.price * item.bundle_quantity), 0)}</h4>
+                            <div className="text-muted small">
+                              <h6>Total of {product.bundle_items.length} items</h6>
+                            </div>
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </Table>
+                  </div>
                 </>
               ) : (
-                <>
-                  <FaPencilAlt /> Update Product
-                </>
+                <p className="text-muted mb-0">No bundle items added yet</p>
               )}
-            </Button>
-          </Modal.Footer>
-        </Form>
-      </Modal>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Modals */}
 
       {/* Add Image Modal */}
       <Modal
@@ -1285,64 +1887,37 @@ const ViewProduct = () => {
         </Modal.Footer>
       </Modal>
 
-      <Row>
-        {/* Product Images Section */}
-        <Col lg={6} className="mb-4">
-          <Card className="border-0 shadow-sm h-100">
-            <Card.Body>
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <h5 className="mb-0">Product Images</h5>
-                <Button
-                  variant="outline-primary"
-                  size="sm"
-                  onClick={() => setShowImageModal(true)}
-                  className="d-flex align-items-center gap-2"
-                >
-                  <FaPencilAlt /> Add Images
-                </Button>
+      {/* Image Preview Modal */}
+      <Modal
+        show={showImagePreview}
+        onHide={() => setShowImagePreview(false)}
+        centered
+        size="lg"
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Image Preview</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="text-center p-0">
+          {product.images && product.images.length > 0 && (
+            <>
+              <div className="position-relative">
+                <Image
+                  src={product.images[selectedImage].path}
+                  alt={product.name}
+                  fluid
+                  className="rounded"
+                  style={{ maxHeight: "70vh", objectFit: "contain" }}
+                />
               </div>
-              <div className="text-center mb-3">
-                {product.images && product.images.length > 0 ? (
-                  <div className="position-relative">
-                    <Image
-                      src={product.images[selectedImage].path}
-                      alt={product.name}
-                      fluid
-                      className="rounded"
-                      style={{ maxHeight: "400px", objectFit: "contain" }}
-                    />
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      className="position-absolute top-0 end-0 m-2"
-                      onClick={() => handleDeleteImage(product.images[selectedImage].id)}
-                      disabled={deleteImageLoading === product.images[selectedImage].id}
-                    >
-                      {deleteImageLoading === product.images[selectedImage].id ? (
-                        <Spinner animation="border" size="sm" />
-                      ) : (
-                        <FaTrash />
-                      )}
-                    </Button>
-                  </div>
-                ) : (
-                  <div
-                    className="bg-light rounded d-flex align-items-center justify-content-center"
-                    style={{ height: "400px" }}
-                  >
-                    <span className="text-muted">No image available</span>
-                  </div>
-                )}
-              </div>
-              {product.images && product.images.length > 1 && (
-                <div className="d-flex gap-2 justify-content-center flex-wrap">
+              {product.images.length > 1 && (
+                <div className="d-flex gap-2 justify-content-center flex-wrap p-3 bg-light">
                   {product.images.map((image, index) => (
                     <div
                       key={image.id}
                       className="position-relative"
                       style={{
-                        width: "80px",
-                        height: "80px",
+                        width: "60px",
+                        height: "60px",
                         border:
                           selectedImage === index
                             ? "2px solid #0d6efd"
@@ -1351,557 +1926,26 @@ const ViewProduct = () => {
                         overflow: "hidden",
                         cursor: "pointer",
                       }}
+                      onClick={() => setSelectedImage(index)}
                     >
-                      <div
-                        className="w-100 h-100"
-                        onClick={() => setSelectedImage(index)}
-                      >
-                        <Image
-                          src={image.path}
-                          alt={`${product.name} - ${index + 1}`}
-                          fluid
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                          }}
-                        />
-                      </div>
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        className="position-absolute top-0 end-0 m-1"
-                        style={{ padding: "0.1rem 0.3rem" }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteImage(image.id);
+                      <Image
+                        src={image.path}
+                        alt={`${product.name} - ${index + 1}`}
+                        fluid
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
                         }}
-                        disabled={deleteImageLoading === image.id}
-                      >
-                        {deleteImageLoading === image.id ? (
-                          <Spinner animation="border" size="sm" />
-                        ) : (
-                          <FaTrash size={12} />
-                        )}
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </Card.Body>
-          </Card>
-        </Col>
-
-        {/* Product Details Section */}
-        <Col lg={6}>
-          <Card className="border-0 shadow-sm mb-4">
-            <Card.Body>
-              <h2 className="mb-3">{product.name}</h2>
-              <p className="text-muted mb-3">{product.short_description}</p>
-
-              <div className="mb-4">
-                <h5 className="mb-3">Description</h5>
-                <p className="mb-0">{product.description}</p>
-              </div>
-
-              <div className="d-flex align-items-center gap-3 mb-4">
-                <h4 className="mb-0">৳{product.price}</h4>
-                {product.discount > 0 && (
-                  <Badge bg="danger" className="fs-6">
-                    -{product.discount}%
-                  </Badge>
-                )}
-              </div>
-
-              <div className="d-flex align-items-center gap-3 mb-4">
-                <Badge
-                  bg={product.quantity > 0 ? "success" : "danger"}
-                  className="px-3 py-2 fs-6"
-                >
-                  {product.quantity > 0
-                    ? `${product.quantity} in stock`
-                    : "Out of stock"}
-                </Badge>
-                <Badge
-                  bg={product.status === "1" ? "success" : "secondary"}
-                  className="px-3 py-2 fs-6"
-                  role="button"
-                  onClick={handleToggleStatus}
-                  style={{ cursor: statusLoading ? 'not-allowed' : 'pointer' }}
-                  disabled={statusLoading}
-                >
-                  {statusLoading ? (
-                    <Spinner animation="border" size="sm" className="me-1" />
-                  ) : null}
-                  {product.status === "1" ? "Active" : "Inactive"}
-                </Badge>
-              </div>
-            </Card.Body>
-          </Card>
-
-          {/* Categories Section - Separate Card */}
-          <Card className="border-0 shadow-sm mb-4">
-            <Card.Body>
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <h5 className="mb-0 d-flex align-items-center gap-2">
-                  <FaLayerGroup /> Categories
-                </h5>
-                <Button
-                  variant="outline-primary"
-                  size="sm"
-                  onClick={() => setShowCategoryModal(true)}
-                  className="d-flex align-items-center gap-2"
-                >
-                  <FaLayerGroup /> Add Categories
-                </Button>
-              </div>
-              {product.categories && product.categories.length > 0 ? (
-                <div className="d-flex flex-wrap gap-2">
-                  {product.categories.map((category) => (
-                    <Badge
-                      key={category.id}
-                      bg="info"
-                      className="px-3 py-2 fs-6 d-flex align-items-center gap-2"
-                    >
-                      {category.name}
-                      <Button
-                        variant="link"
-                        className="p-0 text-white"
-                        style={{ fontSize: "0.875rem" }}
-                        onClick={() => handleDeleteCategory(category.id)}
-                        disabled={deleteCategoryLoading === category.id}
-                      >
-                        {deleteCategoryLoading === category.id ? (
-                          <Spinner animation="border" size="sm" />
-                        ) : (
-                          <FaTrash size={12} />
-                        )}
-                      </Button>
-                    </Badge>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-muted mb-0">No categories added yet</p>
-              )}
-            </Card.Body>
-          </Card>
-
-          {/* Tags Section - Separate Card */}
-          <Card className="border-0 shadow-sm">
-            <Card.Body>
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <h5 className="mb-0 d-flex align-items-center gap-2">
-                  <FaTag /> Tags
-                </h5>
-                <Button
-                  variant="outline-primary"
-                  size="sm"
-                  onClick={() => setShowTagModal(true)}
-                  className="d-flex align-items-center gap-2"
-                >
-                  <FaTag /> Add Tags
-                </Button>
-              </div>
-              {product.tags && product.tags.length > 0 ? (
-                <div className="d-flex flex-wrap gap-2">
-                  {product.tags.map((tag) => (
-                    <Badge
-                      key={tag.id}
-                      bg="secondary"
-                      className="px-3 py-2 fs-6 d-flex align-items-center gap-2"
-                    >
-                      {tag.tag}
-                      <Button
-                        variant="link"
-                        className="p-0 text-white"
-                        style={{ fontSize: "0.875rem" }}
-                        onClick={() => handleDeleteTag(tag.id)}
-                        disabled={deleteTagLoading === tag.id}
-                      >
-                        {deleteTagLoading === tag.id ? (
-                          <Spinner animation="border" size="sm" />
-                        ) : (
-                          <FaTrash size={12} />
-                        )}
-                      </Button>
-                    </Badge>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-muted mb-0">No tags added yet</p>
-              )}
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-
-      {/* Bundle Products Section */}
-      <Card className="border-0 shadow-sm mt-4">
-        <Card.Body>
-          <div className="d-flex justify-content-between align-items-center mb-4">
-            <h4 className="mb-0">Bundle Products</h4>
-          </div>
-
-          {/* Add Bundle Items Section */}
-          <div className="bundle-form-section mb-4">
-            <Card className="border-0 shadow-sm">
-              <Card.Body>
-                <div className="d-flex justify-content-between align-items-center mb-3">
-                  <h5 className="mb-0">Add Bundle Items</h5>
-                </div>
-                
-                {/* Search Section */}
-                <div className="mb-4">
-                  <Form.Group>
-                    <Form.Label className="fw-medium">Search Products</Form.Label>
-                    <InputGroup>
-                      <InputGroup.Text>
-                        <FaSearch />
-                      </InputGroup.Text>
-                      <Form.Control
-                        type="text"
-                        placeholder="Type product name to search..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
                       />
-                    </InputGroup>
-                    <Form.Text className="text-muted">
-                      Search for products to add to your bundle
-                    </Form.Text>
-                  </Form.Group>
-                  {searchLoading && (
-                    <div className="text-center mt-3">
-                      <Spinner animation="border" size="sm" />
-                      <span className="ms-2">Searching products...</span>
                     </div>
-                  )}
-                  {searchResults.length > 0 && (
-                    <div className="mt-3">
-                      <h6 className="mb-2">Search Results</h6>
-                      <div className="border rounded" style={{ maxHeight: "300px", overflowY: "auto" }}>
-                        {searchResults.map((product) => (
-                          <div
-                            key={product.id}
-                            className="p-3 border-bottom d-flex align-items-center justify-content-between hover-bg-light"
-                            style={{ cursor: "pointer" }}
-                            onClick={() => handleSelectProduct(product)}
-                          >
-                            <div className="d-flex align-items-center gap-3">
-                              {product.images && product.images.length > 0 ? (
-                                <div className="rounded" style={{ width: "50px", height: "50px", overflow: "hidden" }}>
-                                  <Image
-                                    src={product.images[0].path}
-                                    alt={product.name}
-                                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                                    className="rounded"
-                                  />
-                                </div>
-                              ) : (
-                                <div 
-                                  className="rounded bg-light d-flex align-items-center justify-content-center"
-                                  style={{ width: "50px", height: "50px" }}
-                                >
-                                  <FaShoppingCart className="text-muted" />
-                                </div>
-                              )}
-                              <div>
-                                <h6 className="mb-1">{product.name}</h6>
-                                <div className="d-flex gap-3 text-muted small">
-                                  <span>Price: ৳{product.price}</span>
-                                  <span>Stock: {product.quantity}</span>
-                                </div>
-                              </div>
-                            </div>
-                            <Button
-                              variant="outline-primary"
-                              size="sm"
-                              className="d-flex align-items-center gap-2"
-                            >
-                              <FaPlus size={12} /> Add
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  ))}
                 </div>
-
-                {/* Selected Items Section */}
-                {selectedItems.length > 0 && (
-                  <div className="selected-items-section">
-                    <div className="d-flex justify-content-between align-items-center mb-3">
-                      <h6 className="mb-0">Selected Items ({selectedItems.length})</h6>
-                      <Button
-                        variant="outline-danger"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedItems([]);
-                          setBundleQuantity({});
-                        }}
-                        className="d-flex align-items-center gap-2"
-                      >
-                        <FaTrash size={12} /> Clear All
-                      </Button>
-                    </div>
-                    <div className="table-responsive">
-                      <Table hover className="align-middle mb-0">
-                        <thead>
-                          <tr>
-                            <th style={{ width: "50px" }}>Image</th>
-                            <th>Product</th>
-                            <th style={{ width: "120px" }}>Price</th>
-                            <th style={{ width: "150px" }}>Quantity</th>
-                            <th style={{ width: "100px" }}>Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {selectedItems.map((item) => (
-                            <tr key={item.id}>
-                              <td>
-                                {item.images && item.images.length > 0 ? (
-                                  <div className="rounded" style={{ width: "50px", height: "50px", overflow: "hidden" }}>
-                                    <Image
-                                      src={item.images[0].path}
-                                      alt={item.name}
-                                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                                      className="rounded"
-                                    />
-                                  </div>
-                                ) : (
-                                  <div 
-                                    className="rounded bg-light d-flex align-items-center justify-content-center"
-                                    style={{ width: "50px", height: "50px" }}
-                                  >
-                                    <FaShoppingCart className="text-muted" />
-                                  </div>
-                                )}
-                              </td>
-                              <td>
-                                <div>
-                                  <div className="fw-medium">{item.name}</div>
-                                  <small className="text-muted">Stock: {item.quantity}</small>
-                                </div>
-                              </td>
-                              <td>৳{item.price}</td>
-                              <td>
-                                <Form.Control
-                                  type="number"
-                                  size="sm"
-                                  min="1"
-                                  max={item.quantity}
-                                  value={bundleQuantity[item.id] || ""}
-                                  onChange={(e) =>
-                                    setBundleQuantity({
-                                      ...bundleQuantity,
-                                      [item.id]: e.target.value,
-                                    })
-                                  }
-                                  placeholder="Qty"
-                                />
-                              </td>
-                              <td>
-                                <Button
-                                  variant="outline-danger"
-                                  size="sm"
-                                  onClick={() => handleRemoveSelectedItem(item.id)}
-                                  className="d-flex align-items-center gap-1"
-                                >
-                                  <FaTrash size={12} />
-                                </Button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                        <tfoot>
-                          <tr>
-                            <td colSpan="2" className="text-end fw-bold">Total:</td>
-                            <td colSpan="3" className="fw-bold text-primary">
-                              ৳{selectedItems.reduce((total, item) => 
-                                total + (item.price * (parseInt(bundleQuantity[item.id]) || 0)), 0
-                              )}
-                            </td>
-                          </tr>
-                        </tfoot>
-                      </Table>
-                    </div>
-
-                    {bundleError && (
-                      <Alert variant="danger" className="mt-3 mb-0">
-                        {bundleError}
-                      </Alert>
-                    )}
-
-                    <div className="d-flex justify-content-end mt-3">
-                      <Button
-                        variant="primary"
-                        onClick={handleAddToBundle}
-                        disabled={bundleLoading || selectedItems.length === 0}
-                        className="d-flex align-items-center gap-2"
-                      >
-                        {bundleLoading ? (
-                          <>
-                            <Spinner animation="border" size="sm" />
-                            Adding...
-                          </>
-                        ) : (
-                          <>
-                            <FaPlus /> Add to Bundle
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </Card.Body>
-            </Card>
-          </div>
-
-          {/* Existing Bundle Items */}
-          {product.bundle_items && product.bundle_items.length > 0 ? (
-            <>
-              <div className="table-responsive">
-                <Table hover className="align-middle">
-                  <thead>
-                    <tr>
-                      <th style={{ width: "60px" }}>Image</th>
-                      <th>Product Name</th>
-                      <th>Price</th>
-                      <th>Quantity</th>
-                      <th>Total</th>
-                      <th style={{ width: "150px" }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {product.bundle_items.map((item) => (
-                      <tr key={item.bundle_id}>
-                        <td>
-                          {item.image ? (
-                            <div className="rounded" style={{ width: "50px", height: "50px", overflow: "hidden" }}>
-                              <Image
-                                src={item.image}
-                                alt={item.name}
-                                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                                className="rounded"
-                              />
-                            </div>
-                          ) : (
-                            <div 
-                              className="rounded bg-light d-flex align-items-center justify-content-center"
-                              style={{ width: "50px", height: "50px" }}
-                            >
-                              <FaShoppingCart className="text-muted" />
-                            </div>
-                          )}
-                        </td>
-                        <td>
-                          <div>
-                            <div className="fw-medium">{item.name}</div>
-                            {item.discount > 0 && (
-                              <Badge bg="danger" className="mt-1">
-                                -{item.discount}%
-                              </Badge>
-                            )}
-                          </div>
-                        </td>
-                        <td>৳{item.price}</td>
-                        <td>
-                          {editingQuantity[item.bundle_id] ? (
-                            <div className="d-flex align-items-center gap-2">
-                              <Form.Control
-                                type="number"
-                                size="sm"
-                                style={{ width: "80px" }}
-                                min="1"
-                                value={editingQuantity[item.bundle_id]}
-                                onChange={(e) => setEditingQuantity({
-                                  ...editingQuantity,
-                                  [item.bundle_id]: e.target.value
-                                })}
-                              />
-                              <Button
-                                variant="success"
-                                size="sm"
-                                onClick={() => handleUpdateBundleQuantity(item.bundle_id, editingQuantity[item.bundle_id])}
-                                disabled={updateQuantityLoading === item.bundle_id}
-                              >
-                                {updateQuantityLoading === item.bundle_id ? (
-                                  <Spinner animation="border" size="sm" />
-                                ) : (
-                                  "Save"
-                                )}
-                              </Button>
-                              <Button
-                                variant="secondary"
-                                size="sm"
-                                onClick={() => setEditingQuantity({})}
-                                disabled={updateQuantityLoading === item.bundle_id}
-                              >
-                                Cancel
-                              </Button>
-                            </div>
-                          ) : (
-                            <div className="d-flex align-items-center gap-2">
-                              <span>{item.bundle_quantity}</span>
-                              <Button
-                                variant="outline-primary"
-                                size="sm"
-                                onClick={() => setEditingQuantity({
-                                  ...editingQuantity,
-                                  [item.bundle_id]: item.bundle_quantity
-                                })}
-                                disabled={updateQuantityLoading === item.bundle_id}
-                              >
-                                <FaPencilAlt size={12} />
-                              </Button>
-                            </div>
-                          )}
-                        </td>
-                        <td className="fw-bold text-primary">৳{item.price * item.bundle_quantity}</td>
-                        <td>
-                          <div className="d-flex gap-2">
-                            <Button
-                              variant="outline-primary"
-                              size="sm"
-                              onClick={() => navigate(`/products/${item.item_id}`)}
-                            >
-                              View
-                            </Button>
-                            <Button
-                              variant="outline-danger"
-                              size="sm"
-                              onClick={() => handleDeleteBundleItem(item.bundle_id)}
-                              disabled={deleteBundleLoading === item.bundle_id || updateQuantityLoading === item.bundle_id}
-                            >
-                              {deleteBundleLoading === item.bundle_id ? (
-                                <Spinner animation="border" size="sm" />
-                              ) : (
-                                <FaTrash />
-                              )}
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr>
-                      <td colSpan="4" className="text-end fw-bold"><h4>Bundle Total:</h4></td>
-                      <td colSpan="2" className="fw-bold text-primary">
-                        <h4>৳{product.bundle_items.reduce((total, item) => total + (item.price * item.bundle_quantity), 0)}</h4>
-                        <div className="text-muted small">
-                          <h6>Total of {product.bundle_items.length} items</h6>
-                        </div>
-                      </td>
-                    </tr>
-                  </tfoot>
-                </Table>
-              </div>
+              )}
             </>
-          ) : (
-            <p className="text-muted mb-0">No bundle items added yet</p>
           )}
-        </Card.Body>
-      </Card>
+        </Modal.Body>
+      </Modal>
     </div>
   );
 };

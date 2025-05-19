@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { FaPlus, FaTimes, FaTag, FaBox, FaBoxes, FaImages, FaDollarSign, FaPercent, FaSave, FaTags, FaSearch, FaSpinner } from 'react-icons/fa';
 import axiosInstance from '../../config/axios';
 import Loading from '../../components/Loading';
+import JoditEditor from 'jodit-react';
 import './AddProduct.css';
 import AsyncSelect from 'react-select/async';
 
@@ -34,6 +35,33 @@ const AddProduct = () => {
   const [imagePreview, setImagePreview] = useState([]);
   const [dragActive, setDragActive] = useState(false);
   const [imageError, setImageError] = useState('');
+  const editorRef = useRef(null);
+
+  const editorConfig = useMemo(() => ({
+    readonly: false,
+    placeholder: 'Start typing your product description...',
+    height: 400,
+    toolbar: true,
+    spellcheck: true,
+    language: 'en',
+    toolbarButtonSize: 'medium',
+    buttons: [
+      'source', '|',
+      'bold', 'italic', 'underline', 'strikethrough', '|',
+      'font', 'fontsize', 'brush', 'paragraph', '|',
+      'image', 'table', 'link', '|',
+      'align', '|',
+      'ul', 'ol', '|',
+      'symbol', 'fullsize', 'print', 'about'
+    ],
+    uploader: {
+      insertImageAsBase64URI: true
+    },
+    removeButtons: ['about'],
+    showCharsCounter: true,
+    showWordsCounter: true,
+    showXPathInStatusbar: false
+  }), []);
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -337,6 +365,13 @@ const AddProduct = () => {
     }
   };
 
+  const handleEditorChange = (newContent) => {
+    setFormData(prev => ({
+      ...prev,
+      description: newContent
+    }));
+  };
+
   if (pageLoading) {
     return <Loading />;
   }
@@ -386,14 +421,13 @@ const AddProduct = () => {
 
             <div className="form-group">
               <label htmlFor="description">Full Description</label>
-              <textarea
-                id="description"
-                name="description"
+              <JoditEditor
+                ref={editorRef}
                 value={formData.description}
-                onChange={handleInputChange}
-                className="form-control"
-                rows="4"
-                placeholder="Detailed product description"
+                config={editorConfig}
+                tabIndex={1}
+                onBlur={handleEditorChange}
+                onChange={newContent => {}}
               />
             </div>
           </div>

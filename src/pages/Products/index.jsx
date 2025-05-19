@@ -34,7 +34,7 @@ const Products = () => {
     short_description: '',
     quantity: '',
     price: '',
-    discount: ''
+    discount: '0'
   });
   const navigate = useNavigate();
   const [searchTimeout, setSearchTimeout] = useState(null);
@@ -221,11 +221,9 @@ const Products = () => {
     setSelectedProduct(product);
     setEditForm({
       name: product.name || '',
-      description: product.description || '',
-      short_description: product.short_description || '',
-      quantity: product.quantity || '',
       price: product.price || '',
-      discount: product.discount || ''
+      quantity: product.quantity || '',
+      discount: product.discount || '0'
     });
     setShowQuickEdit(true);
   };
@@ -234,7 +232,7 @@ const Products = () => {
     const { name, value } = e.target;
     setEditForm(prev => ({
       ...prev,
-      [name]: value
+      [name]: value === '' ? (name === 'discount' ? '0' : value) : value
     }));
   };
 
@@ -558,7 +556,7 @@ const Products = () => {
           </Modal>
 
           {/* Quick Edit Modal */}
-          <Modal show={showQuickEdit} onHide={() => !editLoading && setShowQuickEdit(false)} size="lg">
+          <Modal show={showQuickEdit} onHide={() => !editLoading && setShowQuickEdit(false)}>
             <Modal.Header closeButton>
               <Modal.Title>Quick Edit Product</Modal.Title>
             </Modal.Header>
@@ -571,7 +569,7 @@ const Products = () => {
                   </div>
                 ) : (
                   <Row>
-                    <Col md={6}>
+                    <Col md={12}>
                       <Form.Group className="mb-3">
                         <Form.Label>Product Name</Form.Label>
                         <Form.Control
@@ -580,29 +578,6 @@ const Products = () => {
                           value={editForm.name}
                           onChange={handleEditFormChange}
                           required
-                        />
-                      </Form.Group>
-                    </Col>
-                    <Col md={6}>
-                      <Form.Group className="mb-3">
-                        <Form.Label>Short Description</Form.Label>
-                        <Form.Control
-                          type="text"
-                          name="short_description"
-                          value={editForm.short_description}
-                          onChange={handleEditFormChange}
-                        />
-                      </Form.Group>
-                    </Col>
-                    <Col md={12}>
-                      <Form.Group className="mb-3">
-                        <Form.Label>Description</Form.Label>
-                        <Form.Control
-                          as="textarea"
-                          rows={3}
-                          name="description"
-                          value={editForm.description}
-                          onChange={handleEditFormChange}
                         />
                       </Form.Group>
                     </Col>
@@ -639,11 +614,15 @@ const Products = () => {
                         <Form.Control
                           type="number"
                           name="discount"
-                          value={editForm.discount}
+                          value={editForm.discount || '0'}
                           onChange={handleEditFormChange}
                           min="0"
                           max="100"
+                          placeholder="0"
                         />
+                        <Form.Text className="text-muted">
+                          Enter 0 if no discount
+                        </Form.Text>
                       </Form.Group>
                     </Col>
                   </Row>
