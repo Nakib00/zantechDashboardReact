@@ -4,6 +4,7 @@ import { FaShoppingCart, FaBox, FaMoneyBillWave } from 'react-icons/fa';
 import axiosInstance from '../../config/axios';
 import { toast } from 'react-hot-toast';
 import './Dashboard.css';
+import Loading from '../../components/Loading';
 
 const Dashboard = () => {
     const [dashboardData, setDashboardData] = useState({
@@ -12,6 +13,7 @@ const Dashboard = () => {
         total_revenue: 0
     });
     const [loading, setLoading] = useState(true);
+    const [pageLoading, setPageLoading] = useState(true);
 
     useEffect(() => {
         fetchDashboardData();
@@ -29,15 +31,12 @@ const Dashboard = () => {
             toast.error(error.response?.data?.message || 'Failed to fetch dashboard data');
         } finally {
             setLoading(false);
+            setPageLoading(false);
         }
     };
 
-    if (loading) {
-        return (
-            <div className="dashboard-loading">
-                <div className="loading-text">Loading Dashboard...</div>
-            </div>
-        );
+    if (pageLoading) {
+        return <Loading />;
     }
 
     return (
