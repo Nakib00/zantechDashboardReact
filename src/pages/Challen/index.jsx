@@ -26,7 +26,6 @@ import {
   ListGroup,
 } from "react-bootstrap";
 import Select from "react-select/async";
-import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import Loading from "../../components/Loading";
 import "../Categories/Categories.css";
@@ -44,8 +43,7 @@ const Challen = () => {
     search: "",
     page: 1,
     limit: 10,
-    startDate: null,
-    endDate: null,
+    date: null,
   });
   const [pagination, setPagination] = useState({
     total_rows: 0,
@@ -66,7 +64,7 @@ const Challen = () => {
     }
 
     const timeoutId = setTimeout(() => {
-      if (searchParams.search !== "" || searchParams.startDate || searchParams.endDate) {
+      if (searchParams.search !== "" || searchParams.date) {
         setIsSearching(true);
         fetchChallans(1);
       }
@@ -79,11 +77,34 @@ const Challen = () => {
         clearTimeout(timeoutId);
       }
     };
-  }, [searchParams.search, searchParams.startDate, searchParams.endDate]);
+  }, [searchParams.search, searchParams.date]);
 
   useEffect(() => {
     fetchSuppliers();
   }, []);
+
+  const formatDateForAPI = (date) => {
+    if (!date) return null;
+    // Ensure we're working with a Date object
+    const dateObj = date instanceof Date ? date : new Date(date);
+    // Format as YYYY-MM-DD for API
+    return dateObj.toISOString().split('T')[0];
+  };
+
+  const formatDateForDisplay = (dateString) => {
+    if (!dateString) return '';
+    // Convert API date string to local date string (YYYY-MM-DD)
+    return new Date(dateString).toISOString().split('T')[0];
+  };
+
+  const handleDateChange = (e) => {
+    const value = e.target.value ? new Date(e.target.value + 'T00:00:00') : null;
+    setSearchParams(prev => ({
+      ...prev,
+      date: value,
+      page: 1
+    }));
+  };
 
   const fetchChallans = async (page = searchParams.page) => {
     setLoading(true);
@@ -92,8 +113,7 @@ const Challen = () => {
         page,
         limit: searchParams.limit,
         ...(searchParams.search && { search: searchParams.search }),
-        ...(searchParams.startDate && { startDate: searchParams.startDate.toISOString().split("T")[0] }),
-        ...(searchParams.endDate && { endDate: searchParams.endDate.toISOString().split("T")[0] }),
+        ...(searchParams.date && { date: formatDateForAPI(searchParams.date) }),
       };
 
       const response = await axiosInstance.get("/challans", { params });
@@ -103,7 +123,13 @@ const Challen = () => {
         throw new Error(result.message || "Failed to fetch challans");
       }
 
-      setChallans(result.data);
+      // Format dates in the response data
+      const formattedChallans = result.data.map(challan => ({
+        ...challan,
+        Date: formatDateForDisplay(challan.Date)
+      }));
+
+      setChallans(formattedChallans);
       if (result.pagination) {
         setPagination(result.pagination);
       }
@@ -363,34 +389,23 @@ const Challen = () => {
     return items;
   };
 
-  const handleDateChange = (dates) => {
-    const [start, end] = dates;
-    
-    // Validate dates
-    if (start && end && start > end) {
-      toast.error("Start date cannot be after end date");
-      return;
-    }
-
-    // Format dates to start and end of day
-    const formattedStart = start ? new Date(start.setHours(0, 0, 0, 0)) : null;
-    const formattedEnd = end ? new Date(end.setHours(23, 59, 59, 999)) : null;
-    
+  const clearDateFilter = () => {
     setSearchParams(prev => ({
       ...prev,
-      startDate: formattedStart,
-      endDate: formattedEnd,
+      date: null,
       page: 1
     }));
   };
 
-  const clearDateFilter = () => {
-    setSearchParams(prev => ({
-      ...prev,
-      startDate: null,
-      endDate: null,
-      page: 1
-    }));
+  // Update the table row date display
+  const renderDate = (dateString) => {
+    if (!dateString) return '';
+    try {
+      return new Date(dateString).toLocaleDateString();
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return dateString;
+    }
   };
 
   if (loading && challans.length === 0) {
@@ -451,33 +466,13 @@ const Challen = () => {
                     <InputGroup.Text>
                       <FaCalendarAlt />
                     </InputGroup.Text>
-                    <DatePicker
-                      selected={searchParams.startDate}
+                    <Form.Control
+                      type="date"
+                      value={searchParams.date ? formatDateForAPI(searchParams.date) : ''}
                       onChange={handleDateChange}
-                      startDate={searchParams.startDate}
-                      endDate={searchParams.endDate}
-                      selectsRange
-                      className="form-control date-picker-input"
-                      placeholderText="Select date range"
-                      dateFormat="yyyy-MM-dd - yyyy-MM-dd"
-                      isClearable
-                      onClear={clearDateFilter}
-                      maxDate={new Date()}
-                      showMonthDropdown
-                      showYearDropdown
-                      dropdownMode="select"
-                      monthsShown={2}
-                      calendarStartDay={1}
-                      popperClassName="date-range-popper"
-                      popperPlacement="bottom-start"
-                      popperModifiers={[
-                        {
-                          name: "preventOverflow",
-                          options: {
-                            boundary: "viewport"
-                          }
-                        }
-                      ]}
+                      className="date-input"
+                      max={formatDateForAPI(new Date())}
+                      placeholder="Select date"
                     />
                   </InputGroup>
                 </div>
@@ -495,13 +490,13 @@ const Challen = () => {
                 </Form.Select>
               </Col>
               <Col md={2}>
-                {(searchParams.startDate || searchParams.endDate) && (
+                {searchParams.date && (
                   <Button
                     variant="outline-secondary"
                     onClick={clearDateFilter}
                     className="clear-dates-btn w-100"
                   >
-                    <FaTimes className="me-2" /> Clear Dates
+                    <FaTimes className="me-2" /> Clear Date
                   </Button>
                 )}
               </Col>
@@ -525,7 +520,7 @@ const Challen = () => {
                   {challans.map((challan) => (
                     <tr key={challan.id}>
                       <td className="fw-medium">#{challan.id}</td>
-                      <td>{new Date(challan.Date).toLocaleDateString()}</td>
+                      <td>{renderDate(challan.Date)}</td>
                       <td>
                         <button
                           className="btn btn-link p-0 text-primary supplier-link"

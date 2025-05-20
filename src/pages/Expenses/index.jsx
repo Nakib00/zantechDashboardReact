@@ -3,7 +3,6 @@ import { FaPlus, FaEdit, FaTrash, FaSpinner, FaChevronLeft, FaChevronRight, FaEy
 import { toast } from "react-hot-toast";
 import axiosInstance from "../../config/axios";
 import { Card, Form, Button, Pagination, Row, Col, Modal, InputGroup } from "react-bootstrap";
-import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import "./Expenses.css";
 import { Link } from "react-router-dom";
@@ -24,6 +23,7 @@ const Expenses = () => {
     search: "",
     limit: 10,
     page: 1,
+    exactDate: null,
     startDate: null,
     endDate: null
   });
@@ -40,7 +40,21 @@ const Expenses = () => {
 
   useEffect(() => {
     fetchExpenses();
-  }, [searchParams.page, searchParams.limit, searchParams.startDate, searchParams.endDate]);
+  }, [searchParams.page, searchParams.limit, searchParams.exactDate, searchParams.startDate, searchParams.endDate]);
+
+  const formatDateForAPI = (date) => {
+    if (!date) return null;
+    // Ensure we're working with a Date object
+    const dateObj = date instanceof Date ? date : new Date(date);
+    // Format as YYYY-MM-DD for API
+    return dateObj.toISOString().split('T')[0];
+  };
+
+  const formatDateForDisplay = (dateString) => {
+    if (!dateString) return '';
+    // Convert API date string to local date string (YYYY-MM-DD)
+    return new Date(dateString).toISOString().split('T')[0];
+  };
 
   const fetchExpenses = async (page = searchParams.page) => {
     setLoading(true);
@@ -48,13 +62,19 @@ const Expenses = () => {
       const params = {
         page,
         limit: searchParams.limit,
-        ...(searchParams.startDate && { start_date: searchParams.startDate.toISOString().split('T')[0] }),
-        ...(searchParams.endDate && { end_date: searchParams.endDate.toISOString().split('T')[0] })
+        ...(searchParams.exactDate && { date: formatDateForAPI(searchParams.exactDate) }),
+        ...(searchParams.startDate && { start_date: formatDateForAPI(searchParams.startDate) }),
+        ...(searchParams.endDate && { end_date: formatDateForAPI(searchParams.endDate) })
       };
 
       const response = await axiosInstance.get("/expenses", { params });
       if (response.data.success) {
-        setExpenses(response.data.data);
+        // Format dates in the response data
+        const formattedExpenses = response.data.data.map(expense => ({
+          ...expense,
+          date: formatDateForDisplay(expense.date)
+        }));
+        setExpenses(formattedExpenses);
         setPagination(response.data.pagination);
       } else {
         throw new Error(response.data.message || "Failed to fetch expenses");
@@ -246,23 +266,56 @@ const Expenses = () => {
     }));
   };
 
-  const handleDateChange = (dates) => {
-    const [start, end] = dates;
+  const handleExactDateChange = (e) => {
+    const value = e.target.value ? new Date(e.target.value + 'T00:00:00') : null;
     setSearchParams(prev => ({
       ...prev,
-      startDate: start,
-      endDate: end,
-      page: 1
-    }));
-  };
-
-  const clearDateFilter = () => {
-    setSearchParams(prev => ({
-      ...prev,
+      exactDate: value,
       startDate: null,
       endDate: null,
       page: 1
     }));
+  };
+
+  const handleDateRangeChange = (e, type) => {
+    const value = e.target.value ? new Date(e.target.value + 'T00:00:00') : null;
+    
+    if (type === 'start' && value && searchParams.endDate && value > searchParams.endDate) {
+      toast.error("Start date cannot be after end date");
+      return;
+    }
+    
+    if (type === 'end' && value && searchParams.startDate && value < searchParams.startDate) {
+      toast.error("End date cannot be before start date");
+      return;
+    }
+
+    setSearchParams(prev => ({
+      ...prev,
+      [type === 'start' ? 'startDate' : 'endDate']: value,
+      exactDate: null, // Clear exact date when using date range
+      page: 1
+    }));
+  };
+
+  const clearDateFilters = () => {
+    setSearchParams(prev => ({
+      ...prev,
+      exactDate: null,
+      startDate: null,
+      endDate: null,
+      page: 1
+    }));
+  };
+
+  const renderDate = (dateString) => {
+    if (!dateString) return '';
+    try {
+      return new Date(dateString).toLocaleDateString();
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return dateString;
+    }
   };
 
   if (loading && expenses.length === 0) {
@@ -317,31 +370,46 @@ const Expenses = () => {
                   </InputGroup>
                 </div>
               </Col>
+              <Col md={2}>
+                <div className="date-filter-box">
+                  <InputGroup>
+                    <InputGroup.Text>
+                      <FaCalendarAlt />
+                    </InputGroup.Text>
+                    <Form.Control
+                      type="date"
+                      value={searchParams.exactDate ? formatDateForAPI(searchParams.exactDate) : ''}
+                      onChange={handleExactDateChange}
+                      className="date-input"
+                      max={formatDateForAPI(new Date())}
+                      placeholder="Exact date"
+                    />
+                  </InputGroup>
+                  <small className="text-muted">Or use date range below</small>
+                </div>
+              </Col>
               <Col md={3}>
                 <div className="date-filter-box">
                   <InputGroup>
                     <InputGroup.Text>
                       <FaCalendarAlt />
                     </InputGroup.Text>
-                    <DatePicker
-                      selected={searchParams.startDate}
-                      onChange={handleDateChange}
-                      startDate={searchParams.startDate}
-                      endDate={searchParams.endDate}
-                      selectsRange
-                      className="form-control date-picker-input"
-                      placeholderText="Select date range"
-                      dateFormat="yyyy-MM-dd - yyyy-MM-dd"
-                      isClearable
-                      onClear={clearDateFilter}
-                      maxDate={new Date()}
-                      showMonthDropdown
-                      showYearDropdown
-                      dropdownMode="select"
-                      monthsShown={2}
-                      calendarStartDay={1}
-                      popperClassName="date-range-popper"
-                      popperPlacement="bottom-start"
+                    <Form.Control
+                      type="date"
+                      value={searchParams.startDate ? formatDateForAPI(searchParams.startDate) : ''}
+                      onChange={(e) => handleDateRangeChange(e, 'start')}
+                      className="date-input"
+                      max={searchParams.endDate ? formatDateForAPI(searchParams.endDate) : formatDateForAPI(new Date())}
+                      placeholder="Start date"
+                    />
+                    <Form.Control
+                      type="date"
+                      value={searchParams.endDate ? formatDateForAPI(searchParams.endDate) : ''}
+                      onChange={(e) => handleDateRangeChange(e, 'end')}
+                      className="date-input"
+                      min={searchParams.startDate ? formatDateForAPI(searchParams.startDate) : undefined}
+                      max={formatDateForAPI(new Date())}
+                      placeholder="End date"
                     />
                   </InputGroup>
                 </div>
@@ -359,10 +427,10 @@ const Expenses = () => {
                 </Form.Select>
               </Col>
               <Col md={2}>
-                {(searchParams.startDate || searchParams.endDate) && (
+                {(searchParams.exactDate || searchParams.startDate || searchParams.endDate) && (
                   <Button
                     variant="outline-secondary"
-                    onClick={clearDateFilter}
+                    onClick={clearDateFilters}
                     className="clear-dates-btn w-100"
                   >
                     <FaTimes className="me-2" /> Clear Dates
@@ -389,7 +457,7 @@ const Expenses = () => {
                   {expenses.map((expense) => (
                     <tr key={expense.id}>
                       <td className="fw-medium">#{expense.id}</td>
-                      <td>{new Date(expense.date).toLocaleDateString()}</td>
+                      <td>{renderDate(expense.date)}</td>
                       <td>{expense.title}</td>
                       <td className="expense-amount fw-medium">৳{parseFloat(expense.amount).toLocaleString()}</td>
                       <td className="expense-description">{expense.description || "N/A"}</td>

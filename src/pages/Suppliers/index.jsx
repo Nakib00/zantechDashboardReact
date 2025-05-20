@@ -219,22 +219,26 @@ const Suppliers = () => {
                       <td>{supplier.phone2 || "N/A"}</td>
                       <td>{supplier.address}</td>
                       <td>
-                        <Button
-                          variant="outline-info"
-                          size="sm"
-                          className="view-btn me-2"
-                          onClick={() => openEditModal(supplier)}
-                        >
-                          <FaEdit className="me-1" /> Edit
-                        </Button>
-                        <Button
-                          variant="outline-danger"
-                          size="sm"
-                          className="view-btn"
-                          onClick={() => handleDeleteSupplier(supplier.id)}
-                        >
-                          <FaTrash className="me-1" /> Delete
-                        </Button>
+                        <div className="d-flex gap-2">
+                          <Button
+                            variant="outline-primary"
+                            size="sm"
+                            onClick={() => openEditModal(supplier)}
+                            title="Edit"
+                            className="view-btn"
+                          >
+                            <FaEdit />
+                          </Button>
+                          <Button
+                            variant="outline-danger"
+                            size="sm"
+                            onClick={() => handleDeleteSupplier(supplier.id)}
+                            title="Delete"
+                            className="delete-btn"
+                          >
+                            <FaTrash />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}

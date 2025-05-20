@@ -19,8 +19,6 @@ import {
   InputGroup,
 } from "react-bootstrap";
 import Loading from "../../components/Loading";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
 import "./Transitions.css";
 import "../Categories/Categories.css";
 
@@ -55,6 +53,11 @@ const Transitions = () => {
     searchParams.end_date,
   ]);
 
+  const formatDateForAPI = (date) => {
+    if (!date) return null;
+    return date.toISOString().split('T')[0]; // Returns YYYY-MM-DD format
+  };
+
   const fetchTransitions = async (page = searchParams.page) => {
     setLoading(true);
     try {
@@ -62,12 +65,8 @@ const Transitions = () => {
         page,
         limit: searchParams.limit,
         duration: searchParams.duration,
-        start_date: searchParams.start_date
-          ? searchParams.start_date.toISOString().split("T")[0]
-          : null,
-        end_date: searchParams.end_date
-          ? searchParams.end_date.toISOString().split("T")[0]
-          : null,
+        start_date: formatDateForAPI(searchParams.start_date),
+        end_date: formatDateForAPI(searchParams.end_date),
       };
 
       const response = await axiosInstance.get("/transiions", { params });
@@ -102,12 +101,27 @@ const Transitions = () => {
     }));
   };
 
-  const handleDateRangeChange = (dates) => {
-    const [start, end] = dates;
+  const handleDateChange = (e, type) => {
+    const value = e.target.value ? new Date(e.target.value + 'T00:00:00') : null;
+    
+    if (type === 'start' && value && searchParams.end_date && value > searchParams.end_date) {
+      toast.error("Start date cannot be after end date");
+      return;
+    }
+    
+    if (type === 'end' && value && searchParams.start_date && value < searchParams.start_date) {
+      toast.error("End date cannot be before start date");
+      return;
+    }
+
+    // For end date, set time to end of day (23:59:59)
+    if (type === 'end' && value) {
+      value.setHours(23, 59, 59, 999);
+    }
+
     setSearchParams((prev) => ({
       ...prev,
-      start_date: start,
-      end_date: end,
+      [type === 'start' ? 'start_date' : 'end_date']: value,
       duration: "",
       page: 1,
     }));
@@ -268,16 +282,20 @@ const Transitions = () => {
                     <InputGroup.Text>
                       <FaCalendarAlt />
                     </InputGroup.Text>
-                    <DatePicker
-                      selected={searchParams.start_date}
-                      onChange={handleDateRangeChange}
-                      startDate={searchParams.start_date}
-                      endDate={searchParams.end_date}
-                      selectsRange
-                      dateFormat="yyyy-MM-dd"
-                      placeholderText="Select date range"
-                      className="form-control date-picker-input"
-                      isClearable
+                    <Form.Control
+                      type="date"
+                      value={searchParams.start_date ? formatDateForAPI(searchParams.start_date) : ''}
+                      onChange={(e) => handleDateChange(e, 'start')}
+                      className="date-input"
+                      max={searchParams.end_date ? formatDateForAPI(searchParams.end_date) : formatDateForAPI(new Date())}
+                    />
+                    <Form.Control
+                      type="date"
+                      value={searchParams.end_date ? formatDateForAPI(searchParams.end_date) : ''}
+                      onChange={(e) => handleDateChange(e, 'end')}
+                      className="date-input"
+                      min={searchParams.start_date ? formatDateForAPI(searchParams.start_date) : undefined}
+                      max={formatDateForAPI(new Date())}
                     />
                   </InputGroup>
                 </div>

@@ -21,8 +21,6 @@ import {
   Col,
   Badge,
 } from "react-bootstrap";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
 import Loading from "../../components/Loading";
 import "./Orders.css";
 
@@ -145,23 +143,22 @@ const Orders = () => {
     setFilterStatus(e.target.value);
   };
 
-  const handleDateChange = (dates) => {
-    const [start, end] = dates;
-
-    // Validate dates
-    if (start && end && start > end) {
+  const handleDateChange = (e, type) => {
+    const value = e.target.value ? new Date(e.target.value) : null;
+    
+    if (type === 'start' && value && searchParams.endDate && value > searchParams.endDate) {
       toast.error("Start date cannot be after end date");
       return;
     }
-
-    // Format dates to start and end of day
-    const formattedStart = start ? new Date(start.setHours(0, 0, 0, 0)) : null;
-    const formattedEnd = end ? new Date(end.setHours(23, 59, 59, 999)) : null;
+    
+    if (type === 'end' && value && searchParams.startDate && value < searchParams.startDate) {
+      toast.error("End date cannot be before start date");
+      return;
+    }
 
     setSearchParams((prev) => ({
       ...prev,
-      startDate: formattedStart,
-      endDate: formattedEnd,
+      [type === 'start' ? 'startDate' : 'endDate']: value,
       page: 1,
     }));
   };
@@ -380,33 +377,20 @@ const Orders = () => {
                     <InputGroup.Text>
                       <FaCalendarAlt />
                     </InputGroup.Text>
-                    <DatePicker
-                      selected={searchParams.startDate}
-                      onChange={handleDateChange}
-                      startDate={searchParams.startDate}
-                      endDate={searchParams.endDate}
-                      selectsRange
-                      className="form-control date-picker-input"
-                      placeholderText="Select date range"
-                      dateFormat="yyyy-MM-dd - yyyy-MM-dd"
-                      isClearable
-                      onClear={clearDateFilter}
-                      maxDate={new Date()}
-                      showMonthDropdown
-                      showYearDropdown
-                      dropdownMode="select"
-                      monthsShown={2}
-                      calendarStartDay={1}
-                      popperClassName="date-range-popper"
-                      popperPlacement="bottom-start"
-                      popperModifiers={[
-                        {
-                          name: "preventOverflow",
-                          options: {
-                            boundary: "viewport",
-                          },
-                        },
-                      ]}
+                    <Form.Control
+                      type="date"
+                      value={searchParams.startDate ? searchParams.startDate.toISOString().split('T')[0] : ''}
+                      onChange={(e) => handleDateChange(e, 'start')}
+                      className="date-input"
+                      max={searchParams.endDate ? searchParams.endDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}
+                    />
+                    <Form.Control
+                      type="date"
+                      value={searchParams.endDate ? searchParams.endDate.toISOString().split('T')[0] : ''}
+                      onChange={(e) => handleDateChange(e, 'end')}
+                      className="date-input"
+                      min={searchParams.startDate ? searchParams.startDate.toISOString().split('T')[0] : undefined}
+                      max={new Date().toISOString().split('T')[0]}
                     />
                   </InputGroup>
                 </div>

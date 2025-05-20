@@ -427,20 +427,28 @@ const Categories = () => {
                           </span>
                         </td>
                         <td data-label="Actions" className="action-buttons">
-                          <button
-                            className="btn btn-sm btn-outline-primary me-2"
-                            onClick={() => openEditModal(category)}
-                            disabled={tableLoading}
-                          >
-                            <FaEdit /> Edit
-                          </button>
-                          <button
-                            className="btn btn-sm btn-outline-danger"
-                            onClick={() => handleDeleteCategory(category.id)}
-                            disabled={tableLoading}
-                          >
-                            <FaTrash /> Delete
-                          </button>
+                          <div className="d-flex gap-2">
+                            <Button
+                              variant="outline-primary"
+                              size="sm"
+                              onClick={() => openEditModal(category)}
+                              disabled={tableLoading}
+                              title="Edit"
+                              className="view-btn"
+                            >
+                              <FaEdit />
+                            </Button>
+                            <Button
+                              variant="outline-danger"
+                              size="sm"
+                              onClick={() => handleDeleteCategory(category.id)}
+                              disabled={tableLoading}
+                              title="Delete"
+                              className="delete-btn"
+                            >
+                              <FaTrash />
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     ))}

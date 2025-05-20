@@ -450,20 +450,28 @@ const Coupons = () => {
                         <td data-label="Code">{coupon.code}</td>
                         <td data-label="Amount">৳{parseFloat(coupon.amount).toLocaleString()}</td>
                         <td data-label="Actions" className="action-buttons">
-                          <button
-                            className="btn btn-sm btn-outline-primary me-2"
-                            onClick={() => openEditModal(coupon)}
-                            disabled={tableLoading}
-                          >
-                            <FaEdit /> Edit
-                          </button>
-                          <button
-                            className="btn btn-sm btn-outline-danger"
-                            onClick={() => handleDeleteCoupon(coupon.id)}
-                            disabled={tableLoading}
-                          >
-                            <FaTrash /> Delete
-                          </button>
+                          <div className="d-flex gap-2">
+                            <Button
+                              variant="outline-primary"
+                              size="sm"
+                              onClick={() => openEditModal(coupon)}
+                              disabled={tableLoading}
+                              title="Edit"
+                              className="view-btn"
+                            >
+                              <FaEdit />
+                            </Button>
+                            <Button
+                              variant="outline-danger"
+                              size="sm"
+                              onClick={() => handleDeleteCoupon(coupon.id)}
+                              disabled={tableLoading}
+                              title="Delete"
+                              className="delete-btn"
+                            >
+                              <FaTrash />
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     ))}
