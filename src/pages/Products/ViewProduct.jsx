@@ -997,14 +997,28 @@ const ViewProduct = () => {
                       <Col md={12}>
                         <Form.Group className="mb-3">
                           <Form.Label>Short Description</Form.Label>
-                          <Form.Control
-                            as="textarea"
-                            rows={2}
-                            name="short_description"
+                          <JoditEditor
+                            ref={editorRef}
                             value={editForm.short_description}
-                            onChange={handleEditFormChange}
-                            placeholder="Enter a brief description of the product"
-                            className="form-control-lg"
+                            config={{
+                              ...editorConfig,
+                              height: 200,
+                              placeholder: 'Enter a brief description (displayed in listings)...',
+                              buttons: [
+                                'bold', 'italic', 'underline', '|',
+                                'ul', 'ol', '|',
+                                'link', '|',
+                                'align', '|',
+                                'source'
+                              ]
+                            }}
+                            tabIndex={1}
+                            onBlur={(newContent) => {
+                              setEditForm(prev => ({
+                                ...prev,
+                                short_description: newContent
+                              }));
+                            }}
                           />
                         </Form.Group>
                       </Col>
@@ -1017,7 +1031,6 @@ const ViewProduct = () => {
                             config={editorConfig}
                             tabIndex={1}
                             onBlur={handleEditorChange}
-                            onChange={handleEditorChange}
                           />
                         </Form.Group>
                       </Col>

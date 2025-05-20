@@ -407,14 +407,29 @@ const AddProduct = () => {
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="short_description">Short Description</label>
-                <input
-                  type="text"
-                  id="short_description"
-                  name="short_description"
+                <JoditEditor
+                  ref={editorRef}
                   value={formData.short_description}
-                  onChange={handleInputChange}
-                  className="form-control"
-                  placeholder="Brief description (displayed in listings)"
+                  config={{
+                    ...editorConfig,
+                    height: 200,
+                    placeholder: 'Enter a brief description (displayed in listings)...',
+                    buttons: [
+                      'bold', 'italic', 'underline', '|',
+                      'ul', 'ol', '|',
+                      'link', '|',
+                      'align', '|',
+                      'source'
+                    ]
+                  }}
+                  tabIndex={1}
+                  onBlur={(newContent) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      short_description: newContent
+                    }));
+                  }}
+                  onChange={newContent => {}}
                 />
               </div>
             </div>

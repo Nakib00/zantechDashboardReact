@@ -595,7 +595,6 @@ const Products = () => {
                       <th>ID</th>
                       <th>Image</th>
                       <th>Name</th>
-                      <th>Description</th>
                       <th>Price</th>
                       <th>Stock</th>
                       <th>Status</th>
@@ -622,13 +621,7 @@ const Products = () => {
                         <td data-label="Name">
                           <div>
                             <h6 className="mb-0">{product.name}</h6>
-                            <small className="text-muted">{product.short_description}</small>
                           </div>
-                        </td>
-                        <td data-label="Description">
-                          <p className="mb-0 text-truncate" style={{ maxWidth: '200px' }}>
-                            {product.description}
-                          </p>
                         </td>
                         <td data-label="Price">
                           <div>
