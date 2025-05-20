@@ -34,6 +34,9 @@ const CreateOrder = () => {
   const [isGuest, setIsGuest] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
 
+  // Add ref for menu portal
+  const menuPortalTarget = document.body;
+
   // Load coupons on component mount
   useEffect(() => {
     fetchCoupons();
@@ -506,9 +509,9 @@ const CreateOrder = () => {
   );
 
   return (
-    <div className="categories-container">
-      <Card>
-        <Card.Body>
+    <div className="orders-container">
+      <Card className="modern-card">
+        <Card.Body className="p-4">
           <div className="d-flex justify-content-between align-items-center mb-4">
             <div>
               <Button
@@ -518,319 +521,347 @@ const CreateOrder = () => {
               >
                 <FaArrowLeft className="me-2" /> Back to Orders
               </Button>
-              <h2 className="mb-0">Create New Order</h2>
+              <h2 className="page-title mb-1">Create New Order</h2>
+              <p className="text-muted mb-0">Add a new order to the system</p>
             </div>
           </div>
 
           {renderProgressBar()}
 
-          <Form onSubmit={handleSubmit} className="add-product-form">
+          <Form onSubmit={handleSubmit}>
             <Row>
               <Col lg={8}>
-                <h5 className="mb-3 mt-4 d-flex align-items-center">
-                  <FaUser className="me-2" /> Customer Information
-                </h5>
-                <hr />
-                <Form.Group className="mb-3">
-                  <Form.Label>
-                    Customer
-                    <OverlayTrigger
-                      placement="top"
-                      overlay={<Tooltip>Search for an existing customer or create a guest order</Tooltip>}
-                    >
-                      <FaInfoCircle className="ms-2 text-muted" />
-                    </OverlayTrigger>
-                  </Form.Label>
-                  <div className="d-flex gap-2 align-items-center">
-                    <div style={{ flex: 1 }}>
+                <Card className="modern-card mb-4">
+                  <Card.Body>
+                    <h5 className="mb-3 d-flex align-items-center">
+                      <FaUser className="me-2" /> Customer Information
+                    </h5>
+                    <hr className="mb-4" />
+                    <Form.Group className="mb-3">
+                      <Form.Label className="fw-medium">
+                        Customer
+                        <OverlayTrigger
+                          placement="top"
+                          overlay={<Tooltip>Search for an existing customer or create a guest order</Tooltip>}
+                        >
+                          <FaInfoCircle className="ms-2 text-muted" />
+                        </OverlayTrigger>
+                      </Form.Label>
+                      <div className="d-flex gap-2 align-items-center">
+                        <div style={{ flex: 1 }}>
+                          <Select
+                            isClearable
+                            cacheOptions
+                            defaultOptions
+                            loadOptions={loadUsers}
+                            onChange={handleUserChange}
+                            placeholder="Search customer by name, email or phone..."
+                            isDisabled={isGuest}
+                            styles={customSelectStyles}
+                            formatOptionLabel={formatOptionLabel}
+                            className={validationErrors.user_id ? 'is-invalid' : ''}
+                            noOptionsMessage={() => "No customers found"}
+                            loadingMessage={() => "Searching customers..."}
+                            classNamePrefix="customer-select"
+                            menuPortalTarget={menuPortalTarget}
+                            menuPosition="fixed"
+                            menuPlacement="auto"
+                          />
+                          {validationErrors.user_id && (
+                            <div className="invalid-feedback d-block">
+                              {validationErrors.user_id}
+                            </div>
+                          )}
+                        </div>
+                        <Form.Check
+                          type="checkbox"
+                          label="Guest Customer"
+                          checked={isGuest}
+                          onChange={(e) => {
+                            setIsGuest(e.target.checked);
+                            if (e.target.checked) {
+                              setFormData(prev => ({
+                                ...prev,
+                                user_id: null,
+                                shipping_id: null
+                              }));
+                            }
+                          }}
+                        />
+                      </div>
+                    </Form.Group>
+
+                    {isGuest && (
+                      <div className="guest-fields">
+                        <Form.Group className="mb-3">
+                          <Form.Label className="fw-medium">Guest Name</Form.Label>
+                          <Form.Control
+                            type="text"
+                            value={formData.user_name}
+                            onChange={(e) => {
+                              setFormData(prev => ({ ...prev, user_name: e.target.value }));
+                              setValidationErrors(prev => ({ ...prev, user_name: null }));
+                            }}
+                            isInvalid={!!validationErrors.user_name}
+                            placeholder="Enter guest name"
+                            className="modern-input"
+                          />
+                          <Form.Control.Feedback type="invalid">
+                            {validationErrors.user_name}
+                          </Form.Control.Feedback>
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                          <Form.Label className="fw-medium">Guest Phone</Form.Label>
+                          <Form.Control
+                            type="text"
+                            value={formData.userphone}
+                            onChange={(e) => setFormData(prev => ({ ...prev, userphone: e.target.value }))}
+                            placeholder="Enter guest phone number"
+                            className="modern-input"
+                          />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                          <Form.Label className="fw-medium">Guest Address</Form.Label>
+                          <Form.Control
+                            as="textarea"
+                            value={formData.address}
+                            onChange={(e) => {
+                              setFormData(prev => ({ ...prev, address: e.target.value }));
+                              setValidationErrors(prev => ({ ...prev, address: null }));
+                            }}
+                            isInvalid={!!validationErrors.address}
+                            placeholder="Enter complete delivery address"
+                            rows={3}
+                            className="modern-input"
+                          />
+                          <Form.Control.Feedback type="invalid">
+                            {validationErrors.address}
+                          </Form.Control.Feedback>
+                        </Form.Group>
+                      </div>
+                    )}
+
+                    {!isGuest && formData.user_id && (
+                      <Form.Group className="mb-3">
+                        <Form.Label className="fw-medium">Shipping Address</Form.Label>
+                        <Form.Select
+                          value={formData.shipping_id || ''}
+                          onChange={handleShippingAddressChange}
+                          isInvalid={!!validationErrors.shipping_id}
+                          className="modern-select"
+                        >
+                          <option value="">Select shipping address</option>
+                          {shippingAddresses.map(address => (
+                            <option key={address.id} value={address.id}>
+                              {address.f_name} {address.l_name} - {address.address}, {address.city}
+                            </option>
+                          ))}
+                        </Form.Select>
+                        <Form.Control.Feedback type="invalid">
+                          {validationErrors.shipping_id}
+                        </Form.Control.Feedback>
+                      </Form.Group>
+                    )}
+                  </Card.Body>
+                </Card>
+
+                <Card className="modern-card mb-4">
+                  <Card.Body>
+                    <h5 className="mb-3 d-flex align-items-center">
+                      <FaShoppingCart className="me-2" /> Products
+                    </h5>
+                    <hr className="mb-4" />
+                    <Form.Group className="mb-4">
+                      <Form.Label className="fw-medium">
+                        Add Products
+                        <OverlayTrigger
+                          placement="top"
+                          overlay={<Tooltip>Search and add products to the order</Tooltip>}
+                        >
+                          <FaInfoCircle className="ms-2 text-muted" />
+                        </OverlayTrigger>
+                      </Form.Label>
                       <Select
                         isClearable
                         cacheOptions
                         defaultOptions
-                        loadOptions={loadUsers}
-                        onChange={handleUserChange}
-                        placeholder="Search customer by name, email or phone..."
-                        isDisabled={isGuest}
+                        loadOptions={loadProducts}
+                        onChange={handleProductSelect}
+                        placeholder="Search products by name..."
                         styles={customSelectStyles}
                         formatOptionLabel={formatOptionLabel}
-                        className={validationErrors.user_id ? 'is-invalid' : ''}
-                        noOptionsMessage={() => "No customers found"}
-                        loadingMessage={() => "Searching customers..."}
-                        classNamePrefix="customer-select"
+                        noOptionsMessage={() => "No products found"}
+                        loadingMessage={() => "Searching products..."}
+                        classNamePrefix="product-select"
+                        menuPortalTarget={menuPortalTarget}
+                        menuPosition="fixed"
+                        menuPlacement="auto"
                       />
-                      {validationErrors.user_id && (
+                      {validationErrors.products && (
                         <div className="invalid-feedback d-block">
-                          {validationErrors.user_id}
+                          {validationErrors.products}
                         </div>
                       )}
-                    </div>
-                    <Form.Check
-                      type="checkbox"
-                      label="Guest Customer"
-                      checked={isGuest}
-                      onChange={(e) => {
-                        setIsGuest(e.target.checked);
-                        if (e.target.checked) {
-                          setFormData(prev => ({
-                            ...prev,
-                            user_id: null,
-                            shipping_id: null
-                          }));
-                        }
-                      }}
-                    />
-                  </div>
-                </Form.Group>
-
-                {isGuest && (
-                  <>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Guest Name</Form.Label>
-                      <Form.Control
-                        type="text"
-                        value={formData.user_name}
-                        onChange={(e) => {
-                          setFormData(prev => ({ ...prev, user_name: e.target.value }));
-                          setValidationErrors(prev => ({ ...prev, user_name: null }));
-                        }}
-                        isInvalid={!!validationErrors.user_name}
-                        placeholder="Enter guest name"
-                      />
-                      <Form.Control.Feedback type="invalid">
-                        {validationErrors.user_name}
-                      </Form.Control.Feedback>
                     </Form.Group>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Guest Phone</Form.Label>
-                      <Form.Control
-                        type="text"
-                        value={formData.userphone}
-                        onChange={(e) => setFormData(prev => ({ ...prev, userphone: e.target.value }))}
-                        placeholder="Enter guest phone number"
-                      />
-                    </Form.Group>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Guest Address</Form.Label>
-                      <Form.Control
-                        as="textarea"
-                        value={formData.address}
-                        onChange={(e) => {
-                          setFormData(prev => ({ ...prev, address: e.target.value }));
-                          setValidationErrors(prev => ({ ...prev, address: null }));
-                        }}
-                        isInvalid={!!validationErrors.address}
-                        placeholder="Enter complete delivery address"
-                        rows={3}
-                      />
-                      <Form.Control.Feedback type="invalid">
-                        {validationErrors.address}
-                      </Form.Control.Feedback>
-                    </Form.Group>
-                  </>
-                )}
 
-                {!isGuest && formData.user_id && (
-                  <Form.Group className="mb-3">
-                    <Form.Label>Shipping Address</Form.Label>
-                    <Form.Select
-                      value={formData.shipping_id || ''}
-                      onChange={handleShippingAddressChange}
-                      isInvalid={!!validationErrors.shipping_id}
-                    >
-                      <option value="">Select shipping address</option>
-                      {shippingAddresses.map(address => (
-                        <option key={address.id} value={address.id}>
-                          {address.f_name} {address.l_name} - {address.address}, {address.city}
-                        </option>
-                      ))}
-                    </Form.Select>
-                    <Form.Control.Feedback type="invalid">
-                      {validationErrors.shipping_id}
-                    </Form.Control.Feedback>
-                  </Form.Group>
-                )}
-
-                <h5 className="mb-3 mt-4 d-flex align-items-center">
-                  <FaShoppingCart className="me-2" /> Products
-                </h5>
-                <hr />
-                <Form.Group className="mb-4">
-                  <Form.Label>
-                    Add Products
-                    <OverlayTrigger
-                      placement="top"
-                      overlay={<Tooltip>Search and add products to the order</Tooltip>}
-                    >
-                      <FaInfoCircle className="ms-2 text-muted" />
-                    </OverlayTrigger>
-                  </Form.Label>
-                  <Select
-                    isClearable
-                    cacheOptions
-                    defaultOptions
-                    loadOptions={loadProducts}
-                    onChange={handleProductSelect}
-                    placeholder="Search products by name..."
-                    styles={customSelectStyles}
-                    formatOptionLabel={formatOptionLabel}
-                    noOptionsMessage={() => "No products found"}
-                    loadingMessage={() => "Searching products..."}
-                    classNamePrefix="product-select"
-                  />
-                  {validationErrors.products && (
-                    <div className="invalid-feedback d-block">
-                      {validationErrors.products}
-                    </div>
-                  )}
-                </Form.Group>
-
-                {selectedProducts.length > 0 && (
-                  <div className="table-responsive">
-                    <Table className="table-hover align-middle">
-                      <thead className="bg-light">
-                        <tr>
-                          <th style={{ width: '40%' }}>Product</th>
-                          <th>Price</th>
-                          <th style={{ width: '120px' }}>Quantity</th>
-                          <th>Total</th>
-                          <th style={{ width: '80px' }}></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {selectedProducts.map(product => (
-                          <tr key={product.product_id}>
-                            <td>
-                              <div className="d-flex align-items-center gap-2">
-                                {product.image && (
-                                  <img
-                                    src={product.image}
-                                    alt={product.name}
-                                    style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }}
+                    {selectedProducts.length > 0 && (
+                      <div className="table-responsive">
+                        <Table className="table-hover modern-table align-middle">
+                          <thead className="bg-light">
+                            <tr>
+                              <th style={{ width: '40%' }}>Product</th>
+                              <th>Price</th>
+                              <th style={{ width: '120px' }}>Quantity</th>
+                              <th>Total</th>
+                              <th style={{ width: '80px' }}></th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {selectedProducts.map(product => (
+                              <tr key={product.product_id}>
+                                <td>
+                                  <div className="d-flex align-items-center gap-2">
+                                    {product.image && (
+                                      <img
+                                        src={product.image}
+                                        alt={product.name}
+                                        style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }}
+                                      />
+                                    )}
+                                    <div>
+                                      <div className="fw-medium">{product.name}</div>
+                                      <small className="text-muted">৳{product.price}</small>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td>৳{product.price}</td>
+                                <td>
+                                  <Form.Control
+                                    type="number"
+                                    min="1"
+                                    value={product.quantity}
+                                    onChange={(e) => updateProductQuantity(product.product_id, parseInt(e.target.value))}
+                                    className="text-center modern-input"
                                   />
-                                )}
-                                <div>
-                                  <div>{product.name}</div>
-                                  <small className="text-muted">৳{product.price}</small>
-                                </div>
-                              </div>
-                            </td>
-                            <td>৳{product.price}</td>
-                            <td>
-                              <Form.Control
-                                type="number"
-                                min="1"
-                                value={product.quantity}
-                                onChange={(e) => updateProductQuantity(product.product_id, parseInt(e.target.value))}
-                                className="text-center"
-                              />
-                            </td>
-                            <td>৳{product.price * product.quantity}</td>
-                            <td>
-                              <Button
-                                variant="outline-danger"
-                                size="sm"
-                                onClick={() => removeProduct(product.product_id)}
-                                className="w-100"
-                              >
-                                <FaTrash />
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </Table>
-                  </div>
-                )}
-
-                <h5 className="mb-3 mt-4 d-flex align-items-center">
-                  <FaCreditCard className="me-2" /> Payment Information
-                </h5>
-                <hr />
-                <Row>
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Coupon</Form.Label>
-                      <Form.Select
-                        value={formData.coupon_id || ''}
-                        onChange={(e) => setFormData(prev => ({ ...prev, coupon_id: e.target.value ? parseInt(e.target.value) : null }))}
-                      >
-                        <option value="">Select coupon</option>
-                        {coupons.map(coupon => (
-                          <option key={coupon.id} value={coupon.id}>
-                            {coupon.code} - {coupon.amount} off
-                          </option>
-                        ))}
-                      </Form.Select>
-                    </Form.Group>
-
-                    <Form.Group className="mb-3">
-                      <Form.Label>Shipping Charge</Form.Label>
-                      <Form.Control
-                        type="number"
-                        min="0"
-                        value={formData.shipping_charge}
-                        onChange={(e) => {
-                          const charge = parseFloat(e.target.value) || 0;
-                          setFormData(prev => ({
-                            ...prev,
-                            shipping_charge: charge,
-                            total: prev.product_subtotal + charge
-                          }));
-                        }}
-                        placeholder="Enter shipping charge"
-                      />
-                    </Form.Group>
-                  </Col>
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Payment Method</Form.Label>
-                      <Form.Select
-                        value={formData.payment_type}
-                        onChange={(e) => setFormData(prev => ({ ...prev, payment_type: parseInt(e.target.value) }))}
-                      >
-                        <option value={1}>Cash on Delivery</option>
-                        <option value={2}>Mobile Banking (Bkash)</option>
-                      </Form.Select>
-                    </Form.Group>
-
-                    {formData.payment_type === 2 && (
-                      <>
-                        <Form.Group className="mb-3">
-                          <Form.Label>Transaction ID</Form.Label>
-                          <Form.Control
-                            type="text"
-                            value={formData.trxed}
-                            onChange={(e) => {
-                              setFormData(prev => ({ ...prev, trxed: e.target.value }));
-                              setValidationErrors(prev => ({ ...prev, trxed: null }));
-                            }}
-                            isInvalid={!!validationErrors.trxed}
-                            placeholder="Enter Bkash transaction ID"
-                          />
-                          <Form.Control.Feedback type="invalid">
-                            {validationErrors.trxed}
-                          </Form.Control.Feedback>
-                        </Form.Group>
-                        <Form.Group className="mb-3">
-                          <Form.Label>Payment Phone</Form.Label>
-                          <Form.Control
-                            type="text"
-                            value={formData.paymentphone}
-                            onChange={(e) => {
-                              setFormData(prev => ({ ...prev, paymentphone: e.target.value }));
-                              setValidationErrors(prev => ({ ...prev, paymentphone: null }));
-                            }}
-                            isInvalid={!!validationErrors.paymentphone}
-                            placeholder="Enter Bkash payment phone number"
-                          />
-                          <Form.Control.Feedback type="invalid">
-                            {validationErrors.paymentphone}
-                          </Form.Control.Feedback>
-                        </Form.Group>
-                      </>
+                                </td>
+                                <td className="fw-medium">৳{product.price * product.quantity}</td>
+                                <td>
+                                  <Button
+                                    variant="outline-danger"
+                                    size="sm"
+                                    onClick={() => removeProduct(product.product_id)}
+                                    className="w-100"
+                                  >
+                                    <FaTrash />
+                                  </Button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </Table>
+                      </div>
                     )}
-                  </Col>
-                </Row>
+                  </Card.Body>
+                </Card>
+
+                <Card className="modern-card mb-4">
+                  <Card.Body>
+                    <h5 className="mb-3 d-flex align-items-center">
+                      <FaCreditCard className="me-2" /> Payment Information
+                    </h5>
+                    <hr className="mb-4" />
+                    <Row>
+                      <Col md={6}>
+                        <Form.Group className="mb-3">
+                          <Form.Label className="fw-medium">Coupon</Form.Label>
+                          <Form.Select
+                            value={formData.coupon_id || ''}
+                            onChange={(e) => setFormData(prev => ({ ...prev, coupon_id: e.target.value ? parseInt(e.target.value) : null }))}
+                            className="modern-select"
+                          >
+                            <option value="">Select coupon</option>
+                            {coupons.map(coupon => (
+                              <option key={coupon.id} value={coupon.id}>
+                                {coupon.code} - {coupon.amount} off
+                              </option>
+                            ))}
+                          </Form.Select>
+                        </Form.Group>
+
+                        <Form.Group className="mb-3">
+                          <Form.Label className="fw-medium">Shipping Charge</Form.Label>
+                          <Form.Control
+                            type="number"
+                            min="0"
+                            value={formData.shipping_charge}
+                            onChange={(e) => {
+                              const charge = parseFloat(e.target.value) || 0;
+                              setFormData(prev => ({
+                                ...prev,
+                                shipping_charge: charge,
+                                total: prev.product_subtotal + charge
+                              }));
+                            }}
+                            placeholder="Enter shipping charge"
+                            className="modern-input"
+                          />
+                        </Form.Group>
+                      </Col>
+                      <Col md={6}>
+                        <Form.Group className="mb-3">
+                          <Form.Label className="fw-medium">Payment Method</Form.Label>
+                          <Form.Select
+                            value={formData.payment_type}
+                            onChange={(e) => setFormData(prev => ({ ...prev, payment_type: parseInt(e.target.value) }))}
+                            className="modern-select"
+                          >
+                            <option value={1}>Cash on Delivery</option>
+                            <option value={2}>Mobile Banking (Bkash)</option>
+                          </Form.Select>
+                        </Form.Group>
+
+                        {formData.payment_type === 2 && (
+                          <>
+                            <Form.Group className="mb-3">
+                              <Form.Label className="fw-medium">Transaction ID</Form.Label>
+                              <Form.Control
+                                type="text"
+                                value={formData.trxed}
+                                onChange={(e) => {
+                                  setFormData(prev => ({ ...prev, trxed: e.target.value }));
+                                  setValidationErrors(prev => ({ ...prev, trxed: null }));
+                                }}
+                                isInvalid={!!validationErrors.trxed}
+                                placeholder="Enter Bkash transaction ID"
+                                className="modern-input"
+                              />
+                              <Form.Control.Feedback type="invalid">
+                                {validationErrors.trxed}
+                              </Form.Control.Feedback>
+                            </Form.Group>
+                            <Form.Group className="mb-3">
+                              <Form.Label className="fw-medium">Payment Phone</Form.Label>
+                              <Form.Control
+                                type="text"
+                                value={formData.paymentphone}
+                                onChange={(e) => {
+                                  setFormData(prev => ({ ...prev, paymentphone: e.target.value }));
+                                  setValidationErrors(prev => ({ ...prev, paymentphone: null }));
+                                }}
+                                isInvalid={!!validationErrors.paymentphone}
+                                placeholder="Enter Bkash payment phone number"
+                                className="modern-input"
+                              />
+                              <Form.Control.Feedback type="invalid">
+                                {validationErrors.paymentphone}
+                              </Form.Control.Feedback>
+                            </Form.Group>
+                          </>
+                        )}
+                      </Col>
+                    </Row>
+                  </Card.Body>
+                </Card>
               </Col>
 
               <Col lg={4}>

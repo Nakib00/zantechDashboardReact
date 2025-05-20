@@ -1,9 +1,26 @@
 import React, { useState, useEffect } from "react";
-import { FaSearch, FaSpinner, FaEye, FaTimes, FaPlus, FaCalendarAlt, FaFilter } from "react-icons/fa";
+import {
+  FaSearch,
+  FaSpinner,
+  FaEye,
+  FaTimes,
+  FaPlus,
+  FaCalendarAlt,
+  FaFilter,
+} from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import axiosInstance from "../../config/axios";
-import { Card, Form, InputGroup, Button, Pagination, Row, Col, Badge } from "react-bootstrap";
+import {
+  Card,
+  Form,
+  InputGroup,
+  Button,
+  Pagination,
+  Row,
+  Col,
+  Badge,
+} from "react-bootstrap";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import Loading from "../../components/Loading";
@@ -35,7 +52,12 @@ const Orders = () => {
 
   useEffect(() => {
     fetchOrders();
-  }, [searchParams.page, searchParams.limit, searchParams.startDate, searchParams.endDate]);
+  }, [
+    searchParams.page,
+    searchParams.limit,
+    searchParams.startDate,
+    searchParams.endDate,
+  ]);
 
   useEffect(() => {
     if (searchTimeout) {
@@ -65,11 +87,11 @@ const Orders = () => {
         page,
         limit: searchParams.limit,
         ...(searchParams.search && { search: searchParams.search }),
-        ...(searchParams.startDate && { 
-          start_date: searchParams.startDate.toISOString().split('T')[0] 
+        ...(searchParams.startDate && {
+          start_date: searchParams.startDate.toISOString().split("T")[0],
         }),
-        ...(searchParams.endDate && { 
-          end_date: searchParams.endDate.toISOString().split('T')[0] 
+        ...(searchParams.endDate && {
+          end_date: searchParams.endDate.toISOString().split("T")[0],
         }),
       };
 
@@ -125,7 +147,7 @@ const Orders = () => {
 
   const handleDateChange = (dates) => {
     const [start, end] = dates;
-    
+
     // Validate dates
     if (start && end && start > end) {
       toast.error("Start date cannot be after end date");
@@ -135,26 +157,26 @@ const Orders = () => {
     // Format dates to start and end of day
     const formattedStart = start ? new Date(start.setHours(0, 0, 0, 0)) : null;
     const formattedEnd = end ? new Date(end.setHours(23, 59, 59, 999)) : null;
-    
-    setSearchParams(prev => ({
+
+    setSearchParams((prev) => ({
       ...prev,
       startDate: formattedStart,
       endDate: formattedEnd,
-      page: 1
+      page: 1,
     }));
   };
 
   const clearDateFilter = () => {
-    setSearchParams(prev => ({
+    setSearchParams((prev) => ({
       ...prev,
       startDate: null,
       endDate: null,
-      page: 1
+      page: 1,
     }));
   };
 
   const filteredOrders = filterStatus
-    ? orders.filter(order => order.status?.toString() === filterStatus)
+    ? orders.filter((order) => order.status?.toString() === filterStatus)
     : orders;
 
   const handleStatusChange = async (orderId, newStatus) => {
@@ -163,7 +185,7 @@ const Orders = () => {
       const response = await axiosInstance.put(
         `/orders/update-status/${orderId}`,
         {
-          status: parseInt(newStatus)
+          status: parseInt(newStatus),
         }
       );
 
@@ -305,11 +327,13 @@ const Orders = () => {
           <div className="d-flex justify-content-between align-items-center mb-4">
             <div>
               <h2 className="page-title mb-1">Orders</h2>
-              <p className="text-muted mb-0">Manage and track all your orders</p>
+              <p className="text-muted mb-0">
+                Manage and track all your orders
+              </p>
             </div>
-            <Button 
-              variant="primary" 
-              onClick={() => navigate('/orders/create')}
+            <Button
+              variant="primary"
+              onClick={() => navigate("/orders/create")}
               className="create-order-btn"
             >
               <FaPlus className="me-2" /> Create Order
@@ -322,7 +346,11 @@ const Orders = () => {
                 <div className="search-box">
                   <InputGroup>
                     <InputGroup.Text className="search-icon">
-                      {isSearching ? <FaSpinner className="spinner" /> : <FaSearch />}
+                      {isSearching ? (
+                        <FaSpinner className="spinner" />
+                      ) : (
+                        <FaSearch />
+                      )}
                     </InputGroup.Text>
                     <Form.Control
                       type="text"
@@ -375,9 +403,9 @@ const Orders = () => {
                         {
                           name: "preventOverflow",
                           options: {
-                            boundary: "viewport"
-                          }
-                        }
+                            boundary: "viewport",
+                          },
+                        },
                       ]}
                     />
                   </InputGroup>
@@ -430,9 +458,7 @@ const Orders = () => {
                   <tr>
                     <th>Order ID</th>
                     <th>Invoice Code</th>
-                    <th>Customer Name</th>
-                    <th>Phone</th>
-                    <th>Email</th>
+                    <th>Customer Info</th>
                     <th>Total Amount</th>
                     <th>Paid Amount</th>
                     <th>Due Amount</th>
@@ -446,18 +472,38 @@ const Orders = () => {
                     <tr key={order.order_id}>
                       <td className="fw-medium">#{order.order_id}</td>
                       <td>{order.invoice_code}</td>
-                      <td>{order.user_name}</td>
-                      <td>{order.user_phone}</td>
-                      <td>{order.user_email}</td>
-                      <td className="fw-medium">৳{parseFloat(order.total_amount).toLocaleString()}</td>
-                      <td className="text-success">৳{parseFloat(order.paid_amount || 0).toLocaleString()}</td>
-                      <td className={parseFloat(order.due_amount || 0) > 0 ? "text-danger" : "text-success"}>
+                      <td>
+                        <div className="customer-info">
+                          <div className="customer-name">{order.user_name}</div>
+                          <div className="customer-phone text-muted">
+                            <small>📞 {order.user_phone}</small>
+                          </div>
+                          <div className="customer-email text-muted">
+                            <small>✉️ {order.user_email}</small>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="fw-medium">
+                        ৳{parseFloat(order.total_amount).toLocaleString()}
+                      </td>
+                      <td className="text-success">
+                        ৳{parseFloat(order.paid_amount || 0).toLocaleString()}
+                      </td>
+                      <td
+                        className={
+                          parseFloat(order.due_amount || 0) > 0
+                            ? "text-danger"
+                            : "text-success"
+                        }
+                      >
                         ৳{parseFloat(order.due_amount || 0).toLocaleString()}
                       </td>
                       <td>
                         <Form.Select
                           value={order.status?.toString() || "0"}
-                          onChange={(e) => handleStatusChange(order.order_id, e.target.value)}
+                          onChange={(e) =>
+                            handleStatusChange(order.order_id, e.target.value)
+                          }
                           disabled={updatingStatus[order.order_id]}
                           size="sm"
                           className="status-select"
@@ -469,7 +515,11 @@ const Orders = () => {
                           <option value="4">Refunded</option>
                         </Form.Select>
                       </td>
-                      <td>{new Date(order.order_placed_date_time).toLocaleString()}</td>
+                      <td>
+                        {new Date(
+                          order.order_placed_date_time
+                        ).toLocaleString()}
+                      </td>
                       <td>
                         <Button
                           variant="outline-primary"

@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { FaPlus, FaEdit, FaTrash, FaSpinner, FaChevronLeft, FaChevronRight, FaEye, FaTimes, FaUpload, FaDownload, FaFilter } from "react-icons/fa";
+import { FaPlus, FaEdit, FaTrash, FaSpinner, FaChevronLeft, FaChevronRight, FaEye, FaTimes, FaUpload, FaDownload, FaFilter, FaSearch, FaCalendarAlt } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import axiosInstance from "../../config/axios";
-import { Card, Form, Button, Pagination, Row, Col, Modal } from "react-bootstrap";
+import { Card, Form, Button, Pagination, Row, Col, Modal, InputGroup } from "react-bootstrap";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import "./Expenses.css";
 import { Link } from "react-router-dom";
+import Loading from "../../components/Loading";
 
 const Expenses = () => {
   const [expenses, setExpenses] = useState([]);
@@ -18,13 +21,12 @@ const Expenses = () => {
     to: 5
   });
   const [searchParams, setSearchParams] = useState({
+    search: "",
     limit: 10,
     page: 1,
-    date: "",
-    start_date: "",
-    end_date: ""
+    startDate: null,
+    endDate: null
   });
-  const [showFilters, setShowFilters] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [formData, setFormData] = useState({
     date: "",
@@ -38,7 +40,7 @@ const Expenses = () => {
 
   useEffect(() => {
     fetchExpenses();
-  }, [searchParams.page, searchParams.limit, searchParams.date, searchParams.start_date, searchParams.end_date]);
+  }, [searchParams.page, searchParams.limit, searchParams.startDate, searchParams.endDate]);
 
   const fetchExpenses = async (page = searchParams.page) => {
     setLoading(true);
@@ -46,9 +48,8 @@ const Expenses = () => {
       const params = {
         page,
         limit: searchParams.limit,
-        ...(searchParams.date && { date: searchParams.date }),
-        ...(searchParams.start_date && { start_date: searchParams.start_date }),
-        ...(searchParams.end_date && { end_date: searchParams.end_date })
+        ...(searchParams.startDate && { start_date: searchParams.startDate.toISOString().split('T')[0] }),
+        ...(searchParams.endDate && { end_date: searchParams.endDate.toISOString().split('T')[0] })
       };
 
       const response = await axiosInstance.get("/expenses", { params });
@@ -237,190 +238,199 @@ const Expenses = () => {
     return items;
   };
 
-  const handleDateFilterChange = (e) => {
-    const { name, value } = e.target;
+  const handleSearch = (e) => {
     setSearchParams(prev => ({
       ...prev,
-      [name]: value,
-      page: 1,
-      // Clear other date filters when exact date is set
-      ...(name === 'date' && { start_date: "", end_date: "" }),
-      // Clear exact date when range is set
-      ...((name === 'start_date' || name === 'end_date') && { date: "" })
+      search: e.target.value,
+      page: 1
     }));
   };
 
-  const clearDateFilters = () => {
+  const handleDateChange = (dates) => {
+    const [start, end] = dates;
     setSearchParams(prev => ({
       ...prev,
-      date: "",
-      start_date: "",
-      end_date: "",
+      startDate: start,
+      endDate: end,
+      page: 1
+    }));
+  };
+
+  const clearDateFilter = () => {
+    setSearchParams(prev => ({
+      ...prev,
+      startDate: null,
+      endDate: null,
       page: 1
     }));
   };
 
   if (loading && expenses.length === 0) {
-    return (
-      <div className="loading-container">
-        <div className="loading-text">Zantech</div>
-      </div>
-    );
+    return <Loading />;
   }
 
   return (
     <div className="expenses-container">
-      <Card>
-        <Card.Body>
-          <div className="expenses-header d-flex justify-content-between align-items-center">
-            <h2>Expenses</h2>
-            <Button variant="primary" onClick={handleAddExpense}>
+      <Card className="modern-card">
+        <Card.Body className="p-4">
+          <div className="d-flex justify-content-between align-items-center mb-4">
+            <div>
+              <h2 className="page-title mb-1">Expenses</h2>
+              <p className="text-muted mb-0">Manage and track all your expenses</p>
+            </div>
+            <Button 
+              variant="primary" 
+              onClick={handleAddExpense}
+              className="create-expense-btn"
+            >
               <FaPlus className="me-2" /> Add Expense
             </Button>
           </div>
 
-          <div className="d-flex justify-content-between align-items-center mb-3">
-            <div className="d-flex gap-2 align-items-center">
-              <Button
-                variant="outline-secondary"
-                onClick={() => setShowFilters(!showFilters)}
-                className="d-flex align-items-center gap-2"
-              >
-                <FaFilter /> Filters
-                {(searchParams.date || searchParams.start_date || searchParams.end_date) && (
-                  <span className="badge bg-primary">Active</span>
+          <div className="filters-section mb-4">
+            <Row className="g-3">
+              <Col md={3}>
+                <div className="search-box">
+                  <InputGroup>
+                    <InputGroup.Text className="search-icon">
+                      <FaSearch />
+                    </InputGroup.Text>
+                    <Form.Control
+                      type="text"
+                      placeholder="Search expenses..."
+                      value={searchParams.search}
+                      onChange={handleSearch}
+                      className="search-input"
+                    />
+                    {searchParams.search && (
+                      <Button
+                        variant="link"
+                        className="clear-search"
+                        onClick={() => {
+                          setSearchParams(prev => ({ ...prev, search: "" }));
+                          fetchExpenses(1);
+                        }}
+                      >
+                        <FaTimes />
+                      </Button>
+                    )}
+                  </InputGroup>
+                </div>
+              </Col>
+              <Col md={3}>
+                <div className="date-filter-box">
+                  <InputGroup>
+                    <InputGroup.Text>
+                      <FaCalendarAlt />
+                    </InputGroup.Text>
+                    <DatePicker
+                      selected={searchParams.startDate}
+                      onChange={handleDateChange}
+                      startDate={searchParams.startDate}
+                      endDate={searchParams.endDate}
+                      selectsRange
+                      className="form-control date-picker-input"
+                      placeholderText="Select date range"
+                      dateFormat="yyyy-MM-dd - yyyy-MM-dd"
+                      isClearable
+                      onClear={clearDateFilter}
+                      maxDate={new Date()}
+                      showMonthDropdown
+                      showYearDropdown
+                      dropdownMode="select"
+                      monthsShown={2}
+                      calendarStartDay={1}
+                      popperClassName="date-range-popper"
+                      popperPlacement="bottom-start"
+                    />
+                  </InputGroup>
+                </div>
+              </Col>
+              <Col md={2}>
+                <Form.Select
+                  value={searchParams.limit}
+                  onChange={handleLimitChange}
+                  className="limit-select"
+                >
+                  <option value="5">5 per page</option>
+                  <option value="10">10 per page</option>
+                  <option value="20">20 per page</option>
+                  <option value="50">50 per page</option>
+                </Form.Select>
+              </Col>
+              <Col md={2}>
+                {(searchParams.startDate || searchParams.endDate) && (
+                  <Button
+                    variant="outline-secondary"
+                    onClick={clearDateFilter}
+                    className="clear-dates-btn w-100"
+                  >
+                    <FaTimes className="me-2" /> Clear Dates
+                  </Button>
                 )}
-              </Button>
-            </div>
-
-            <div className="d-flex gap-2 align-items-center">
-              <Form.Select
-                value={searchParams.limit}
-                onChange={handleLimitChange}
-                style={{ width: "120px" }}
-                disabled={loading}
-              >
-                <option value="5">5 per page</option>
-                <option value="10">10 per page</option>
-                <option value="20">20 per page</option>
-                <option value="50">50 per page</option>
-              </Form.Select>
-            </div>
+              </Col>
+            </Row>
           </div>
 
-          {/* Date Filters */}
-          {showFilters && (
-            <Card className="mb-3">
-              <Card.Body>
-                <div className="d-flex justify-content-between align-items-center mb-3">
-                  <h6 className="mb-0">Date Filters</h6>
-                  {(searchParams.date || searchParams.start_date || searchParams.end_date) && (
-                    <Button
-                      variant="link"
-                      className="text-danger p-0"
-                      onClick={clearDateFilters}
-                    >
-                      Clear Filters
-                    </Button>
-                  )}
-                </div>
-                <Row>
-                  <Col md={4}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Exact Date</Form.Label>
-                      <Form.Control
-                        type="date"
-                        name="date"
-                        value={searchParams.date}
-                        onChange={handleDateFilterChange}
-                        disabled={!!(searchParams.start_date || searchParams.end_date)}
-                      />
-                    </Form.Group>
-                  </Col>
-                  <Col md={4}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Start Date</Form.Label>
-                      <Form.Control
-                        type="date"
-                        name="start_date"
-                        value={searchParams.start_date}
-                        onChange={handleDateFilterChange}
-                        disabled={!!searchParams.date}
-                        max={searchParams.end_date || undefined}
-                      />
-                    </Form.Group>
-                  </Col>
-                  <Col md={4}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>End Date</Form.Label>
-                      <Form.Control
-                        type="date"
-                        name="end_date"
-                        value={searchParams.end_date}
-                        onChange={handleDateFilterChange}
-                        disabled={!!searchParams.date}
-                        min={searchParams.start_date || undefined}
-                      />
-                    </Form.Group>
-                  </Col>
-                </Row>
-              </Card.Body>
-            </Card>
-          )}
-
-          <div className="table-responsive">
-            <table className="table expenses-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Date</th>
-                  <th>Title</th>
-                  <th>Amount</th>
-                  <th>Description</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {expenses.map((expense) => (
-                  <tr key={expense.id}>
-                    <td>{expense.id}</td>
-                    <td>{new Date(expense.date).toLocaleDateString()}</td>
-                    <td>{expense.title}</td>
-                    <td className="expense-amount">৳{parseFloat(expense.amount).toLocaleString()}</td>
-                    <td className="expense-description">{expense.description || "N/A"}</td>
-                    <td>
-                      <div className="expense-actions">
-                        <Button
-                          variant="outline-info"
-                          size="sm"
-                          as={Link}
-                          to={`/expenses/${expense.id}`}
-                        >
-                          <FaEye />
-                        </Button>
-                        <Button
-                          variant="outline-danger"
-                          size="sm"
-                          onClick={() => handleDelete(expense.id)}
-                        >
-                          <FaTrash />
-                        </Button>
-                      </div>
-                    </td>
+          <div className="table-container">
+            <div className="table-responsive">
+              <table className="table table-hover modern-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Date</th>
+                    <th>Title</th>
+                    <th>Amount</th>
+                    <th>Description</th>
+                    <th>Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {expenses.map((expense) => (
+                    <tr key={expense.id}>
+                      <td className="fw-medium">#{expense.id}</td>
+                      <td>{new Date(expense.date).toLocaleDateString()}</td>
+                      <td>{expense.title}</td>
+                      <td className="expense-amount fw-medium">৳{parseFloat(expense.amount).toLocaleString()}</td>
+                      <td className="expense-description">{expense.description || "N/A"}</td>
+                      <td>
+                        <div className="d-flex gap-2">
+                          <Button
+                            variant="outline-primary"
+                            size="sm"
+                            as={Link}
+                            to={`/expenses/${expense.id}`}
+                            className="view-btn"
+                          >
+                            <FaEye className="me-1" /> View
+                          </Button>
+                          <Button
+                            variant="outline-danger"
+                            size="sm"
+                            onClick={() => handleDelete(expense.id)}
+                            className="delete-btn"
+                          >
+                            <FaTrash />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           {pagination.last_page > 1 && (
-            <div className="pagination-container">
-              <Pagination>{renderPagination()}</Pagination>
+            <div className="pagination-container mt-4">
+              <Pagination className="modern-pagination">
+                {renderPagination()}
+              </Pagination>
             </div>
           )}
 
           {/* Add Expense Modal */}
-          <Modal show={showAddModal} onHide={handleCloseModal} size="lg">
+          <Modal show={showAddModal} onHide={handleCloseModal} size="lg" centered>
             <Modal.Header closeButton>
               <Modal.Title>Add New Expense</Modal.Title>
             </Modal.Header>
@@ -436,6 +446,7 @@ const Expenses = () => {
                         value={formData.date}
                         onChange={handleInputChange}
                         isInvalid={!!formErrors.date}
+                        className="form-control-lg"
                       />
                       <Form.Control.Feedback type="invalid">
                         {formErrors.date}
@@ -454,6 +465,7 @@ const Expenses = () => {
                         min="0"
                         step="0.01"
                         isInvalid={!!formErrors.amount}
+                        className="form-control-lg"
                       />
                       <Form.Control.Feedback type="invalid">
                         {formErrors.amount}
@@ -471,6 +483,7 @@ const Expenses = () => {
                     onChange={handleInputChange}
                     placeholder="Enter expense title"
                     isInvalid={!!formErrors.title}
+                    className="form-control-lg"
                   />
                   <Form.Control.Feedback type="invalid">
                     {formErrors.title}
@@ -486,6 +499,7 @@ const Expenses = () => {
                     onChange={handleInputChange}
                     placeholder="Enter expense description"
                     rows={3}
+                    className="form-control-lg"
                   />
                 </Form.Group>
 
@@ -496,6 +510,7 @@ const Expenses = () => {
                     multiple
                     onChange={handleFileChange}
                     accept=".jpg,.jpeg,.png,.pdf"
+                    className="form-control-lg"
                   />
                   <Form.Text className="text-muted">
                     Upload JPG, PNG, or PDF files (max 3MB each)
@@ -503,10 +518,15 @@ const Expenses = () => {
                 </Form.Group>
 
                 <div className="d-flex justify-content-end gap-2">
-                  <Button variant="secondary" onClick={handleCloseModal}>
+                  <Button variant="secondary" onClick={handleCloseModal} className="px-4">
                     Cancel
                   </Button>
-                  <Button variant="primary" type="submit" disabled={isSubmitting}>
+                  <Button 
+                    variant="primary" 
+                    type="submit" 
+                    disabled={isSubmitting}
+                    className="px-4"
+                  >
                     {isSubmitting ? (
                       <>
                         <FaSpinner className="spinner me-2" />

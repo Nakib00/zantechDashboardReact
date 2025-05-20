@@ -24,11 +24,14 @@ import {
   FaPencilAlt,
   FaPlus,
   FaSearch,
+  FaEye,
+  FaDownload,
 } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import axiosInstance from "../../config/axios";
 import Loading from "../../components/Loading";
 import JoditEditor from 'jodit-react';
+import "./Products.css";
 
 const ViewProduct = () => {
   const { id } = useParams();
@@ -924,65 +927,59 @@ const ViewProduct = () => {
   }
 
   return (
-    <div className="container-fluid py-4">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <Button
-          variant="outline-secondary"
-          onClick={() => navigate("/products")}
-          className="d-flex align-items-center gap-2"
-        >
-          <FaArrowLeft /> Back to Products
-        </Button>
-        <Button
-          variant="outline-danger"
-          size="sm"
-          onClick={handleDelete}
-          className="d-flex align-items-center gap-2"
-        >
-          <FaTrash /> Delete Product
-        </Button>
-      </div>
+    <div className="products-container">
+      <Card className="modern-card">
+        <Card.Body className="p-4">
+          <div className="d-flex justify-content-between align-items-center mb-4">
+            <div>
+              <Button
+                variant="link"
+                className="p-0 mb-2 text-decoration-none"
+                onClick={() => navigate('/products')}
+              >
+                <FaArrowLeft className="me-2" /> Back to Products
+              </Button>
+              <h2 className="page-title mb-1">Product Details</h2>
+              <p className="text-muted mb-0">View and manage product information</p>
+            </div>
+            <div className="d-flex gap-2">
+              <Button
+                variant="outline-danger"
+                onClick={handleDelete}
+                className="delete-btn"
+              >
+                <FaTrash className="me-2" /> Delete Product
+              </Button>
+              <Badge
+                bg={product.status === "1" ? "success" : "secondary"}
+                className="px-3 py-2 fs-6 status-badge"
+                role="button"
+                onClick={handleToggleStatus}
+                style={{ cursor: statusLoading ? 'not-allowed' : 'pointer' }}
+                disabled={statusLoading}
+              >
+                {statusLoading ? (
+                  <Spinner animation="border" size="sm" className="me-1" />
+                ) : null}
+                {product.status === "1" ? "Active" : "Inactive"}
+              </Badge>
+            </div>
+          </div>
 
-      <Row>
-        {/* Product Details Section */}
-        <Col lg={12}>
-          <Card className="border-0 shadow-sm mb-4">
-            <Card.Body>
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <h2 className="mb-0">{product.name}</h2>
-                <div className="d-flex gap-2">
-                  <Badge
-                    bg={product.quantity > 0 ? "success" : "danger"}
-                    className="px-3 py-2 fs-6"
-                  >
-                    {product.quantity > 0
-                      ? `${product.quantity} in stock`
-                      : "Out of stock"}
-                  </Badge>
-                  <Badge
-                    bg={product.status === "1" ? "success" : "secondary"}
-                    className="px-3 py-2 fs-6"
-                    role="button"
-                    onClick={handleToggleStatus}
-                    style={{ cursor: statusLoading ? 'not-allowed' : 'pointer' }}
-                    disabled={statusLoading}
-                  >
-                    {statusLoading ? (
-                      <Spinner animation="border" size="sm" className="me-1" />
-                    ) : null}
-                    {product.status === "1" ? "Active" : "Inactive"}
-                  </Badge>
-                </div>
-              </div>
-
-              <Form onSubmit={handleQuickEditSubmit} className="mb-4">
-                {editLoading ? (
-                  <div className="text-center py-4">
-                    <Loading />
-                    <p className="text-muted mt-2 mb-0">Updating product...</p>
-                  </div>
-                ) : (
-                  <div className="border rounded p-3 bg-light">
+          <div className="mt-4">
+            {/* Basic Information Card */}
+            <Card className="border mb-4">
+              <Card.Header className="bg-light">
+                <h5 className="mb-0">Basic Information</h5>
+              </Card.Header>
+              <Card.Body>
+                <Form onSubmit={handleQuickEditSubmit}>
+                  {editLoading ? (
+                    <div className="text-center py-4">
+                      <Loading />
+                      <p className="text-muted mt-2 mb-0">Updating product...</p>
+                    </div>
+                  ) : (
                     <Row>
                       <Col md={12}>
                         <Form.Group className="mb-3">
@@ -993,6 +990,7 @@ const ViewProduct = () => {
                             value={editForm.name}
                             onChange={handleEditFormChange}
                             required
+                            className="form-control-lg"
                           />
                         </Form.Group>
                       </Col>
@@ -1006,6 +1004,7 @@ const ViewProduct = () => {
                             value={editForm.short_description}
                             onChange={handleEditFormChange}
                             placeholder="Enter a brief description of the product"
+                            className="form-control-lg"
                           />
                         </Form.Group>
                       </Col>
@@ -1033,6 +1032,7 @@ const ViewProduct = () => {
                             min="0"
                             step="0.01"
                             required
+                            className="form-control-lg"
                           />
                         </Form.Group>
                       </Col>
@@ -1046,6 +1046,7 @@ const ViewProduct = () => {
                             onChange={handleEditFormChange}
                             min="0"
                             required
+                            className="form-control-lg"
                           />
                         </Form.Group>
                       </Col>
@@ -1060,6 +1061,7 @@ const ViewProduct = () => {
                             min="0"
                             max="100"
                             placeholder="0"
+                            className="form-control-lg"
                           />
                           <Form.Text className="text-muted">
                             Enter 0 if no discount
@@ -1070,127 +1072,103 @@ const ViewProduct = () => {
                         <Button
                           variant="primary"
                           type="submit"
-                          className="d-flex align-items-center gap-2"
+                          className="update-btn"
+                          disabled={editLoading}
                         >
                           {editLoading ? (
                             <>
-                              <Spinner animation="border" size="sm" />
+                              <Spinner animation="border" size="sm" className="me-2" />
                               Updating...
                             </>
                           ) : (
                             <>
-                              <FaPencilAlt /> Update Product
+                              <FaPencilAlt className="me-2" /> Update Product
                             </>
                           )}
                         </Button>
                       </Col>
                     </Row>
-                  </div>
-                )}
-              </Form>
+                  )}
+                </Form>
+              </Card.Body>
+            </Card>
 
-              <div className="d-flex align-items-center gap-3 mb-4">
-                <h4 className="mb-0">৳{product.price}</h4>
-                {product.discount > 0 && (
-                  <Badge bg="danger" className="fs-6">
-                    -{product.discount}%
-                  </Badge>
-                )}
-              </div>
-            </Card.Body>
-          </Card>
-
-          {/* Product Images Section */}
-          <Card className="border-0 shadow-sm mb-4">
-            <Card.Body>
-              <div className="d-flex justify-content-between align-items-center mb-3">
+            {/* Product Images Card */}
+            <Card className="border mb-4">
+              <Card.Header className="bg-light d-flex justify-content-between align-items-center">
                 <h5 className="mb-0">Product Images</h5>
                 <Button
                   variant="outline-primary"
                   size="sm"
                   onClick={() => setShowImageModal(true)}
-                  className="d-flex align-items-center gap-2"
+                  className="add-btn"
                 >
-                  <FaPencilAlt /> Add Images
+                  <FaPencilAlt className="me-2" /> Add Images
                 </Button>
-              </div>
-
-              {product.images && product.images.length > 0 ? (
-                <div className="table-responsive">
-                  <Table hover className="align-middle mb-0">
-                    <thead>
-                      <tr>
-                        <th style={{ width: "80px" }}>Image</th>
-                        <th>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {product.images.map((image, index) => (
-                        <tr key={image.id}>
-                          <td>
-                            <div 
-                              className="rounded cursor-pointer"
-                              style={{ 
-                                width: "60px", 
-                                height: "60px", 
-                                overflow: "hidden",
-                                cursor: "pointer"
-                              }}
-                              onClick={() => {
-                                setSelectedImage(index);
-                                setShowImagePreview(true);
-                              }}
-                            >
-                              <Image
-                                src={image.path}
-                                alt={`${product.name} - ${index + 1}`}
-                                fluid
-                                style={{
-                                  width: "100%",
-                                  height: "100%",
-                                  objectFit: "cover",
-                                }}
-                                className="rounded"
-                              />
-                            </div>
-                          </td>
-                          <td>
-                            <Button
-                              variant="outline-danger"
-                              size="sm"
-                              onClick={() => handleDeleteImage(image.id)}
-                              disabled={deleteImageLoading === image.id}
-                              className="d-flex align-items-center gap-1"
-                            >
-                              {deleteImageLoading === image.id ? (
-                                <Spinner animation="border" size="sm" />
-                              ) : (
-                                <>
-                                  <FaTrash size={12} /> Delete
-                                </>
-                              )}
-                            </Button>
-                          </td>
+              </Card.Header>
+              <Card.Body>
+                {product.images && product.images.length > 0 ? (
+                  <div className="table-container">
+                    <Table hover className="modern-table">
+                      <thead>
+                        <tr>
+                          <th style={{ width: "100px" }}>Preview</th>
+                          <th>Action</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </Table>
-                </div>
-              ) : (
-                <div
-                  className="bg-light rounded d-flex align-items-center justify-content-center"
-                  style={{ height: "100px" }}
-                >
-                  <span className="text-muted">No image available</span>
-                </div>
-              )}
-            </Card.Body>
-          </Card>
+                      </thead>
+                      <tbody>
+                        {product.images.map((image, index) => (
+                          <tr key={image.id}>
+                            <td>
+                              <div 
+                                className="image-preview-table"
+                                onClick={() => {
+                                  setSelectedImage(index);
+                                  setShowImagePreview(true);
+                                }}
+                              >
+                                <Image
+                                  src={image.path}
+                                  alt={`${product.name} - ${index + 1}`}
+                                  fluid
+                                  className="preview-image"
+                                />
+                              </div>
+                            </td>
+                            <td>
+                              <Button
+                                variant="outline-danger"
+                                size="sm"
+                                onClick={() => handleDeleteImage(image.id)}
+                                disabled={deleteImageLoading === image.id}
+                                className="delete-btn"
+                              >
+                                {deleteImageLoading === image.id ? (
+                                  <Spinner animation="border" size="sm" />
+                                ) : (
+                                  <>
+                                    <FaTrash className="me-1" /> Delete
+                                  </>
+                                )}
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </Table>
+                  </div>
+                ) : (
+                  <div className="empty-state">
+                    <FaShoppingCart className="empty-icon" />
+                    <p className="text-muted mb-0">No images available</p>
+                  </div>
+                )}
+              </Card.Body>
+            </Card>
 
-          {/* Categories Section */}
-          <Card className="border-0 shadow-sm mb-4">
-            <Card.Body>
-              <div className="d-flex justify-content-between align-items-center mb-3">
+            {/* Categories Card */}
+            <Card className="border mb-4">
+              <Card.Header className="bg-light d-flex justify-content-between align-items-center">
                 <h5 className="mb-0 d-flex align-items-center gap-2">
                   <FaLayerGroup /> Categories
                 </h5>
@@ -1198,46 +1176,46 @@ const ViewProduct = () => {
                   variant="outline-primary"
                   size="sm"
                   onClick={() => setShowCategoryModal(true)}
-                  className="d-flex align-items-center gap-2"
+                  className="add-btn"
                 >
-                  <FaLayerGroup /> Add Categories
+                  <FaLayerGroup className="me-2" /> Add Categories
                 </Button>
-              </div>
-              {product.categories && product.categories.length > 0 ? (
-                <div className="d-flex flex-wrap gap-2">
-                  {product.categories.map((category) => (
-                    <Badge
-                      key={category.id}
-                      bg="info"
-                      className="px-3 py-2 fs-6 d-flex align-items-center gap-2"
-                    >
-                      {category.name}
-                      <Button
-                        variant="link"
-                        className="p-0 text-white"
-                        style={{ fontSize: "0.875rem" }}
-                        onClick={() => handleDeleteCategory(category.id)}
-                        disabled={deleteCategoryLoading === category.id}
-                      >
-                        {deleteCategoryLoading === category.id ? (
-                          <Spinner animation="border" size="sm" />
-                        ) : (
-                          <FaTrash size={12} />
-                        )}
-                      </Button>
-                    </Badge>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-muted mb-0">No categories added yet</p>
-              )}
-            </Card.Body>
-          </Card>
+              </Card.Header>
+              <Card.Body>
+                {product.categories && product.categories.length > 0 ? (
+                  <div className="categories-grid">
+                    {product.categories.map((category) => (
+                      <div key={category.id} className="category-item">
+                        <div className="category-content">
+                          <span className="category-name">{category.name}</span>
+                          <Button
+                            variant="link"
+                            className="category-remove-btn"
+                            onClick={() => handleDeleteCategory(category.id)}
+                            disabled={deleteCategoryLoading === category.id}
+                          >
+                            {deleteCategoryLoading === category.id ? (
+                              <Spinner animation="border" size="sm" />
+                            ) : (
+                              <FaTrash size={12} />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="empty-state">
+                    <FaLayerGroup className="empty-icon" />
+                    <p className="text-muted mb-0">No categories added yet</p>
+                  </div>
+                )}
+              </Card.Body>
+            </Card>
 
-          {/* Tags Section */}
-          <Card className="border-0 shadow-sm mb-4">
-            <Card.Body>
-              <div className="d-flex justify-content-between align-items-center mb-3">
+            {/* Tags Card */}
+            <Card className="border mb-4">
+              <Card.Header className="bg-light d-flex justify-content-between align-items-center">
                 <h5 className="mb-0 d-flex align-items-center gap-2">
                   <FaTag /> Tags
                 </h5>
@@ -1245,268 +1223,257 @@ const ViewProduct = () => {
                   variant="outline-primary"
                   size="sm"
                   onClick={() => setShowTagModal(true)}
-                  className="d-flex align-items-center gap-2"
+                  className="add-btn"
                 >
-                  <FaTag /> Add Tags
+                  <FaTag className="me-2" /> Add Tags
                 </Button>
-              </div>
-              {product.tags && product.tags.length > 0 ? (
-                <div className="d-flex flex-wrap gap-2">
-                  {product.tags.map((tag) => (
-                    <Badge
-                      key={tag.id}
-                      bg="secondary"
-                      className="px-3 py-2 fs-6 d-flex align-items-center gap-2"
-                    >
-                      {tag.tag}
-                      <Button
-                        variant="link"
-                        className="p-0 text-white"
-                        style={{ fontSize: "0.875rem" }}
-                        onClick={() => handleDeleteTag(tag.id)}
-                        disabled={deleteTagLoading === tag.id}
-                      >
-                        {deleteTagLoading === tag.id ? (
-                          <Spinner animation="border" size="sm" />
-                        ) : (
-                          <FaTrash size={12} />
-                        )}
-                      </Button>
-                    </Badge>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-muted mb-0">No tags added yet</p>
-              )}
-            </Card.Body>
-          </Card>
-
-          {/* Bundle Products Section */}
-          <Card className="border-0 shadow-sm">
-            <Card.Body>
-              <div className="d-flex justify-content-between align-items-center mb-4">
-                <h4 className="mb-0">Bundle Products</h4>
-              </div>
-
-              {/* Add Bundle Items Section */}
-              <div className="bundle-form-section mb-4">
-                <Card className="border-0 shadow-sm">
-                  <Card.Body>
-                    <div className="d-flex justify-content-between align-items-center mb-3">
-                      <h5 className="mb-0">Add Bundle Items</h5>
-                    </div>
-                    
-                    {/* Search Section */}
-                    <div className="mb-4">
-                      <Form.Group>
-                        <Form.Label className="fw-medium">Search Products</Form.Label>
-                        <InputGroup>
-                          <InputGroup.Text>
-                            <FaSearch />
-                          </InputGroup.Text>
-                          <Form.Control
-                            type="text"
-                            placeholder="Type product name to search..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                          />
-                        </InputGroup>
-                        <Form.Text className="text-muted">
-                          Search for products to add to your bundle
-                        </Form.Text>
-                      </Form.Group>
-                      {searchLoading && (
-                        <div className="text-center mt-3">
-                          <Spinner animation="border" size="sm" />
-                          <span className="ms-2">Searching products...</span>
-                        </div>
-                      )}
-                      {searchResults.length > 0 && (
-                        <div className="mt-3">
-                          <h6 className="mb-2">Search Results</h6>
-                          <div className="border rounded" style={{ maxHeight: "300px", overflowY: "auto" }}>
-                            {searchResults.map((product) => (
-                              <div
-                                key={product.id}
-                                className="p-3 border-bottom d-flex align-items-center justify-content-between hover-bg-light"
-                                style={{ cursor: "pointer" }}
-                                onClick={() => handleSelectProduct(product)}
-                              >
-                                <div className="d-flex align-items-center gap-3">
-                                  {product.images && product.images.length > 0 ? (
-                                    <div className="rounded" style={{ width: "50px", height: "50px", overflow: "hidden" }}>
-                                      <Image
-                                        src={product.images[0].path}
-                                        alt={product.name}
-                                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                                        className="rounded"
-                                      />
-                                    </div>
-                                  ) : (
-                                    <div 
-                                      className="rounded bg-light d-flex align-items-center justify-content-center"
-                                      style={{ width: "50px", height: "50px" }}
-                                    >
-                                      <FaShoppingCart className="text-muted" />
-                                    </div>
-                                  )}
-                                  <div>
-                                    <h6 className="mb-1">{product.name}</h6>
-                                    <div className="d-flex gap-3 text-muted small">
-                                      <span>Price: ৳{product.price}</span>
-                                      <span>Stock: {product.quantity}</span>
-                                    </div>
-                                  </div>
-                                </div>
-                                <Button
-                                  variant="outline-primary"
-                                  size="sm"
-                                  className="d-flex align-items-center gap-2"
-                                >
-                                  <FaPlus size={12} /> Add
-                                </Button>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Selected Items Section */}
-                    {selectedItems.length > 0 && (
-                      <div className="selected-items-section">
-                        <div className="d-flex justify-content-between align-items-center mb-3">
-                          <h6 className="mb-0">Selected Items ({selectedItems.length})</h6>
+              </Card.Header>
+              <Card.Body>
+                {product.tags && product.tags.length > 0 ? (
+                  <div className="tags-grid">
+                    {product.tags.map((tag) => (
+                      <div key={tag.id} className="tag-item">
+                        <div className="tag-content">
+                          <span className="tag-name">{tag.tag}</span>
                           <Button
-                            variant="outline-danger"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedItems([]);
-                              setBundleQuantity({});
-                            }}
-                            className="d-flex align-items-center gap-2"
+                            variant="link"
+                            className="tag-remove-btn"
+                            onClick={() => handleDeleteTag(tag.id)}
+                            disabled={deleteTagLoading === tag.id}
                           >
-                            <FaTrash size={12} /> Clear All
-                          </Button>
-                        </div>
-                        <div className="table-responsive">
-                          <Table hover className="align-middle mb-0">
-                            <thead>
-                              <tr>
-                                <th style={{ width: "50px" }}>Image</th>
-                                <th>Product</th>
-                                <th style={{ width: "120px" }}>Price</th>
-                                <th style={{ width: "150px" }}>Quantity</th>
-                                <th style={{ width: "100px" }}>Actions</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {selectedItems.map((item) => (
-                                <tr key={item.id}>
-                                  <td>
-                                    {item.images && item.images.length > 0 ? (
-                                      <div className="rounded" style={{ width: "50px", height: "50px", overflow: "hidden" }}>
-                                        <Image
-                                          src={item.images[0].path}
-                                          alt={item.name}
-                                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                                          className="rounded"
-                                        />
-                                      </div>
-                                    ) : (
-                                      <div 
-                                        className="rounded bg-light d-flex align-items-center justify-content-center"
-                                        style={{ width: "50px", height: "50px" }}
-                                      >
-                                        <FaShoppingCart className="text-muted" />
-                                      </div>
-                                    )}
-                                  </td>
-                                  <td>
-                                    <div>
-                                      <div className="fw-medium">{item.name}</div>
-                                      <small className="text-muted">Stock: {item.quantity}</small>
-                                    </div>
-                                  </td>
-                                  <td>৳{item.price}</td>
-                                  <td>
-                                    <Form.Control
-                                      type="number"
-                                      size="sm"
-                                      min="1"
-                                      max={item.quantity}
-                                      value={bundleQuantity[item.id] || ""}
-                                      onChange={(e) =>
-                                        setBundleQuantity({
-                                          ...bundleQuantity,
-                                          [item.id]: e.target.value,
-                                        })
-                                      }
-                                      placeholder="Qty"
-                                    />
-                                  </td>
-                                  <td>
-                                    <Button
-                                      variant="outline-danger"
-                                      size="sm"
-                                      onClick={() => handleRemoveSelectedItem(item.id)}
-                                      className="d-flex align-items-center gap-1"
-                                    >
-                                      <FaTrash size={12} />
-                                    </Button>
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                            <tfoot>
-                              <tr>
-                                <td colSpan="2" className="text-end fw-bold">Total:</td>
-                                <td colSpan="3" className="fw-bold text-primary">
-                                  ৳{selectedItems.reduce((total, item) => 
-                                    total + (item.price * (parseInt(bundleQuantity[item.id]) || 0)), 0
-                                  )}
-                                </td>
-                              </tr>
-                            </tfoot>
-                          </Table>
-                        </div>
-
-                        {bundleError && (
-                          <Alert variant="danger" className="mt-3 mb-0">
-                            {bundleError}
-                          </Alert>
-                        )}
-
-                        <div className="d-flex justify-content-end mt-3">
-                          <Button
-                            variant="primary"
-                            onClick={handleAddToBundle}
-                            disabled={bundleLoading || selectedItems.length === 0}
-                            className="d-flex align-items-center gap-2"
-                          >
-                            {bundleLoading ? (
-                              <>
-                                <Spinner animation="border" size="sm" />
-                                Adding...
-                              </>
+                            {deleteTagLoading === tag.id ? (
+                              <Spinner animation="border" size="sm" />
                             ) : (
-                              <>
-                                <FaPlus /> Add to Bundle
-                              </>
+                              <FaTrash size={12} />
                             )}
                           </Button>
                         </div>
                       </div>
-                    )}
-                  </Card.Body>
-                </Card>
-              </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="empty-state">
+                    <FaTag className="empty-icon" />
+                    <p className="text-muted mb-0">No tags added yet</p>
+                  </div>
+                )}
+              </Card.Body>
+            </Card>
 
-              {/* Existing Bundle Items */}
-              {product.bundle_items && product.bundle_items.length > 0 ? (
-                <>
-                  <div className="table-responsive">
-                    <Table hover className="align-middle">
+            {/* Bundle Products Card */}
+            <Card className="border">
+              <Card.Header className="bg-light">
+                <h5 className="mb-0">Bundle Products</h5>
+              </Card.Header>
+              <Card.Body>
+                {/* Add Bundle Items Section */}
+                <div className="bundle-form-section mb-4">
+                  <Card className="border-0 shadow-sm">
+                    <Card.Body>
+                      <div className="d-flex justify-content-between align-items-center mb-3">
+                        <h6 className="mb-0">Add Bundle Items</h6>
+                      </div>
+                      
+                      {/* Search Section */}
+                      <div className="mb-4">
+                        <Form.Group>
+                          <Form.Label className="fw-medium">Search Products</Form.Label>
+                          <InputGroup className="search-box">
+                            <InputGroup.Text>
+                              <FaSearch />
+                            </InputGroup.Text>
+                            <Form.Control
+                              type="text"
+                              placeholder="Type product name to search..."
+                              value={searchQuery}
+                              onChange={(e) => setSearchQuery(e.target.value)}
+                              className="search-input"
+                            />
+                          </InputGroup>
+                        </Form.Group>
+                        {searchLoading && (
+                          <div className="text-center mt-3">
+                            <Spinner animation="border" size="sm" />
+                            <span className="ms-2">Searching products...</span>
+                          </div>
+                        )}
+                        {searchResults.length > 0 && (
+                          <div className="mt-3">
+                            <h6 className="mb-2">Search Results</h6>
+                            <div className="search-results-list">
+                              {searchResults.map((product) => (
+                                <div
+                                  key={product.id}
+                                  className="search-result-item"
+                                  onClick={() => handleSelectProduct(product)}
+                                >
+                                  <div className="d-flex align-items-center gap-3">
+                                    {product.images && product.images.length > 0 ? (
+                                      <div className="product-thumbnail">
+                                        <Image
+                                          src={product.images[0].path}
+                                          alt={product.name}
+                                          fluid
+                                        />
+                                      </div>
+                                    ) : (
+                                      <div className="product-thumbnail empty">
+                                        <FaShoppingCart />
+                                      </div>
+                                    )}
+                                    <div>
+                                      <h6 className="mb-1">{product.name}</h6>
+                                      <div className="d-flex gap-3 text-muted small">
+                                        <span>Price: ৳{product.price}</span>
+                                        <span>Stock: {product.quantity}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <Button
+                                    variant="outline-primary"
+                                    size="sm"
+                                    className="add-btn"
+                                  >
+                                    <FaPlus size={12} className="me-1" /> Add
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Selected Items Section */}
+                      {selectedItems.length > 0 && (
+                        <div className="selected-items-section">
+                          <div className="d-flex justify-content-between align-items-center mb-3">
+                            <h6 className="mb-0">Selected Items ({selectedItems.length})</h6>
+                            <Button
+                              variant="outline-danger"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedItems([]);
+                                setBundleQuantity({});
+                              }}
+                              className="clear-btn"
+                            >
+                              <FaTrash size={12} className="me-1" /> Clear All
+                            </Button>
+                          </div>
+                          <div className="table-container">
+                            <Table hover className="modern-table">
+                              <thead>
+                                <tr>
+                                  <th style={{ width: "60px" }}>Image</th>
+                                  <th>Product</th>
+                                  <th style={{ width: "120px" }}>Price</th>
+                                  <th style={{ width: "150px" }}>Quantity</th>
+                                  <th style={{ width: "100px" }}>Actions</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {selectedItems.map((item) => (
+                                  <tr key={item.id}>
+                                    <td>
+                                      {item.images && item.images.length > 0 ? (
+                                        <div className="product-thumbnail">
+                                          <Image
+                                            src={item.images[0].path}
+                                            alt={item.name}
+                                            fluid
+                                          />
+                                        </div>
+                                      ) : (
+                                        <div className="product-thumbnail empty">
+                                          <FaShoppingCart />
+                                        </div>
+                                      )}
+                                    </td>
+                                    <td>
+                                      <div>
+                                        <div className="fw-medium">{item.name}</div>
+                                        <small className="text-muted">Stock: {item.quantity}</small>
+                                      </div>
+                                    </td>
+                                    <td>৳{item.price}</td>
+                                    <td>
+                                      <Form.Control
+                                        type="number"
+                                        size="sm"
+                                        min="1"
+                                        max={item.quantity}
+                                        value={bundleQuantity[item.id] || ""}
+                                        onChange={(e) =>
+                                          setBundleQuantity({
+                                            ...bundleQuantity,
+                                            [item.id]: e.target.value,
+                                          })
+                                        }
+                                        placeholder="Qty"
+                                        className="quantity-input"
+                                      />
+                                    </td>
+                                    <td>
+                                      <Button
+                                        variant="outline-danger"
+                                        size="sm"
+                                        onClick={() => handleRemoveSelectedItem(item.id)}
+                                        className="delete-btn"
+                                      >
+                                        <FaTrash size={12} />
+                                      </Button>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                              <tfoot>
+                                <tr>
+                                  <td colSpan="2" className="text-end fw-bold">Total:</td>
+                                  <td colSpan="3" className="fw-bold text-primary">
+                                    ৳{selectedItems.reduce((total, item) => 
+                                      total + (item.price * (parseInt(bundleQuantity[item.id]) || 0)), 0
+                                    )}
+                                  </td>
+                                </tr>
+                              </tfoot>
+                            </Table>
+                          </div>
+
+                          {bundleError && (
+                            <Alert variant="danger" className="mt-3 mb-0">
+                              {bundleError}
+                            </Alert>
+                          )}
+
+                          <div className="d-flex justify-content-end mt-3">
+                            <Button
+                              variant="primary"
+                              onClick={handleAddToBundle}
+                              disabled={bundleLoading || selectedItems.length === 0}
+                              className="add-bundle-btn"
+                            >
+                              {bundleLoading ? (
+                                <>
+                                  <Spinner animation="border" size="sm" className="me-2" />
+                                  Adding...
+                                </>
+                              ) : (
+                                <>
+                                  <FaPlus className="me-2" /> Add to Bundle
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </Card.Body>
+                  </Card>
+                </div>
+
+                {/* Existing Bundle Items */}
+                {product.bundle_items && product.bundle_items.length > 0 ? (
+                  <div className="table-container">
+                    <Table hover className="modern-table">
                       <thead>
                         <tr>
                           <th style={{ width: "60px" }}>Image</th>
@@ -1522,20 +1489,16 @@ const ViewProduct = () => {
                           <tr key={item.bundle_id}>
                             <td>
                               {item.image ? (
-                                <div className="rounded" style={{ width: "50px", height: "50px", overflow: "hidden" }}>
+                                <div className="product-thumbnail">
                                   <Image
                                     src={item.image}
                                     alt={item.name}
-                                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                                    className="rounded"
+                                    fluid
                                   />
                                 </div>
                               ) : (
-                                <div 
-                                  className="rounded bg-light d-flex align-items-center justify-content-center"
-                                  style={{ width: "50px", height: "50px" }}
-                                >
-                                  <FaShoppingCart className="text-muted" />
+                                <div className="product-thumbnail empty">
+                                  <FaShoppingCart />
                                 </div>
                               )}
                             </td>
@@ -1563,12 +1526,14 @@ const ViewProduct = () => {
                                       ...editingQuantity,
                                       [item.bundle_id]: e.target.value
                                     })}
+                                    className="quantity-input"
                                   />
                                   <Button
                                     variant="success"
                                     size="sm"
                                     onClick={() => handleUpdateBundleQuantity(item.bundle_id, editingQuantity[item.bundle_id])}
                                     disabled={updateQuantityLoading === item.bundle_id}
+                                    className="save-btn"
                                   >
                                     {updateQuantityLoading === item.bundle_id ? (
                                       <Spinner animation="border" size="sm" />
@@ -1581,6 +1546,7 @@ const ViewProduct = () => {
                                     size="sm"
                                     onClick={() => setEditingQuantity({})}
                                     disabled={updateQuantityLoading === item.bundle_id}
+                                    className="cancel-btn"
                                   >
                                     Cancel
                                   </Button>
@@ -1596,6 +1562,7 @@ const ViewProduct = () => {
                                       [item.bundle_id]: item.bundle_quantity
                                     })}
                                     disabled={updateQuantityLoading === item.bundle_id}
+                                    className="edit-btn"
                                   >
                                     <FaPencilAlt size={12} />
                                   </Button>
@@ -1609,14 +1576,16 @@ const ViewProduct = () => {
                                   variant="outline-primary"
                                   size="sm"
                                   onClick={() => navigate(`/products/${item.item_id}`)}
+                                  className="view-btn"
                                 >
-                                  View
+                                  <FaEye className="me-1" /> View
                                 </Button>
                                 <Button
                                   variant="outline-danger"
                                   size="sm"
                                   onClick={() => handleDeleteBundleItem(item.bundle_id)}
                                   disabled={deleteBundleLoading === item.bundle_id || updateQuantityLoading === item.bundle_id}
+                                  className="delete-btn"
                                 >
                                   {deleteBundleLoading === item.bundle_id ? (
                                     <Spinner animation="border" size="sm" />
@@ -1642,14 +1611,17 @@ const ViewProduct = () => {
                       </tfoot>
                     </Table>
                   </div>
-                </>
-              ) : (
-                <p className="text-muted mb-0">No bundle items added yet</p>
-              )}
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+                ) : (
+                  <div className="empty-state">
+                    <FaShoppingCart className="empty-icon" />
+                    <p className="text-muted mb-0">No bundle items added yet</p>
+                  </div>
+                )}
+              </Card.Body>
+            </Card>
+          </div>
+        </Card.Body>
+      </Card>
 
       {/* Modals */}
 

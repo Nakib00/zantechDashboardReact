@@ -59,6 +59,7 @@ const ViewOrder = () => {
   const [updatingPaidAmount, setUpdatingPaidAmount] = useState(false);
   const [editingPaidAmount, setEditingPaidAmount] = useState(null);
   const [generatingInvoice, setGeneratingInvoice] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     fetchOrder();
@@ -79,6 +80,18 @@ const ViewOrder = () => {
       navigate("/orders");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const refreshOrderData = async () => {
+    setIsRefreshing(true);
+    try {
+      await fetchOrder();
+      toast.success('Order data refreshed');
+    } catch (error) {
+      console.error('Refresh error:', error);
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -103,9 +116,6 @@ const ViewOrder = () => {
       });
 
       if (response.data.success) {
-        toast.success(
-          response.data.message || "Order status updated successfully"
-        );
         setOrderData((prev) => ({
           ...prev,
           order: {
@@ -114,14 +124,14 @@ const ViewOrder = () => {
             status_change_desc: response.data.data.status_change_desc,
           },
         }));
+        toast.success(response.data.message || "Order status updated successfully");
+        refreshOrderData();
       } else {
         throw new Error(response.data.message || "Failed to update status");
       }
     } catch (error) {
       console.error("Status update error:", error);
-      toast.error(
-        error.response?.data?.message || "Failed to update order status"
-      );
+      toast.error(error.response?.data?.message || "Failed to update order status");
     } finally {
       setUpdatingStatus(false);
       setShowStatusModal(false);
@@ -181,34 +191,26 @@ const ViewOrder = () => {
   const handleRemoveItem = async (productId) => {
     if (removingItem) return;
 
-    if (
-      !window.confirm(
-        "Are you sure you want to remove this item from the order?"
-      )
-    ) {
+    if (!window.confirm("Are you sure you want to remove this item from the order?")) {
       return;
     }
 
     setRemovingItem(true);
     try {
-      const response = await axiosInstance.delete(
-        `/orders/products/${id}/remove/${productId}`
-      );
+      const response = await axiosInstance.delete(`/orders/products/${id}/remove/${productId}`);
 
       if (response.data.success) {
-        toast.success("Item removed successfully");
-        // Update the order items list
         setOrderData((prev) => ({
           ...prev,
-          order_items: prev.order_items.filter(
-            (item) => item.product_id !== productId
-          ),
+          order_items: prev.order_items.filter((item) => item.product_id !== productId),
           order: {
             ...prev.order,
             item_subtotal: response.data.data.item_subtotal,
             total_amount: response.data.data.total_amount,
           },
         }));
+        toast.success("Item removed successfully");
+        refreshOrderData();
       } else {
         throw new Error(response.data.message || "Failed to remove item");
       }
@@ -225,22 +227,15 @@ const ViewOrder = () => {
 
     setUpdatingQuantity(true);
     try {
-      const response = await axiosInstance.put(
-        `/orders/products/${id}/update-quantity/${productId}`,
-        {
-          quantity: parseInt(newQuantity),
-        }
-      );
+      const response = await axiosInstance.put(`/orders/products/${id}/update-quantity/${productId}`, {
+        quantity: parseInt(newQuantity),
+      });
 
       if (response.data.success) {
-        toast.success("Quantity updated successfully");
-        // Update the order items and totals
         setOrderData((prev) => ({
           ...prev,
           order_items: prev.order_items.map((item) =>
-            item.product_id === productId
-              ? { ...item, quantity: parseInt(newQuantity) }
-              : item
+            item.product_id === productId ? { ...item, quantity: parseInt(newQuantity) } : item
           ),
           order: {
             ...prev.order,
@@ -248,7 +243,9 @@ const ViewOrder = () => {
             total_amount: response.data.data.total_amount,
           },
         }));
+        toast.success("Quantity updated successfully");
         setEditingItem(null);
+        refreshOrderData();
       } else {
         throw new Error(response.data.message || "Failed to update quantity");
       }
@@ -268,7 +265,6 @@ const ViewOrder = () => {
   const handleItemSelect = (selectedOption) => {
     if (!selectedOption) return;
 
-    // Check if item is already selected
     if (
       selectedItems.some((item) => item.product_id === selectedOption.value)
     ) {
@@ -300,7 +296,6 @@ const ViewOrder = () => {
 
     setAddingItemsLoading(true);
     try {
-      // Add items sequentially
       for (const item of selectedItems) {
         const response = await axiosInstance.post(`/orders/add-product/${id}`, {
           product_id: item.product_id,
@@ -313,11 +308,9 @@ const ViewOrder = () => {
       }
 
       toast.success("Items added successfully");
-      // Refresh order data
-      await fetchOrder();
-      // Reset form
       setSelectedItems([]);
       setIsAddingItems(false);
+      await refreshOrderData();
     } catch (error) {
       console.error("Error adding items:", error);
       toast.error(error.response?.data?.message || "Failed to add items");
@@ -330,7 +323,6 @@ const ViewOrder = () => {
     const email = emailInput.trim();
     if (!email) return;
 
-    // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       toast.error("Please enter a valid email address");
@@ -358,12 +350,9 @@ const ViewOrder = () => {
 
     setSendingEmails(true);
     try {
-      const response = await axiosInstance.post(
-        `/orders/sendOrderEmails/${id}`,
-        {
-          emails: emailList,
-        }
-      );
+      const response = await axiosInstance.post(`/orders/sendOrderEmails/${id}`, {
+        emails: emailList,
+      });
 
       if (response.data.success) {
         toast.success("Order details sent successfully");
@@ -374,9 +363,7 @@ const ViewOrder = () => {
       }
     } catch (error) {
       console.error("Error sending emails:", error);
-      toast.error(
-        error.response?.data?.message || "Failed to send order details"
-      );
+      toast.error(error.response?.data?.message || "Failed to send order details");
     } finally {
       setSendingEmails(false);
     }
@@ -387,27 +374,27 @@ const ViewOrder = () => {
 
     setUpdatingPaymentStatus(true);
     try {
-      const response = await axiosInstance.put(
-        `/payments/update-status/${paymentId}`,
-        {
-          status: parseInt(newStatus),
-        }
-      );
+      const response = await axiosInstance.put(`/payments/update-status/${paymentId}`, {
+        status: parseInt(newStatus),
+      });
 
       if (response.data.success) {
+        setOrderData((prev) => ({
+          ...prev,
+          payments: prev.payments.map((payment) =>
+            payment.payment_id === paymentId
+              ? { ...payment, status: newStatus }
+              : payment
+          ),
+        }));
         toast.success("Payment status updated successfully");
-        // Refresh the order data to get updated values
-        await fetchOrder();
+        refreshOrderData();
       } else {
-        throw new Error(
-          response.data.message || "Failed to update payment status"
-        );
+        throw new Error(response.data.message || "Failed to update payment status");
       }
     } catch (error) {
       console.error("Payment status update error:", error);
-      toast.error(
-        error.response?.data?.message || "Failed to update payment status"
-      );
+      toast.error(error.response?.data?.message || "Failed to update payment status");
     } finally {
       setUpdatingPaymentStatus(false);
     }
@@ -416,7 +403,6 @@ const ViewOrder = () => {
   const handlePaidAmountChange = async (paymentId, newAmount) => {
     if (updatingPaidAmount || !newAmount || newAmount < 0) return;
 
-    // Validate amount
     const payment = orderData.payments.find((p) => p.payment_id === paymentId);
     if (!payment) return;
 
@@ -430,27 +416,31 @@ const ViewOrder = () => {
 
     setUpdatingPaidAmount(true);
     try {
-      const response = await axiosInstance.put(
-        `/payments/update-paid-amount/${paymentId}`,
-        {
-          padi_amount: paidAmount
-        }
-      );
+      const response = await axiosInstance.put(`/payments/update-paid-amount/${paymentId}`, {
+        padi_amount: paidAmount
+      });
 
       if (response.data.success) {
+        setOrderData((prev) => ({
+          ...prev,
+          payments: prev.payments.map((payment) =>
+            payment.payment_id === paymentId
+              ? { 
+                  ...payment, 
+                  paid_amount: paidAmount,
+                  due_amount: totalAmount - paidAmount
+                }
+              : payment
+          ),
+        }));
         toast.success("Paid amount updated successfully");
-        // Refresh the order data to get updated values
-        await fetchOrder();
+        refreshOrderData();
       } else {
-        throw new Error(
-          response.data.message || "Failed to update paid amount"
-        );
+        throw new Error(response.data.message || "Failed to update paid amount");
       }
     } catch (error) {
       console.error("Paid amount update error:", error);
-      toast.error(
-        error.response?.data?.message || "Failed to update paid amount"
-      );
+      toast.error(error.response?.data?.message || "Failed to update paid amount");
     } finally {
       setUpdatingPaidAmount(false);
       setEditingPaidAmount(null);
@@ -462,23 +452,16 @@ const ViewOrder = () => {
 
     setGeneratingInvoice(true);
     try {
-      // Create a new window for printing
       const printWindow = window.open('', '_blank');
 
-      // Generate invoice HTML content using the component
       const invoiceContent = InvoiceDocument({ orderData });
 
-      // Write the content to the new window
       printWindow.document.write(invoiceContent);
       printWindow.document.close();
 
-      // Wait for content to load then print
       printWindow.onload = function() {
-        // Adding a small timeout to ensure all styles and images are loaded before printing
         setTimeout(() => {
           printWindow.print();
-          // Close the window after printing (optional)
-          // printWindow.close();
         }, 500);
       };
 
@@ -540,21 +523,18 @@ const ViewOrder = () => {
 
   const { order, user, shipping_address, coupon, order_items, payments } = orderData;
 
-  // Helper function to get customer name
   const getCustomerName = () => {
     if (user?.name) return user.name;
     if (order.user_name) return order.user_name;
     return 'N/A';
   };
 
-  // Helper function to get customer phone
   const getCustomerPhone = () => {
     if (user?.phone) return user.phone;
     if (order.user_phone) return order.user_phone;
     return 'N/A';
   };
 
-  // Helper function to get customer address
   const getCustomerAddress = () => {
     if (user?.address) return user.address;
     if (order.address) return order.address;
@@ -562,12 +542,38 @@ const ViewOrder = () => {
   };
 
   return (
-    <div className="categories-container">
-      <Card>
-        <Card.Body>
+    <div className="orders-container">
+      <Card className="modern-card">
+        <Card.Body className="p-4">
           <div className="d-flex justify-content-between align-items-center mb-4">
-            <h2 className="mb-0">Order Details</h2>
+            <div>
+              <Button
+                variant="link"
+                className="p-0 mb-2 text-decoration-none"
+                onClick={() => navigate('/orders')}
+              >
+                <FaArrowLeft className="me-2" /> Back to Orders
+              </Button>
+              <h2 className="page-title mb-1">Order Details</h2>
+              <p className="text-muted mb-0">View and manage order information</p>
+            </div>
             <div className="d-flex gap-2">
+              <Button
+                variant="outline-secondary"
+                onClick={refreshOrderData}
+                disabled={isRefreshing}
+                className="d-flex align-items-center gap-2 modern-btn"
+              >
+                {isRefreshing ? (
+                  <>
+                    <FaSpinner className="spinner-border spinner-border-sm" /> Refreshing...
+                  </>
+                ) : (
+                  <>
+                    <FaSpinner /> Refresh
+                  </>
+                )}
+              </Button>
               <Button
                 variant="outline-success"
                 onClick={handleGenerateInvoice}
@@ -596,7 +602,7 @@ const ViewOrder = () => {
                 onChange={(e) => handleStatusChange(e.target.value)}
                 disabled={updatingStatus}
                 style={{ width: "auto" }}
-                className="me-2"
+                className="modern-select me-2"
               >
                 <option value="0">Processing</option>
                 <option value="1">Completed</option>
@@ -604,24 +610,21 @@ const ViewOrder = () => {
                 <option value="3">Cancelled</option>
                 <option value="4">Refunded</option>
               </Form.Select>
-              <Button variant="outline-primary" onClick={() => navigate("/orders")}>
-                <FaArrowLeft className="me-2" /> Back to Orders
-              </Button>
             </div>
           </div>
 
-          {/* Email Modal */}
           <Modal
             show={showEmailModal}
             onHide={() => setShowEmailModal(false)}
             centered
+            className="modern-modal"
           >
-            <Modal.Header closeButton>
+            <Modal.Header closeButton className="bg-light">
               <Modal.Title>Send Order Details</Modal.Title>
             </Modal.Header>
             <Modal.Body>
               <Form.Group className="mb-3">
-                <Form.Label>Email Addresses</Form.Label>
+                <Form.Label className="fw-medium">Email Addresses</Form.Label>
                 <div className="d-flex gap-2 mb-2">
                   <Form.Control
                     type="email"
@@ -634,6 +637,7 @@ const ViewOrder = () => {
                         handleAddEmail();
                       }
                     }}
+                    className="modern-input"
                   />
                   <Button variant="outline-primary" onClick={handleAddEmail}>
                     Add
@@ -667,6 +671,7 @@ const ViewOrder = () => {
                   setShowEmailModal(false);
                   setEmailList([]);
                 }}
+                className="modern-btn"
               >
                 Cancel
               </Button>
@@ -674,7 +679,7 @@ const ViewOrder = () => {
                 variant="primary"
                 onClick={handleSendEmails}
                 disabled={sendingEmails || emailList.length === 0}
-                className="d-flex align-items-center gap-2"
+                className="d-flex align-items-center gap-2 modern-btn"
               >
                 {sendingEmails ? (
                   <>
@@ -690,12 +695,13 @@ const ViewOrder = () => {
             </Modal.Footer>
           </Modal>
 
-          {/* Status Change Confirmation Modal */}
           <Modal
             show={showStatusModal}
             onHide={() => setShowStatusModal(false)}
+            centered
+            className="modern-modal"
           >
-            <Modal.Header closeButton>
+            <Modal.Header closeButton className="bg-light">
               <Modal.Title>Confirm Status Change</Modal.Title>
             </Modal.Header>
             <Modal.Body>
@@ -718,6 +724,7 @@ const ViewOrder = () => {
               <Button
                 variant="secondary"
                 onClick={() => setShowStatusModal(false)}
+                className="modern-btn"
               >
                 Cancel
               </Button>
@@ -725,6 +732,7 @@ const ViewOrder = () => {
                 variant="primary"
                 onClick={confirmStatusChange}
                 disabled={updatingStatus}
+                className="modern-btn"
               >
                 {updatingStatus ? (
                   <>
@@ -737,8 +745,7 @@ const ViewOrder = () => {
             </Modal.Footer>
           </Modal>
 
-          {/* Order Information Section */}
-          <Card className="border mb-4">
+          <Card className="modern-card mb-4">
             <Card.Header className="bg-light">
               <h5 className="mb-0 d-flex align-items-center">
                 <FaBox className="me-2" /> Order Information
@@ -747,51 +754,62 @@ const ViewOrder = () => {
             <Card.Body>
               <Row>
                 <Col md={6}>
-                  <div className="mb-2">
-                    <strong>Invoice Code:</strong> {order.invoice_code}
+                  <div className="mb-3">
+                    <strong className="text-muted">Invoice Code:</strong>
+                    <div className="fw-medium">{order.invoice_code}</div>
                   </div>
-                  <div className="mb-2">
-                    <strong>Status:</strong> {getStatusBadge(order.status)}
+                  <div className="mb-3">
+                    <strong className="text-muted">Status:</strong>
+                    <div>{getStatusBadge(order.status)}</div>
                   </div>
-                  <div className="mb-2">
-                    <strong>Order Date:</strong>{" "}
-                    {new Date(order.created_at).toLocaleString()}
+                  <div className="mb-3">
+                    <strong className="text-muted">Order Date:</strong>
+                    <div className="fw-medium">
+                      {new Date(order.created_at).toLocaleString()}
+                    </div>
                   </div>
                   {order.status_change_desc && (
-                    <div className="mb-2">
-                      <strong>Status Change:</strong>{" "}
-                      <small className="text-muted">
+                    <div className="mb-3">
+                      <strong className="text-muted">Status Change:</strong>
+                      <div className="text-muted small">
                         {order.status_change_desc}
-                      </small>
+                      </div>
                     </div>
                   )}
                 </Col>
                 <Col md={6}>
-                  <div className="mb-2">
-                    <strong>Item Subtotal:</strong> ৳
-                    {parseFloat(order.item_subtotal).toLocaleString()}
+                  <div className="mb-3">
+                    <strong className="text-muted">Item Subtotal:</strong>
+                    <div className="fw-medium">
+                      ৳{parseFloat(order.item_subtotal).toLocaleString()}
+                    </div>
                   </div>
-                  <div className="mb-2">
-                    <strong>Shipping Charge:</strong> ৳
-                    {parseFloat(order.shipping_charge).toLocaleString()}
+                  <div className="mb-3">
+                    <strong className="text-muted">Shipping Charge:</strong>
+                    <div className="fw-medium">
+                      ৳{parseFloat(order.shipping_charge).toLocaleString()}
+                    </div>
                   </div>
                   {parseFloat(order.discount) > 0 && (
-                    <div className="mb-2">
-                      <strong>Discount:</strong> ৳
-                      {parseFloat(order.discount).toLocaleString()}
+                    <div className="mb-3">
+                      <strong className="text-muted">Discount:</strong>
+                      <div className="fw-medium text-danger">
+                        -৳{parseFloat(order.discount).toLocaleString()}
+                      </div>
                     </div>
                   )}
-                  <div className="mb-2">
-                    <strong>Total Amount:</strong> ৳
-                    {parseFloat(order.total_amount).toLocaleString()}
+                  <div className="mb-3">
+                    <strong className="text-muted">Total Amount:</strong>
+                    <div className="fw-bold fs-5">
+                      ৳{parseFloat(order.total_amount).toLocaleString()}
+                    </div>
                   </div>
                 </Col>
               </Row>
             </Card.Body>
           </Card>
 
-          {/* Customer Information Section */}
-          <Card className="border mb-4">
+          <Card className="modern-card mb-4">
             <Card.Header className="bg-light">
               <h5 className="mb-0 d-flex align-items-center">
                 <FaUser className="me-2" /> Customer Information
@@ -800,52 +818,65 @@ const ViewOrder = () => {
             <Card.Body>
               <Row>
                 <Col md={6}>
-                  <div className="mb-2">
-                    <strong>Name:</strong> {getCustomerName()}
+                  <div className="mb-3">
+                    <strong className="text-muted">Name:</strong>
+                    <div className="fw-medium">{getCustomerName()}</div>
                   </div>
                   {user?.email && (
-                    <div className="mb-2">
-                      <strong>Email:</strong> {user.email}
+                    <div className="mb-3">
+                      <strong className="text-muted">Email:</strong>
+                      <div className="fw-medium">{user.email}</div>
                     </div>
                   )}
-                  <div className="mb-2">
-                    <strong>Phone:</strong> {getCustomerPhone()}
+                  <div className="mb-3">
+                    <strong className="text-muted">Phone:</strong>
+                    <div className="fw-medium">{getCustomerPhone()}</div>
                   </div>
                   <div>
-                    <strong>Address:</strong> {getCustomerAddress()}
+                    <strong className="text-muted">Address:</strong>
+                    <div className="fw-medium">{getCustomerAddress()}</div>
                   </div>
                 </Col>
                 <Col md={6}>
-                  <h6 className="mb-3">Shipping Address</h6>
+                  <h6 className="mb-3 fw-medium">Shipping Address</h6>
                   {shipping_address ? (
                     <>
-                      <div className="mb-2">
-                        <strong>Name:</strong> {shipping_address.f_name}{" "}
-                        {shipping_address.l_name}
+                      <div className="mb-3">
+                        <strong className="text-muted">Name:</strong>
+                        <div className="fw-medium">
+                          {shipping_address.f_name} {shipping_address.l_name}
+                        </div>
                       </div>
-                      <div className="mb-2">
-                        <strong>Phone:</strong> {shipping_address.phone}
+                      <div className="mb-3">
+                        <strong className="text-muted">Phone:</strong>
+                        <div className="fw-medium">{shipping_address.phone}</div>
                       </div>
-                      <div className="mb-2">
-                        <strong>Address:</strong> {shipping_address.address}
+                      <div className="mb-3">
+                        <strong className="text-muted">Address:</strong>
+                        <div className="fw-medium">{shipping_address.address}</div>
                       </div>
-                      <div className="mb-2">
-                        <strong>City:</strong> {shipping_address.city}
+                      <div className="mb-3">
+                        <strong className="text-muted">City:</strong>
+                        <div className="fw-medium">{shipping_address.city}</div>
                       </div>
                       <div>
-                        <strong>ZIP:</strong> {shipping_address.zip}
+                        <strong className="text-muted">ZIP:</strong>
+                        <div className="fw-medium">{shipping_address.zip}</div>
                       </div>
                     </>
                   ) : (
                     <>
-                      <div className="mb-2">
-                        <strong>Name:</strong> {getCustomerName()}
+                      <div className="mb-3">
+                        <strong className="text-muted">Name:</strong>
+                        <div className="fw-medium">{getCustomerName()}</div>
                       </div>
-                      <div className="mb-2">
-                        <strong>Phone:</strong> {getCustomerPhone()}
+                      <div className="mb-3">
+                        <strong className="text-muted">Phone:</strong>
+                        <div className="fw-medium">{getCustomerPhone()}</div>
                       </div>
-                      <div className="mb-2">
-                        <strong>Address:</strong> {getCustomerAddress()}
+                      <div className="mb-3">
+                        <strong className="text-muted">Address:</strong>
+                        <div className="fw-medium">{getCustomerAddress()}</div>
                       </div>
                     </>
                   )}
@@ -854,8 +885,7 @@ const ViewOrder = () => {
             </Card.Body>
           </Card>
 
-          {/* Payment Information Section */}
-          <Card className="border mb-4">
+          <Card className="modern-card mb-4">
             <Card.Header className="bg-light">
               <h5 className="mb-0 d-flex align-items-center">
                 <FaCreditCard className="me-2" /> Payment Information
@@ -863,7 +893,7 @@ const ViewOrder = () => {
             </Card.Header>
             <Card.Body>
               <div className="table-responsive">
-                <Table className="table-hover align-middle">
+                <Table className="table-hover modern-table align-middle">
                   <thead className="bg-light">
                     <tr>
                       <th>Payment ID</th>
@@ -892,6 +922,7 @@ const ViewOrder = () => {
                               disabled={updatingPaymentStatus}
                               size="sm"
                               style={{ width: "auto" }}
+                              className="modern-select"
                             >
                               <option value="0">Unpaid</option>
                               <option value="1">Paid by Cash</option>
@@ -931,6 +962,7 @@ const ViewOrder = () => {
                                   size="sm"
                                   style={{ width: "120px" }}
                                   disabled={updatingPaidAmount}
+                                  className="modern-input"
                                 />
                                 {updatingPaidAmount && (
                                   <FaSpinner className="spinner-border spinner-border-sm" />
@@ -944,7 +976,7 @@ const ViewOrder = () => {
                                 }
                                 style={{ cursor: "pointer" }}
                               >
-                                <span>
+                                <span className="fw-medium">
                                   ৳
                                   {parseFloat(
                                     payment.paid_amount
@@ -963,6 +995,7 @@ const ViewOrder = () => {
                             bg={
                               payment.payment_type === "1" ? "success" : "info"
                             }
+                            className="modern-badge"
                           >
                             {getPaymentType(payment.payment_type)}
                           </Badge>
@@ -988,8 +1021,7 @@ const ViewOrder = () => {
             </Card.Body>
           </Card>
 
-          {/* Order Items Section */}
-          <Card className="border">
+          <Card className="modern-card">
             <Card.Header className="bg-light">
               <div className="d-flex justify-content-between align-items-center">
                 <h5 className="mb-0 d-flex align-items-center">
@@ -998,7 +1030,7 @@ const ViewOrder = () => {
                 <Button
                   variant="outline-primary"
                   onClick={() => setIsAddingItems(!isAddingItems)}
-                  className="d-flex align-items-center gap-2"
+                  className="d-flex align-items-center gap-2 modern-btn"
                 >
                   {isAddingItems ? <FaTimes /> : <FaPlus />}
                   {isAddingItems ? "Cancel" : "Add Items"}
@@ -1009,7 +1041,7 @@ const ViewOrder = () => {
               {isAddingItems && (
                 <div className="mb-4">
                   <Form.Group className="mb-3">
-                    <Form.Label>Add Items</Form.Label>
+                    <Form.Label className="fw-medium">Add Items</Form.Label>
                     <Select
                       cacheOptions
                       defaultOptions
@@ -1029,12 +1061,12 @@ const ViewOrder = () => {
                                 height: "30px",
                                 objectFit: "cover",
                                 marginRight: "10px",
+                                borderRadius: "4px"
                               }}
-                              className="rounded"
                             />
                           )}
                           <div>
-                            <div>{option.label}</div>
+                            <div className="fw-medium">{option.label}</div>
                             <small className="text-muted">
                               Price: ৳{parseFloat(option.price).toLocaleString()} |
                               Available: {option.quantity}
@@ -1042,12 +1074,16 @@ const ViewOrder = () => {
                           </div>
                         </div>
                       )}
+                      classNamePrefix="product-select"
+                      menuPortalTarget={document.body}
+                      menuPosition="fixed"
+                      menuPlacement="auto"
                     />
                   </Form.Group>
 
                   {selectedItems.length > 0 && (
                     <div className="mb-3">
-                      <h6>Selected Items</h6>
+                      <h6 className="fw-medium mb-3">Selected Items</h6>
                       {selectedItems.map((item, index) => (
                         <div key={index} className="border rounded p-3 mb-2">
                           <div className="d-flex justify-content-between align-items-center mb-2">
@@ -1061,12 +1097,12 @@ const ViewOrder = () => {
                                     height: "40px",
                                     objectFit: "cover",
                                     marginRight: "10px",
+                                    borderRadius: "4px"
                                   }}
-                                  className="rounded"
                                 />
                               )}
                               <div>
-                                <strong>{item.name}</strong>
+                                <div className="fw-medium">{item.name}</div>
                                 <div className="text-muted">
                                   Price: ৳
                                   {parseFloat(item.price).toLocaleString()}
@@ -1084,7 +1120,7 @@ const ViewOrder = () => {
                           <Row>
                             <Col md={6}>
                               <Form.Group>
-                                <Form.Label>Quantity</Form.Label>
+                                <Form.Label className="fw-medium">Quantity</Form.Label>
                                 <Form.Control
                                   type="number"
                                   min="1"
@@ -1097,11 +1133,12 @@ const ViewOrder = () => {
                                     setSelectedItems(newItems);
                                   }}
                                   required
+                                  className="modern-input"
                                 />
                               </Form.Group>
                             </Col>
                             <Col md={6}>
-                              <Form.Label>Subtotal</Form.Label>
+                              <Form.Label className="fw-medium">Subtotal</Form.Label>
                               <div className="form-control bg-light">
                                 ৳
                                 {(
@@ -1116,7 +1153,7 @@ const ViewOrder = () => {
                         variant="primary"
                         onClick={handleAddItems}
                         disabled={addingItemsLoading}
-                        className="d-flex align-items-center gap-2"
+                        className="d-flex align-items-center gap-2 modern-btn"
                       >
                         {addingItemsLoading ? (
                           <>
@@ -1135,7 +1172,7 @@ const ViewOrder = () => {
               )}
 
               <div className="table-responsive">
-                <Table className="table-hover align-middle">
+                <Table className="table-hover modern-table align-middle">
                   <thead className="bg-light">
                     <tr>
                       <th>Product</th>
@@ -1163,7 +1200,7 @@ const ViewOrder = () => {
                               />
                             )}
                             <div>
-                              <h6 className="mb-0">{item.name}</h6>
+                              <div className="fw-medium mb-1">{item.name}</div>
                               {item.is_bundle === 1 && (
                                 <small className="text-muted">
                                   Bundle Product
@@ -1185,6 +1222,7 @@ const ViewOrder = () => {
                                 }
                                 style={{ width: "80px" }}
                                 disabled={updatingQuantity}
+                                className="modern-input"
                               />
                               <Button
                                 variant="success"
@@ -1196,6 +1234,7 @@ const ViewOrder = () => {
                                   )
                                 }
                                 disabled={updatingQuantity}
+                                className="modern-btn"
                               >
                                 {updatingQuantity ? (
                                   <FaSpinner className="spin" />
@@ -1211,25 +1250,27 @@ const ViewOrder = () => {
                                   setQuantityInput("");
                                 }}
                                 disabled={updatingQuantity}
+                                className="modern-btn"
                               >
                                 Cancel
                               </Button>
                             </div>
                           ) : (
                             <div className="d-flex align-items-center gap-2">
-                              <span>{item.quantity}</span>
+                              <span className="fw-medium">{item.quantity}</span>
                               <Button
                                 variant="outline-primary"
                                 size="sm"
                                 onClick={() => startEditingQuantity(item)}
                                 disabled={updatingQuantity || removingItem}
+                                className="modern-btn"
                               >
                                 <FaEdit />
                               </Button>
                             </div>
                           )}
                         </td>
-                        <td>
+                        <td className="fw-medium">
                           ৳
                           {(
                             parseFloat(item.price) * parseInt(item.quantity)
@@ -1241,6 +1282,7 @@ const ViewOrder = () => {
                             size="sm"
                             onClick={() => handleRemoveItem(item.product_id)}
                             disabled={updatingQuantity || removingItem}
+                            className="modern-btn"
                           >
                             {removingItem ? (
                               <FaSpinner className="spin" />
@@ -1262,6 +1304,7 @@ const ViewOrder = () => {
                           ৳{parseFloat(order.item_subtotal).toLocaleString()}
                         </strong>
                       </td>
+                      <td></td>
                     </tr>
                     <tr>
                       <td colSpan="3" className="text-end">
@@ -1272,6 +1315,7 @@ const ViewOrder = () => {
                           ৳{parseFloat(order.shipping_charge).toLocaleString()}
                         </strong>
                       </td>
+                      <td></td>
                     </tr>
                     {parseFloat(order.discount) > 0 && (
                       <tr>
@@ -1283,6 +1327,7 @@ const ViewOrder = () => {
                             -৳{parseFloat(order.discount).toLocaleString()}
                           </strong>
                         </td>
+                        <td></td>
                       </tr>
                     )}
                     <tr>
@@ -1290,10 +1335,11 @@ const ViewOrder = () => {
                         <strong>Total Amount:</strong>
                       </td>
                       <td>
-                        <strong>
+                        <strong className="fs-5">
                           ৳{parseFloat(order.total_amount).toLocaleString()}
                         </strong>
                       </td>
+                      <td></td>
                     </tr>
                   </tfoot>
                 </Table>
@@ -1301,18 +1347,17 @@ const ViewOrder = () => {
             </Card.Body>
           </Card>
 
-          {/* Coupon Information */}
           {coupon && (
-            <Card className="border mt-4">
+            <Card className="modern-card mt-4">
               <Card.Header className="bg-light">
                 <h5 className="mb-0">Coupon Applied</h5>
               </Card.Header>
               <Card.Body>
                 <div className="d-flex align-items-center">
-                  <Badge bg="success" className="me-2">
+                  <Badge bg="success" className="me-2 modern-badge">
                     {coupon.code}
                   </Badge>
-                  <span>
+                  <span className="fw-medium">
                     Discount Amount: ৳
                     {parseFloat(coupon.amount).toLocaleString()}
                   </span>

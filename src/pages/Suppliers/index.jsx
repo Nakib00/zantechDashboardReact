@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
+import { FaPlus, FaEdit, FaTrash, FaSearch, FaSpinner, FaTimes } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import axiosInstance from "../../config/axios";
-import "../Categories/Categories.css";
+import { Card, Form, InputGroup, Button, Table, Row, Col } from "react-bootstrap";
+import Loading from "../../components/Loading";
+import "./Suppliers.css";
 
 const Suppliers = () => {
   const [suppliers, setSuppliers] = useState([]);
@@ -10,6 +12,11 @@ const Suppliers = () => {
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState("add");
   const [selectedSupplier, setSelectedSupplier] = useState(null);
+  const [searchParams, setSearchParams] = useState({
+    search: "",
+  });
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchTimeout, setSearchTimeout] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -21,15 +28,45 @@ const Suppliers = () => {
     fetchSuppliers();
   }, []);
 
+  useEffect(() => {
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+
+    const timeoutId = setTimeout(() => {
+      if (searchParams.search !== "") {
+        setIsSearching(true);
+        fetchSuppliers();
+      }
+    }, 500);
+
+    setSearchTimeout(timeoutId);
+
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [searchParams.search]);
+
   const fetchSuppliers = async () => {
     try {
-      const response = await axiosInstance.get("/suppliers");
+      const response = await axiosInstance.get("/suppliers", {
+        params: {
+          search: searchParams.search,
+        },
+      });
       setSuppliers(response.data.data);
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to fetch suppliers");
     } finally {
       setLoading(false);
+      setIsSearching(false);
     }
+  };
+
+  const handleSearch = (e) => {
+    setSearchParams((prev) => ({ ...prev, search: e.target.value }));
   };
 
   const handleAddSupplier = async (e) => {
@@ -105,61 +142,109 @@ const Suppliers = () => {
     setSelectedSupplier(null);
   };
 
-  if (loading) {
-    return (
-      <div className="loading-container">
-        <div className="loading-text">Zantech</div>
-      </div>
-    );
+  if (loading && !suppliers.length) {
+    return <Loading />;
   }
 
   return (
-    <div className="categories-container">
-      <div className="categories-header">
-        <h2>Suppliers</h2>
-        <button className="btn btn-primary" onClick={openAddModal}>
-          <FaPlus /> Add Supplier
-        </button>
-      </div>
-      <div className="categories-table-container">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Name</th>
-              <th>Phone</th>
-              <th>Secondary Phone</th>
-              <th>Address</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {suppliers.map((supplier) => (
-              <tr key={supplier.id}>
-                <td>{supplier.id}</td>
-                <td>{supplier.name}</td>
-                <td>{supplier.phone}</td>
-                <td>{supplier.phone2 || "N/A"}</td>
-                <td>{supplier.address}</td>
-                <td>
-                  <button
-                    className="btn btn-sm btn-info me-2"
-                    onClick={() => openEditModal(supplier)}
-                  >
-                    <FaEdit />
-                  </button>
-                  <button
-                    className="btn btn-sm btn-danger"
-                    onClick={() => handleDeleteSupplier(supplier.id)}
-                  >
-                    <FaTrash />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+    <div className="orders-container">
+      <Card className="modern-card">
+        <Card.Body className="p-4">
+          <div className="d-flex justify-content-between align-items-center mb-4">
+            <div>
+              <h2 className="page-title mb-1">Suppliers</h2>
+              <p className="text-muted mb-0">Manage your suppliers and their information</p>
+            </div>
+            <Button 
+              variant="primary" 
+              onClick={openAddModal}
+              className="create-order-btn"
+            >
+              <FaPlus className="me-2" /> Add Supplier
+            </Button>
+          </div>
+
+          <div className="filters-section mb-4">
+            <Row className="g-3">
+              <Col md={4}>
+                <div className="search-box">
+                  <InputGroup>
+                    <InputGroup.Text className="search-icon">
+                      {isSearching ? <FaSpinner className="spinner" /> : <FaSearch />}
+                    </InputGroup.Text>
+                    <Form.Control
+                      type="text"
+                      placeholder="Search suppliers..."
+                      value={searchParams.search}
+                      onChange={handleSearch}
+                      className="search-input"
+                    />
+                    {searchParams.search && (
+                      <Button
+                        variant="link"
+                        className="clear-search"
+                        onClick={() => {
+                          setSearchParams((prev) => ({ ...prev, search: "" }));
+                          fetchSuppliers();
+                        }}
+                      >
+                        <FaTimes />
+                      </Button>
+                    )}
+                  </InputGroup>
+                </div>
+              </Col>
+            </Row>
+          </div>
+
+          <div className="table-container">
+            <div className="table-responsive">
+              <table className="table table-hover modern-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Secondary Phone</th>
+                    <th>Address</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {suppliers.map((supplier) => (
+                    <tr key={supplier.id}>
+                      <td className="fw-medium">#{supplier.id}</td>
+                      <td>{supplier.name}</td>
+                      <td>{supplier.phone}</td>
+                      <td>{supplier.phone2 || "N/A"}</td>
+                      <td>{supplier.address}</td>
+                      <td>
+                        <Button
+                          variant="outline-info"
+                          size="sm"
+                          className="view-btn me-2"
+                          onClick={() => openEditModal(supplier)}
+                        >
+                          <FaEdit className="me-1" /> Edit
+                        </Button>
+                        <Button
+                          variant="outline-danger"
+                          size="sm"
+                          className="view-btn"
+                          onClick={() => handleDeleteSupplier(supplier.id)}
+                        >
+                          <FaTrash className="me-1" /> Delete
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </Card.Body>
+      </Card>
+
       {/* Add/Edit Supplier Modal */}
       {showModal && (
         <div className="modal-overlay">

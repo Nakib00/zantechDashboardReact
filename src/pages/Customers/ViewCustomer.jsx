@@ -3,9 +3,9 @@ import { useParams, useNavigate } from "react-router-dom";
 import { FaArrowLeft } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import axiosInstance from "../../config/axios";
-import { Card, Button, Row, Col } from "react-bootstrap";
+import { Card, Button, Row, Col, Table } from "react-bootstrap";
 import Loading from "../../components/Loading";
-import "../Categories/Categories.css";
+import "./Customers.css";
 
 const ViewCustomer = () => {
   const { id } = useParams();
@@ -43,7 +43,7 @@ const ViewCustomer = () => {
 
   if (!customer) {
     return (
-      <div className="categories-container">
+      <div className="customers-container">
         <div className="alert alert-danger">Customer not found</div>
       </div>
     );
@@ -52,101 +52,171 @@ const ViewCustomer = () => {
   const { user, shipping_addresses, order_summary, payment_summary } = customer;
 
   return (
-    <div className="categories-container">
-      <div className="categories-header">
-        <div className="d-flex align-items-center gap-3">
-          <Button
-            variant="outline-secondary"
-            onClick={() => navigate("/customers")}
-            className="d-flex align-items-center gap-2"
-          >
-            <FaArrowLeft /> Back
-          </Button>
-          <h2 className="mb-0">Customer Details</h2>
-        </div>
-      </div>
+    <div className="customers-container">
+      <Card className="modern-card">
+        <Card.Body className="p-4">
+          <div className="d-flex justify-content-between align-items-center mb-4">
+            <div>
+              <Button
+                variant="link"
+                className="p-0 mb-2 text-decoration-none"
+                onClick={() => navigate('/customers')}
+              >
+                <FaArrowLeft className="me-2" /> Back to Customers
+              </Button>
+              <h2 className="page-title mb-1">Customer Details</h2>
+              <p className="text-muted mb-0">View and manage customer information</p>
+            </div>
+          </div>
 
-      <Row className="g-4">
-        <Col md={6}>
-          <Card className="h-100">
-            <Card.Body>
-              <h5 className="mb-4">Basic Information</h5>
-              <div className="mb-3">
-                <strong>Name:</strong> {user.name}
-              </div>
-              <div className="mb-3">
-                <strong>Email:</strong> {user.email}
-              </div>
-              <div className="mb-3">
-                <strong>Phone:</strong> {user.phone}
-              </div>
-              <div className="mb-3">
-                <strong>Address:</strong> {user.address || "N/A"}
-              </div>
-              <div className="mb-3">
-                <strong>Member Since:</strong>{" "}
-                {new Date(user.created_at).toLocaleDateString()}
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-
-        <Col md={6}>
-          <Card className="h-100">
-            <Card.Body>
-              <h5 className="mb-4">Order Summary</h5>
-              <div className="mb-3">
-                <strong>Total Orders:</strong> {order_summary.total_orders}
-              </div>
-              <div className="mb-3">
-                <strong>Total Spend:</strong> ৳
-                {order_summary.total_spend.toLocaleString()}
-              </div>
-              <div className="mb-3">
-                <strong>Due Amount:</strong> ৳
-                {payment_summary.due_amount.toLocaleString()}
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-
-        <Col md={12}>
-          <Card>
-            <Card.Body>
-              <h5 className="mb-4">Shipping Addresses</h5>
-              {shipping_addresses.length > 0 ? (
-                <div className="row g-3">
-                  {shipping_addresses.map((address, index) => (
-                    <div key={index} className="col-md-6">
-                      <Card className="h-100 border">
-                        <Card.Body>
-                          <div className="mb-2">
-                            <strong>Address:</strong> {address.address}
-                          </div>
-                          <div className="mb-2">
-                            <strong>City:</strong> {address.city}
-                          </div>
-                          <div className="mb-2">
-                            <strong>State:</strong> {address.state}
-                          </div>
-                          <div className="mb-2">
-                            <strong>Postal Code:</strong> {address.postal_code}
-                          </div>
-                          <div>
-                            <strong>Country:</strong> {address.country}
-                          </div>
-                        </Card.Body>
-                      </Card>
+          <div className="mt-4">
+            <Card className="border mb-4">
+              <Card.Header className="bg-light">
+                <h5 className="mb-0">Basic Information</h5>
+              </Card.Header>
+              <Card.Body>
+                <Row>
+                  <Col md={6}>
+                    <div className="mb-4">
+                      <label className="detail-label">ID</label>
+                      <div className="detail-value">#{user.id}</div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-muted">No shipping addresses found</div>
-              )}
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+                  </Col>
+                  <Col md={6}>
+                    <div className="mb-4">
+                      <label className="detail-label">Member Since</label>
+                      <div className="detail-value">
+                        {new Date(user.created_at).toLocaleDateString()}
+                      </div>
+                    </div>
+                  </Col>
+                </Row>
+
+                <Row>
+                  <Col md={6}>
+                    <div className="mb-4">
+                      <label className="detail-label">Name</label>
+                      <div className="detail-value">{user.name}</div>
+                    </div>
+                  </Col>
+                  <Col md={6}>
+                    <div className="mb-4">
+                      <label className="detail-label">Email</label>
+                      <div className="detail-value">{user.email}</div>
+                    </div>
+                  </Col>
+                </Row>
+
+                <Row>
+                  <Col md={6}>
+                    <div className="mb-4">
+                      <label className="detail-label">Phone</label>
+                      <div className="detail-value">{user.phone}</div>
+                    </div>
+                  </Col>
+                  <Col md={6}>
+                    <div className="mb-4">
+                      <label className="detail-label">Address</label>
+                      <div className="detail-value">{user.address || "N/A"}</div>
+                    </div>
+                  </Col>
+                </Row>
+              </Card.Body>
+            </Card>
+
+            <Card className="border mb-4">
+              <Card.Header className="bg-light">
+                <h5 className="mb-0">Order Summary</h5>
+              </Card.Header>
+              <Card.Body>
+                <Row>
+                  <Col md={4}>
+                    <div className="mb-4">
+                      <label className="detail-label">Total Orders</label>
+                      <div className="detail-value">{order_summary.total_orders}</div>
+                    </div>
+                  </Col>
+                  <Col md={4}>
+                    <div className="mb-4">
+                      <label className="detail-label">Total Spend</label>
+                      <div className="detail-value expense-amount">
+                        ৳{order_summary.total_spend.toLocaleString()}
+                      </div>
+                    </div>
+                  </Col>
+                  <Col md={4}>
+                    <div className="mb-4">
+                      <label className="detail-label">Due Amount</label>
+                      <div className={`detail-value ${payment_summary.due_amount > 0 ? "text-danger" : "text-success"}`}>
+                        ৳{payment_summary.due_amount.toLocaleString()}
+                      </div>
+                    </div>
+                  </Col>
+                </Row>
+              </Card.Body>
+            </Card>
+
+            <Card className="border">
+              <Card.Header className="bg-light">
+                <h5 className="mb-0">Shipping Addresses</h5>
+              </Card.Header>
+              <Card.Body>
+                {shipping_addresses.length > 0 ? (
+                  <div className="row g-3">
+                    {shipping_addresses.map((address, index) => (
+                      <div key={index} className="col-md-6">
+                        <Card className="address-card h-100">
+                          <Card.Body className="p-4">
+                            <div className="address-header mb-3">
+                              <h6 className="mb-0 text-primary">Address #{index + 1}</h6>
+                            </div>
+                            <div className="address-details">
+                              <div className="mb-3">
+                                <label className="detail-label">Street Address</label>
+                                <div className="detail-value">{address.address}</div>
+                              </div>
+                              <div className="row g-3">
+                                <div className="col-6">
+                                  <div className="mb-3">
+                                    <label className="detail-label">City</label>
+                                    <div className="detail-value">{address.city}</div>
+                                  </div>
+                                </div>
+                                <div className="col-6">
+                                  <div className="mb-3">
+                                    <label className="detail-label">State</label>
+                                    <div className="detail-value">{address.state}</div>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="row g-3">
+                                <div className="col-6">
+                                  <div className="mb-3">
+                                    <label className="detail-label">Postal Code</label>
+                                    <div className="detail-value">{address.postal_code}</div>
+                                  </div>
+                                </div>
+                                <div className="col-6">
+                                  <div className="mb-3">
+                                    <label className="detail-label">Country</label>
+                                    <div className="detail-value">{address.country}</div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </Card.Body>
+                        </Card>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-muted p-3 bg-light rounded">No shipping addresses found</div>
+                )}
+              </Card.Body>
+            </Card>
+          </div>
+        </Card.Body>
+      </Card>
     </div>
   );
 };

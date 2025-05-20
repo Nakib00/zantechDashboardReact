@@ -10,6 +10,7 @@ import {
   FaChevronRight,
   FaTimes,
   FaEye,
+  FaCalendarAlt,
 } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import axiosInstance from "../../config/axios";
@@ -25,7 +26,11 @@ import {
   ListGroup,
 } from "react-bootstrap";
 import Select from "react-select/async";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import Loading from "../../components/Loading";
 import "../Categories/Categories.css";
+import "./Challen.css";
 
 const Challen = () => {
   const navigate = useNavigate();
@@ -39,9 +44,8 @@ const Challen = () => {
     search: "",
     page: 1,
     limit: 10,
-    date: "",
-    start_date: "",
-    end_date: "",
+    startDate: null,
+    endDate: null,
   });
   const [pagination, setPagination] = useState({
     total_rows: 0,
@@ -62,7 +66,7 @@ const Challen = () => {
     }
 
     const timeoutId = setTimeout(() => {
-      if (searchParams.search !== "" || searchParams.date !== "" || searchParams.start_date !== "" || searchParams.end_date !== "") {
+      if (searchParams.search !== "" || searchParams.startDate || searchParams.endDate) {
         setIsSearching(true);
         fetchChallans(1);
       }
@@ -75,7 +79,7 @@ const Challen = () => {
         clearTimeout(timeoutId);
       }
     };
-  }, [searchParams.search, searchParams.date, searchParams.start_date, searchParams.end_date]);
+  }, [searchParams.search, searchParams.startDate, searchParams.endDate]);
 
   useEffect(() => {
     fetchSuppliers();
@@ -88,9 +92,8 @@ const Challen = () => {
         page,
         limit: searchParams.limit,
         ...(searchParams.search && { search: searchParams.search }),
-        ...(searchParams.date && { date: searchParams.date }),
-        ...(searchParams.start_date && { start_date: searchParams.start_date }),
-        ...(searchParams.end_date && { end_date: searchParams.end_date }),
+        ...(searchParams.startDate && { startDate: searchParams.startDate.toISOString().split("T")[0] }),
+        ...(searchParams.endDate && { endDate: searchParams.endDate.toISOString().split("T")[0] }),
       };
 
       const response = await axiosInstance.get("/challans", { params });
@@ -360,190 +363,201 @@ const Challen = () => {
     return items;
   };
 
-  const handleDateFilter = (type, value) => {
-    if (type === 'date') {
-      setSearchParams((prev) => ({
-        ...prev,
-        date: value,
-        start_date: "",
-        end_date: "",
-        page: 1,
-      }));
-    } else {
-      setSearchParams((prev) => ({
-        ...prev,
-        date: "",
-        [type]: value,
-        page: 1,
-      }));
+  const handleDateChange = (dates) => {
+    const [start, end] = dates;
+    
+    // Validate dates
+    if (start && end && start > end) {
+      toast.error("Start date cannot be after end date");
+      return;
     }
+
+    // Format dates to start and end of day
+    const formattedStart = start ? new Date(start.setHours(0, 0, 0, 0)) : null;
+    const formattedEnd = end ? new Date(end.setHours(23, 59, 59, 999)) : null;
+    
+    setSearchParams(prev => ({
+      ...prev,
+      startDate: formattedStart,
+      endDate: formattedEnd,
+      page: 1
+    }));
   };
 
-  const clearDateFilters = () => {
-    setSearchParams((prev) => ({
+  const clearDateFilter = () => {
+    setSearchParams(prev => ({
       ...prev,
-      date: "",
-      start_date: "",
-      end_date: "",
-      page: 1,
+      startDate: null,
+      endDate: null,
+      page: 1
     }));
   };
 
   if (loading && challans.length === 0) {
-    return (
-      <div className="loading-container">
-        <div className="loading-text">Zantech</div>
-      </div>
-    );
+    return <Loading />;
   }
 
   return (
-    <div className="categories-container">
-      <Card className="border-0 shadow-sm">
-        <Card.Body>
+    <div className="challen-container">
+      <Card className="modern-card">
+        <Card.Body className="p-4">
           <div className="d-flex justify-content-between align-items-center mb-4">
             <div>
-              <h4 className="mb-1">Challans</h4>
-              <p className="text-muted mb-0">
-                Showing {challans.length} of {pagination.total_rows} challans
-              </p>
+              <h2 className="page-title mb-1">Challans</h2>
+              <p className="text-muted mb-0">Manage and track all your challans</p>
             </div>
-            <div className="d-flex gap-3 align-items-center">
-              <div className="d-flex flex-column align-items-start">
-                <small className="text-muted mb-1">Single Date</small>
-                <Form.Control
-                  type="date"
-                  value={searchParams.date}
-                  onChange={(e) => handleDateFilter("date", e.target.value)}
-                  style={{ width: "150px" }}
-                />
-              </div>
-              <div className="d-flex flex-column align-items-start">
-                <small className="text-muted mb-1">Date Range</small>
-                <div className="d-flex gap-2">
-                  <Form.Control
-                    type="date"
-                    value={searchParams.start_date}
-                    onChange={(e) => handleDateFilter("start_date", e.target.value)}
-                    placeholder="Start Date"
-                    style={{ width: "150px" }}
-                  />
-                  <Form.Control
-                    type="date"
-                    value={searchParams.end_date}
-                    onChange={(e) => handleDateFilter("end_date", e.target.value)}
-                    placeholder="End Date"
-                    style={{ width: "150px" }}
-                  />
-                </div>
-              </div>
-              {(searchParams.date || searchParams.start_date || searchParams.end_date) && (
-                <Button
-                  variant="outline-secondary"
-                  onClick={clearDateFilters}
-                  className="d-flex align-items-center gap-1"
-                  style={{ marginTop: '22px' }}
-                >
-                  <FaTimes /> Clear
-                </Button>
-              )}
-              <Button
-                variant="primary"
-                onClick={() => navigate("/challans/add")}
-                className="d-flex align-items-center gap-2"
-              >
-                <FaPlus /> Add New Challan
-              </Button>
-              <InputGroup style={{ width: "300px" }}>
-                <InputGroup.Text>
-                  {isSearching ? (
-                    <FaSpinner className="spinner-border spinner-border-sm" />
-                  ) : (
-                    <FaSearch />
-                  )}
-                </InputGroup.Text>
-                <Form.Control
-                  type="text"
-                  placeholder="Search challans..."
-                  value={searchParams.search}
-                  onChange={handleSearch}
-                  disabled={loading}
-                />
-                {searchParams.search && !isSearching && (
-                  <Button
-                    variant="outline-secondary"
-                    onClick={() => {
-                      setSearchParams((prev) => ({ ...prev, search: "" }));
-                      fetchChallans(1);
-                    }}
-                    disabled={loading}
-                  >
-                    ×
-                  </Button>
-                )}
-              </InputGroup>
-              <Form.Select
-                value={searchParams.limit}
-                onChange={handleLimitChange}
-                style={{ width: "120px" }}
-                disabled={loading}
-              >
-                <option value="5">5 per page</option>
-                <option value="10">10 per page</option>
-                <option value="20">20 per page</option>
-                <option value="50">50 per page</option>
-              </Form.Select>
-            </div>
+            <Button 
+              variant="primary" 
+              onClick={() => navigate('/challans/add')}
+              className="create-challan-btn"
+            >
+              <FaPlus className="me-2" /> Add New Challan
+            </Button>
           </div>
 
-          <div className="table-responsive">
-            <table className="table table-hover align-middle">
-              <thead className="bg-light">
-                <tr>
-                  <th>ID</th>
-                  <th>Date</th>
-                  <th>Supplier</th>
-                  <th>Total</th>
-                  <th>Delivery Price</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {challans.map((challan) => (
-                  <tr key={challan.id}>
-                    <td>{challan.id}</td>
-                    <td>{new Date(challan.Date).toLocaleDateString()}</td>
-                    <td>
-                      <button
-                        className="btn btn-link p-0 text-primary"
-                        onClick={() => showSupplierDetails(challan.supplier)}
-                      >
-                        {challan.supplier.name}
-                      </button>
-                    </td>
-                    <td>৳{parseFloat(challan.total).toLocaleString()}</td>
-                    <td>
-                      ৳{parseFloat(challan.delivery_price).toLocaleString()}
-                    </td>
-                    <td>
+          <div className="filters-section mb-4">
+            <Row className="g-3">
+              <Col md={4}>
+                <div className="search-box">
+                  <InputGroup>
+                    <InputGroup.Text className="search-icon">
+                      {isSearching ? <FaSpinner className="spinner" /> : <FaSearch />}
+                    </InputGroup.Text>
+                    <Form.Control
+                      type="text"
+                      placeholder="Search challans..."
+                      value={searchParams.search}
+                      onChange={handleSearch}
+                      className="search-input"
+                    />
+                    {searchParams.search && (
                       <Button
-                        variant="outline-primary"
-                        size="sm"
-                        className="d-flex align-items-center gap-1"
-                        onClick={() => navigate(`/challans/${challan.id}`)}
+                        variant="link"
+                        className="clear-search"
+                        onClick={() => {
+                          setSearchParams((prev) => ({ ...prev, search: "" }));
+                          fetchChallans(1);
+                        }}
                       >
-                        <FaEye /> View
+                        <FaTimes />
                       </Button>
-                    </td>
+                    )}
+                  </InputGroup>
+                </div>
+              </Col>
+              <Col md={4}>
+                <div className="date-filter-box">
+                  <InputGroup>
+                    <InputGroup.Text>
+                      <FaCalendarAlt />
+                    </InputGroup.Text>
+                    <DatePicker
+                      selected={searchParams.startDate}
+                      onChange={handleDateChange}
+                      startDate={searchParams.startDate}
+                      endDate={searchParams.endDate}
+                      selectsRange
+                      className="form-control date-picker-input"
+                      placeholderText="Select date range"
+                      dateFormat="yyyy-MM-dd - yyyy-MM-dd"
+                      isClearable
+                      onClear={clearDateFilter}
+                      maxDate={new Date()}
+                      showMonthDropdown
+                      showYearDropdown
+                      dropdownMode="select"
+                      monthsShown={2}
+                      calendarStartDay={1}
+                      popperClassName="date-range-popper"
+                      popperPlacement="bottom-start"
+                      popperModifiers={[
+                        {
+                          name: "preventOverflow",
+                          options: {
+                            boundary: "viewport"
+                          }
+                        }
+                      ]}
+                    />
+                  </InputGroup>
+                </div>
+              </Col>
+              <Col md={2}>
+                <Form.Select
+                  value={searchParams.limit}
+                  onChange={handleLimitChange}
+                  className="limit-select"
+                >
+                  <option value="5">5 per page</option>
+                  <option value="10">10 per page</option>
+                  <option value="20">20 per page</option>
+                  <option value="50">50 per page</option>
+                </Form.Select>
+              </Col>
+              <Col md={2}>
+                {(searchParams.startDate || searchParams.endDate) && (
+                  <Button
+                    variant="outline-secondary"
+                    onClick={clearDateFilter}
+                    className="clear-dates-btn w-100"
+                  >
+                    <FaTimes className="me-2" /> Clear Dates
+                  </Button>
+                )}
+              </Col>
+            </Row>
+          </div>
+
+          <div className="table-container">
+            <div className="table-responsive">
+              <table className="table table-hover modern-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Date</th>
+                    <th>Supplier</th>
+                    <th>Total</th>
+                    <th>Delivery Price</th>
+                    <th>Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {challans.map((challan) => (
+                    <tr key={challan.id}>
+                      <td className="fw-medium">#{challan.id}</td>
+                      <td>{new Date(challan.Date).toLocaleDateString()}</td>
+                      <td>
+                        <button
+                          className="btn btn-link p-0 text-primary supplier-link"
+                          onClick={() => showSupplierDetails(challan.supplier)}
+                        >
+                          {challan.supplier.name}
+                        </button>
+                      </td>
+                      <td className="fw-medium">৳{parseFloat(challan.total).toLocaleString()}</td>
+                      <td>৳{parseFloat(challan.delivery_price).toLocaleString()}</td>
+                      <td>
+                        <Button
+                          variant="outline-primary"
+                          size="sm"
+                          className="view-btn"
+                          onClick={() => navigate(`/challans/${challan.id}`)}
+                        >
+                          <FaEye className="me-1" /> View
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           {pagination.total_pages > 1 && (
-            <div className="d-flex justify-content-center mt-4">
-              <Pagination className="mb-0">{renderPagination()}</Pagination>
+            <div className="pagination-container mt-4">
+              <Pagination className="modern-pagination">
+                {renderPagination()}
+              </Pagination>
             </div>
           )}
         </Card.Body>
@@ -554,13 +568,14 @@ const Challen = () => {
         show={showSupplierModal}
         onHide={() => setShowSupplierModal(false)}
         centered
+        className="modern-modal"
       >
         <Modal.Header closeButton>
           <Modal.Title>Supplier Details</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {selectedSupplier && (
-            <div>
+            <div className="supplier-details">
               <p>
                 <strong>Name:</strong> {selectedSupplier.name}
               </p>
@@ -577,6 +592,7 @@ const Challen = () => {
           <Button
             variant="secondary"
             onClick={() => setShowSupplierModal(false)}
+            className="close-btn"
           >
             Close
           </Button>

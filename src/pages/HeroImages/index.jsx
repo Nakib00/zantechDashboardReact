@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { FaPlus, FaTrash, FaSpinner, FaTimes } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaSpinner, FaTimes, FaSearch } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
 import axiosInstance from '../../config/axios';
-import { Card, Form, Button, Modal } from 'react-bootstrap';
-import '../Categories/Categories.css';
+import { Card, Form, Button, Modal, InputGroup, Pagination, Row, Col } from 'react-bootstrap';
+import Loading from '../../components/Loading';
+import './HeroImages.css';
 
 const HeroImages = () => {
   const [heroImages, setHeroImages] = useState([]);
@@ -14,25 +15,66 @@ const HeroImages = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [searchParams, setSearchParams] = useState({
+    search: '',
     page: 1,
     limit: 10
   });
+  const [pagination, setPagination] = useState({
+    total: 0,
+    current_page: 1,
+    per_page: 10,
+    last_page: 1,
+    from: 0,
+    to: 0
+  });
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchTimeout, setSearchTimeout] = useState(null);
 
   useEffect(() => {
     fetchHeroImages();
   }, [searchParams.page, searchParams.limit]);
+
+  useEffect(() => {
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+
+    const timeoutId = setTimeout(() => {
+      if (searchParams.search !== '') {
+        setIsSearching(true);
+        fetchHeroImages(1);
+      }
+    }, 500);
+
+    setSearchTimeout(timeoutId);
+
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [searchParams.search]);
 
   const fetchHeroImages = async (page = searchParams.page) => {
     setLoading(true);
     try {
       const params = {
         page,
-        limit: searchParams.limit
+        limit: searchParams.limit,
+        search: searchParams.search
       };
 
       const response = await axiosInstance.get('/hero-images', { params });
       if (response.data.success) {
         setHeroImages(response.data.data);
+        setPagination(response.data.pagination || {
+          total: response.data.data.length,
+          current_page: page,
+          per_page: searchParams.limit,
+          last_page: Math.ceil(response.data.data.length / searchParams.limit),
+          from: (page - 1) * searchParams.limit + 1,
+          to: Math.min(page * searchParams.limit, response.data.data.length)
+        });
       } else {
         throw new Error(response.data.message || 'Failed to fetch hero images');
       }
@@ -41,7 +83,16 @@ const HeroImages = () => {
       setHeroImages([]);
     } finally {
       setLoading(false);
+      setIsSearching(false);
     }
+  };
+
+  const handleSearch = (e) => {
+    setSearchParams(prev => ({
+      ...prev,
+      search: e.target.value,
+      page: 1
+    }));
   };
 
   const handleLimitChange = (e) => {
@@ -51,6 +102,81 @@ const HeroImages = () => {
       limit,
       page: 1
     }));
+  };
+
+  const handlePageChange = (page) => {
+    setSearchParams(prev => ({
+      ...prev,
+      page
+    }));
+  };
+
+  const renderPagination = () => {
+    const items = [];
+    const { current_page, last_page } = pagination;
+
+    // Previous button
+    items.push(
+      <Pagination.Prev
+        key="prev"
+        onClick={() => handlePageChange(current_page - 1)}
+        disabled={current_page === 1}
+      />
+    );
+
+    // First page
+    if (current_page > 2) {
+      items.push(
+        <Pagination.Item key={1} onClick={() => handlePageChange(1)}>
+          1
+        </Pagination.Item>
+      );
+      if (current_page > 3) {
+        items.push(<Pagination.Ellipsis key="ellipsis1" disabled />);
+      }
+    }
+
+    // Page numbers
+    const startPage = Math.max(1, current_page - 1);
+    const endPage = Math.min(last_page, current_page + 1);
+
+    for (let number = startPage; number <= endPage; number++) {
+      items.push(
+        <Pagination.Item
+          key={number}
+          active={number === current_page}
+          onClick={() => handlePageChange(number)}
+        >
+          {number}
+        </Pagination.Item>
+      );
+    }
+
+    // Last page
+    if (endPage < last_page) {
+      if (endPage < last_page - 1) {
+        items.push(<Pagination.Ellipsis key="ellipsis2" disabled />);
+      }
+      items.push(
+        <Pagination.Item
+          key={last_page}
+          onClick={() => handlePageChange(last_page)}
+        >
+          {last_page}
+        </Pagination.Item>
+      );
+    }
+
+    // Next button
+    items.push(
+      <Pagination.Next
+        key="next"
+        onClick={() => handlePageChange(current_page + 1)}
+        disabled={current_page === last_page}
+      />
+    );
+
+    return items;
   };
 
   const handleFileChange = (e) => {
@@ -123,87 +249,115 @@ const HeroImages = () => {
   };
 
   if (loading && heroImages.length === 0) {
-    return (
-      <div className="loading-container">
-        <div className="loading-text">Zantech</div>
-      </div>
-    );
+    return <Loading />;
   }
 
   return (
-    <div className="categories-container">
-      <div className="categories-header">
-        <h2>Hero Section Images</h2>
-        <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>
-          <FaPlus /> Add Hero Image
-        </button>
-      </div>
-
-      <Card className="mb-4">
-        <Card.Body>
-          <div className="d-flex justify-content-end align-items-center mb-4">
-            <Form.Select
-              value={searchParams.limit}
-              onChange={handleLimitChange}
-              style={{ width: 'auto' }}
-              disabled={loading}
+    <div className="hero-images-container">
+      <Card className="modern-card">
+        <Card.Body className="p-4">
+          <div className="d-flex justify-content-between align-items-center mb-4">
+            <div>
+              <h2 className="page-title mb-1">Hero Section Images</h2>
+              <p className="text-muted mb-0">Manage and organize your hero section images</p>
+            </div>
+            <Button 
+              variant="primary" 
+              onClick={() => setShowAddModal(true)}
+              className="create-image-btn"
             >
-              <option value="5">5 per page</option>
-              <option value="10">10 per page</option>
-              <option value="20">20 per page</option>
-              <option value="50">50 per page</option>
-            </Form.Select>
+              <FaPlus className="me-2" /> Add Hero Image
+            </Button>
           </div>
 
-          <div className="table-responsive">
-            <table className="table table-hover align-middle">
-              <thead className="bg-light">
-                <tr>
-                  <th>ID</th>
-                  <th>Image</th>
-                  <th>Created At</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {heroImages.map((image) => (
-                  <tr key={image.id}>
-                    <td>{image.id}</td>
-                    <td>
-                      <img
-                        src={image.path}
-                        alt={`Hero Image ${image.id}`}
-                        className="rounded img-thumbnail cursor-pointer"
-                        style={{ 
-                          width: '200px', 
-                          height: '100px', 
-                          objectFit: 'cover',
-                          cursor: 'pointer'
-                        }}
-                        onClick={() => handleImageClick(image)}
-                      />
-                    </td>
-                    <td>{new Date(image.created_at).toLocaleString()}</td>
-                    <td>
-                      <Button
-                        variant="outline-danger"
-                        size="sm"
-                        onClick={() => handleDelete(image.id)}
-                        disabled={loading}
-                      >
-                        <FaTrash /> Delete
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="filters-section mb-4">
+            <Row className="g-3">
+              <Col md={3}>
+                <Form.Select
+                  value={searchParams.limit}
+                  onChange={handleLimitChange}
+                  className="limit-select"
+                >
+                  <option value="5">5 per page</option>
+                  <option value="10">10 per page</option>
+                  <option value="20">20 per page</option>
+                  <option value="50">50 per page</option>
+                </Form.Select>
+              </Col>
+            </Row>
           </div>
+
+          <div className="table-container">
+            <div className="table-responsive">
+              <table className="table table-hover modern-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Image</th>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Email</th>
+                    <th>Created At</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {heroImages.map((image) => (
+                    <tr key={image.id}>
+                      <td className="fw-medium">#{image.id}</td>
+                      <td>
+                        <img
+                          src={image.path}
+                          alt={`Hero Image ${image.id}`}
+                          className="rounded img-thumbnail cursor-pointer"
+                          style={{ 
+                            width: '200px', 
+                            height: '100px', 
+                            objectFit: 'cover',
+                            cursor: 'pointer'
+                          }}
+                          onClick={() => handleImageClick(image)}
+                        />
+                      </td>
+                      <td>{image.user_name || 'N/A'}</td>
+                      <td>{image.user_phone || 'N/A'}</td>
+                      <td>{image.user_email || 'N/A'}</td>
+                      <td>{new Date(image.created_at).toLocaleString()}</td>
+                      <td>
+                        <Button
+                          variant="outline-danger"
+                          size="sm"
+                          onClick={() => handleDelete(image.id)}
+                          disabled={loading}
+                          className="delete-btn"
+                        >
+                          <FaTrash className="me-1" /> Delete
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {pagination.last_page > 1 && (
+            <div className="pagination-container mt-4">
+              <Pagination className="modern-pagination">
+                {renderPagination()}
+              </Pagination>
+            </div>
+          )}
         </Card.Body>
       </Card>
 
       {/* Add Hero Image Modal */}
-      <Modal show={showAddModal} onHide={() => setShowAddModal(false)} centered>
+      <Modal 
+        show={showAddModal} 
+        onHide={() => setShowAddModal(false)} 
+        centered
+        className="modern-modal"
+      >
         <Modal.Header closeButton>
           <Modal.Title>Add Hero Image</Modal.Title>
         </Modal.Header>
@@ -216,6 +370,7 @@ const HeroImages = () => {
                 accept="image/*"
                 onChange={handleFileChange}
                 required
+                className="modern-file-input"
               />
               <Form.Text className="text-muted">
                 Maximum file size: 4MB. Supported formats: JPG, PNG, GIF, SVG
@@ -234,17 +389,22 @@ const HeroImages = () => {
             )}
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowAddModal(false)}>
+            <Button 
+              variant="secondary" 
+              onClick={() => setShowAddModal(false)}
+              className="cancel-btn"
+            >
               Cancel
             </Button>
             <Button
               type="submit"
               variant="primary"
               disabled={!selectedFile || uploading}
+              className="upload-btn"
             >
               {uploading ? (
                 <>
-                  <FaSpinner className="spinner-border spinner-border-sm me-2" />
+                  <FaSpinner className="spinner me-2" />
                   Uploading...
                 </>
               ) : (
@@ -261,7 +421,7 @@ const HeroImages = () => {
         onHide={() => setShowPreviewModal(false)} 
         centered
         size="lg"
-        className="image-preview-modal"
+        className="modern-modal image-preview-modal"
       >
         <Modal.Header closeButton>
           <Modal.Title>Image Preview</Modal.Title>
@@ -280,7 +440,11 @@ const HeroImages = () => {
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowPreviewModal(false)}>
+          <Button 
+            variant="secondary" 
+            onClick={() => setShowPreviewModal(false)}
+            className="close-btn"
+          >
             Close
           </Button>
         </Modal.Footer>

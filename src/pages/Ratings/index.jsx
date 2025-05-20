@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { FaPlus, FaEdit, FaTrash, FaSpinner, FaFilter } from "react-icons/fa";
+import { FaPlus, FaEdit, FaTrash, FaSpinner, FaTimes } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import axiosInstance from "../../config/axios";
-import { Card, Form, Button, Modal, Pagination, Badge } from "react-bootstrap";
+import { Card, Form, Button, Modal, Pagination, Table, Row, Col } from "react-bootstrap";
 import Select from "react-select/async";
-import "../Categories/Categories.css";
+import Loading from "../../components/Loading";
+import "./Ratings.css";
 
 const Ratings = () => {
   const [ratings, setRatings] = useState([]);
@@ -28,7 +29,6 @@ const Ratings = () => {
     total_pages: 1,
     has_more_pages: false,
   });
-  const [showFilters, setShowFilters] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [statusToggleLoading, setStatusToggleLoading] = useState({});
 
@@ -85,7 +85,7 @@ const Ratings = () => {
       toast.error("Please select a product and rating");
       return;
     }
-    
+
     setIsSubmitting(true);
     try {
       const response = await axiosInstance.post("/ratings", formData);
@@ -93,7 +93,7 @@ const Ratings = () => {
         // First close the modal and reset form
         setShowModal(false);
         setFormData({ star: "", reating: "", product_id: "" });
-        
+
         // Then update the ratings list
         await fetchRatings(1);
         toast.success("Rating added successfully");
@@ -130,28 +130,11 @@ const Ratings = () => {
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
-    setSearchParams((prev) => ({
+    setSearchParams(prev => ({
       ...prev,
       [name]: value,
-      page: 1,
+      page: 1
     }));
-  };
-
-  const handleFilterSubmit = (e) => {
-    e.preventDefault();
-    setShowFilters(false);
-    fetchRatings(1);
-  };
-
-  const handleResetFilters = () => {
-    setSearchParams({
-      page: 1,
-      limit: 10,
-      status: "",
-      star: "",
-    });
-    setShowFilters(false);
-    fetchRatings(1);
   };
 
   const renderPagination = () => {
@@ -221,321 +204,256 @@ const Ratings = () => {
   };
 
   if (loading && ratings.length === 0) {
-    return (
-      <div className="loading-container">
-        <div className="loading-text">Zantech</div>
-      </div>
-    );
+    return <Loading />;
   }
 
   return (
-    <div className="categories-container">
-      <Card className="border-0 shadow-sm">
-        <Card.Body>
+    <div className="orders-container">
+      <Card className="modern-card">
+        <Card.Body className="p-4">
           <div className="d-flex justify-content-between align-items-center mb-4">
-            <h2 className="mb-0">Ratings</h2>
-            <div className="d-flex gap-2">
-              <Button
-                variant="outline-secondary"
-                onClick={() => setShowFilters(true)}
-                title="Filter"
-                disabled={loading}
-              >
-                <FaFilter />
-              </Button>
-              <button
-                className="btn btn-primary d-flex align-items-center gap-2"
-                onClick={() => {
-                  setFormData({ star: "", reating: "", product_id: "" });
-                  setShowModal(true);
-                }}
-                disabled={loading}
-              >
-                <FaPlus /> Add Rating
-              </button>
+            <div>
+              <h2 className="page-title mb-1">Ratings</h2>
+              <p className="text-muted mb-0">Manage and track all your product ratings</p>
+            </div>
+            <Button
+              variant="primary"
+              className="create-order-btn"
+              onClick={() => {
+                setFormData({ star: "", reating: "", product_id: "" });
+                setShowModal(true);
+              }}
+            >
+              <FaPlus className="me-2" /> Add Rating
+            </Button>
+          </div>
+
+          <div className="filters-section mb-4">
+            <Row className="g-3 align-items-center">
+              <Col md={2}>
+                <Form.Select
+                  className="status-filter"
+                  name="star"
+                  value={searchParams.star}
+                  onChange={handleFilterChange}
+                >
+                  <option value="">All Stars</option>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <option key={star} value={star}>
+                      {star} Star{star > 1 ? "s" : ""}
+                    </option>
+                  ))}
+                </Form.Select>
+              </Col>
+              <Col md={2}>
+                <Form.Select
+                  className="status-filter"
+                  name="status"
+                  value={searchParams.status}
+                  onChange={handleFilterChange}
+                >
+                  <option value="">All Status</option>
+                  <option value="1">Active</option>
+                  <option value="0">Inactive</option>
+                </Form.Select>
+              </Col>
+              <Col md={2}>
+                <Form.Select
+                  value={searchParams.limit}
+                  onChange={(e) => {
+                    setSearchParams(prev => ({
+                      ...prev,
+                      limit: parseInt(e.target.value),
+                      page: 1
+                    }));
+                  }}
+                  className="limit-select"
+                >
+                  <option value="5">5 per page</option>
+                  <option value="10">10 per page</option>
+                  <option value="20">20 per page</option>
+                  <option value="50">50 per page</option>
+                </Form.Select>
+              </Col>
+            </Row>
+          </div>
+
+          <div className="table-container">
+            <div className="table-responsive">
+              <Table className="modern-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Star Rating</th>
+                    <th>Review Text</th>
+                    <th>Product</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading && ratings.length === 0 ? (
+                    <tr>
+                      <td colSpan="6" className="text-center">
+                        <FaSpinner className="spinner" /> Loading...
+                      </td>
+                    </tr>
+                  ) : ratings.length > 0 ? (
+                    ratings.map((rating) => (
+                      <tr key={rating.id}>
+                        <td>{rating.id}</td>
+                        <td>
+                          <div className="d-flex align-items-center gap-1">
+                            {[...Array(5)].map((_, index) => (
+                              <span
+                                key={index}
+                                style={{
+                                  color: index < rating.star ? "#ffc107" : "#e4e5e9",
+                                }}
+                              >
+                                ★
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+                        <td>{rating.reating || "No review"}</td>
+                        <td>
+                          {rating.product ? (
+                            <div className="d-flex align-items-center">
+                              {rating.product.images?.[0]?.path && (
+                                <img
+                                  src={`http://127.0.0.1:8000/storage/${rating.product.images[0].path.replace('public/', '')}`}
+                                  alt={rating.product.name}
+                                  style={{
+                                    width: "50px",
+                                    height: "50px",
+                                    objectFit: "cover",
+                                    marginRight: "10px",
+                                    borderRadius: "5px",
+                                  }}
+                                />
+                              )}
+                              <div>{rating.product.name}</div>
+                            </div>
+                          ) : (
+                            "N/A"
+                          )}
+                        </td>
+                        <td>
+                          <span className={rating.status === "1" ? "text-success" : "text-danger"}>
+                            {rating.status === "1" ? "Active" : "Inactive"}
+                          </span>
+                        </td>
+                        <td>
+                          <Button
+                            variant={rating.status === "1" ? "outline-danger" : "outline-success"}
+                            size="sm"
+                            onClick={() => handleToggleStatus(rating.id)}
+                            disabled={statusToggleLoading[rating.id]}
+                            className="view-btn"
+                          >
+                            {statusToggleLoading[rating.id] ? (
+                              <FaSpinner className="spinner" size="sm" />
+                            ) : rating.status === "1" ? (
+                              "Deactivate"
+                            ) : (
+                              "Activate"
+                            )}
+                          </Button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="6" className="text-center">No ratings found.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </Table>
             </div>
           </div>
 
-          {/* Filter Modal */}
-          <Modal show={showFilters} onHide={() => !loading && setShowFilters(false)}>
-            <Modal.Header closeButton>
-              <Modal.Title>Filter Ratings</Modal.Title>
-            </Modal.Header>
-            <Form onSubmit={handleFilterSubmit}>
-              <Modal.Body>
-                <Form.Group className="mb-3">
-                  <Form.Label>Status</Form.Label>
-                  <Form.Select
-                    name="status"
-                    value={searchParams.status}
-                    onChange={handleFilterChange}
-                    disabled={loading}
-                  >
-                    <option value="">All Status</option>
-                    <option value="1">Active</option>
-                    <option value="0">Inactive</option>
-                  </Form.Select>
-                </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Label>Star Rating</Form.Label>
-                  <Form.Select
-                    name="star"
-                    value={searchParams.star}
-                    onChange={handleFilterChange}
-                    disabled={loading}
-                  >
-                    <option value="">All Stars</option>
-                    <option value="1">1 Star</option>
-                    <option value="2">2 Stars</option>
-                    <option value="3">3 Stars</option>
-                    <option value="4">4 Stars</option>
-                    <option value="5">5 Stars</option>
-                  </Form.Select>
-                </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Label>Items per page</Form.Label>
-                  <Form.Select
-                    name="limit"
-                    value={searchParams.limit}
-                    onChange={handleFilterChange}
-                    disabled={loading}
-                  >
-                    <option value="5">5 per page</option>
-                    <option value="10">10 per page</option>
-                    <option value="20">20 per page</option>
-                    <option value="50">50 per page</option>
-                  </Form.Select>
-                </Form.Group>
-              </Modal.Body>
-              <Modal.Footer>
-                <Button variant="secondary" onClick={handleResetFilters} disabled={loading}>
-                  Reset Filters
-                </Button>
-                <Button variant="primary" type="submit" disabled={loading}>
-                  Apply Filters
-                </Button>
-              </Modal.Footer>
-            </Form>
-          </Modal>
-
-          {/* Add Rating Modal */}
-          <Modal 
-            show={showModal} 
-            onHide={() => {
-              if (!isSubmitting) {
-                setShowModal(false);
-                setFormData({ star: "", reating: "", product_id: "" });
-              }
-            }}
-            backdrop={isSubmitting ? "static" : true}
-            keyboard={!isSubmitting}
-          >
-            <Modal.Header closeButton={!isSubmitting}>
-              <Modal.Title>Add New Rating</Modal.Title>
-            </Modal.Header>
-            <Form onSubmit={handleAddRating}>
-              <Modal.Body>
-                <Form.Group className="mb-3">
-                  <Form.Label>Product <span className="text-danger">*</span></Form.Label>
-                  <Select
-                    cacheOptions
-                    defaultOptions
-                    loadOptions={loadProducts}
-                    onChange={(selected) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        product_id: selected?.value || "",
-                      }))
-                    }
-                    value={formData.product_id ? {
-                      value: formData.product_id,
-                      label: ratings.find(r => r.product.id === formData.product_id)?.product.name || "Selected Product"
-                    } : null}
-                    placeholder="Search and select a product..."
-                    noOptionsMessage={() => "No products found"}
-                    loadingMessage={() => "Loading products..."}
-                    isDisabled={isSubmitting}
-                    formatOptionLabel={(option) => (
-                      <div className="d-flex align-items-center gap-2">
-                        {option.image && (
-                          <img
-                            src={option.image}
-                            alt={option.label}
-                            style={{ width: "30px", height: "30px", objectFit: "cover" }}
-                          />
-                        )}
-                        <span>{option.label}</span>
-                      </div>
-                    )}
-                  />
-                </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Label>Star Rating <span className="text-danger">*</span></Form.Label>
-                  <Form.Select
-                    value={formData.star}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        star: e.target.value,
-                      }))
-                    }
-                    required
-                    disabled={isSubmitting}
-                  >
-                    <option value="">Select Rating</option>
-                    <option value="1">1 Star</option>
-                    <option value="2">2 Stars</option>
-                    <option value="3">3 Stars</option>
-                    <option value="4">4 Stars</option>
-                    <option value="5">5 Stars</option>
-                  </Form.Select>
-                </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Label>Review</Form.Label>
-                  <Form.Control
-                    as="textarea"
-                    rows={3}
-                    value={formData.reating}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        reating: e.target.value,
-                      }))
-                    }
-                    placeholder="Write your review..."
-                    disabled={isSubmitting}
-                  />
-                </Form.Group>
-              </Modal.Body>
-              <Modal.Footer>
-                <Button 
-                  variant="secondary" 
-                  onClick={() => {
-                    setShowModal(false);
-                    setFormData({ star: "", reating: "", product_id: "" });
-                  }} 
-                  disabled={isSubmitting}
-                >
-                  Cancel
-                </Button>
-                <Button variant="primary" type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? (
-                    <>
-                      <FaSpinner className="spinner-border spinner-border-sm me-2" />
-                      Adding...
-                    </>
-                  ) : (
-                    "Add Rating"
-                  )}
-                </Button>
-              </Modal.Footer>
-            </Form>
-          </Modal>
-
-          <div className="table-responsive">
-            <table className="table table-hover align-middle">
-              <thead className="bg-light">
-                <tr>
-                  <th>ID</th>
-                  <th>Product</th>
-                  <th>User</th>
-                  <th>Rating</th>
-                  <th>Review</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ratings.map((rating) => (
-                  <tr key={rating.id}>
-                    <td>{rating.id}</td>
-                    <td>
-                      <div className="d-flex align-items-center gap-2">
-                        {rating.product.image && (
-                          <img
-                            src={rating.product.image}
-                            alt={rating.product.name}
-                            style={{ width: "40px", height: "40px", objectFit: "cover" }}
-                          />
-                        )}
-                        <span>{rating.product.name}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <div>
-                        <div>{rating.user.name}</div>
-                        <small className="text-muted">{rating.user.email}</small>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="d-flex align-items-center gap-1">
-                        {[...Array(5)].map((_, index) => (
-                          <span
-                            key={index}
-                            style={{
-                              color: index < rating.star ? "#ffc107" : "#e4e5e9",
-                            }}
-                          >
-                            ★
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-                    <td>{rating.reating || "No review"}</td>
-                    <td>
-                      <Badge
-                        bg={rating.status === "1" ? "success" : "danger"}
-                        className="cursor-pointer"
-                        onClick={() => handleToggleStatus(rating.id)}
-                        style={{ cursor: "pointer" }}
-                      >
-                        {statusToggleLoading[rating.id] ? (
-                          <FaSpinner className="spinner-border spinner-border-sm" />
-                        ) : rating.status === "1" ? (
-                          "Active"
-                        ) : (
-                          "Inactive"
-                        )}
-                      </Badge>
-                    </td>
-                    <td>
-                      <Button
-                        variant="outline-danger"
-                        size="sm"
-                        className="d-flex align-items-center gap-1"
-                        onClick={() => handleToggleStatus(rating.id)}
-                        disabled={statusToggleLoading[rating.id]}
-                      >
-                        {statusToggleLoading[rating.id] ? (
-                          <FaSpinner className="spinner-border spinner-border-sm" />
-                        ) : (
-                          <>
-                            {rating.status === "1" ? (
-                              <>
-                                <FaTrash /> Deactivate
-                              </>
-                            ) : (
-                              <>
-                                <FaEdit /> Activate
-                              </>
-                            )}
-                          </>
-                        )}
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
           {pagination.total_pages > 1 && (
-            <div className="d-flex justify-content-center mt-4">
-              <Pagination className="mb-0">{renderPagination()}</Pagination>
+            <div className="pagination-container mt-4">
+              <Pagination className="modern-pagination">
+                {renderPagination()}
+              </Pagination>
             </div>
           )}
         </Card.Body>
       </Card>
+
+      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Add New Rating</Modal.Title>
+        </Modal.Header>
+        <Form onSubmit={handleAddRating}>
+          <Modal.Body>
+            <Row className="g-3">
+              <Col md={12}>
+                <Form.Group>
+                  <Form.Label>Product</Form.Label>
+                  <Select
+                    cacheOptions
+                    defaultOptions
+                    loadOptions={loadProducts}
+                    onChange={(selectedOption) =>
+                      setFormData({
+                        ...formData,
+                        product_id: selectedOption ? selectedOption.value : "",
+                      })
+                    }
+                    placeholder="Select a product"
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={12}>
+                <Form.Group>
+                  <Form.Label>Star Rating</Form.Label>
+                  <Form.Control
+                    as="select"
+                    name="star"
+                    value={formData.star}
+                    onChange={(e) =>
+                      setFormData({ ...formData, star: e.target.value })
+                    }
+                    required
+                  >
+                    <option value="">Select star rating</option>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <option key={star} value={star}>
+                        {star} Star{star > 1 ? "s" : ""}
+                      </option>
+                    ))}
+                  </Form.Control>
+                </Form.Group>
+              </Col>
+              <Col md={12}>
+                <Form.Group>
+                  <Form.Label>Review Text (Optional)</Form.Label>
+                  <Form.Control
+                    as="textarea"
+                    rows={3}
+                    name="reating"
+                    value={formData.reating}
+                    onChange={(e) =>
+                      setFormData({ ...formData, reating: e.target.value })
+                    }
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowModal(false)}>
+              Close
+            </Button>
+            <Button variant="primary" type="submit" disabled={isSubmitting}>
+              {isSubmitting ? <FaSpinner className="spinner" size="sm" /> : "Add Rating"}
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
     </div>
   );
 };

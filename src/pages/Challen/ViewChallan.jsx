@@ -11,13 +11,14 @@ import {
   FaTrash,
   FaPencilAlt,
   FaUpload,
+  FaEye,
 } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import axiosInstance from "../../config/axios";
 import { Card, Button, Row, Col, Table, Image, Form, Modal } from "react-bootstrap";
 import Select from "react-select/async";
 import Loading from "../../components/Loading";
-import "../Categories/Categories.css";
+import "./Challan.css";
 
 const ViewChallan = () => {
   const { id } = useParams();
@@ -375,43 +376,43 @@ const ViewChallan = () => {
   }
 
   return (
-    <div className="categories-container">
-      <Card className="border-0 shadow-sm">
-        <Card.Body>
+    <div className="challan-container">
+      <Card className="modern-card">
+        <Card.Body className="p-4">
           <div className="d-flex justify-content-between align-items-center mb-4">
-            <div className="d-flex align-items-center gap-3">
+            <div>
               <Button
-                variant="outline-secondary"
-                onClick={() => navigate("/challans")}
-                className="d-flex align-items-center gap-2"
+                variant="link"
+                className="p-0 mb-2 text-decoration-none"
+                onClick={() => navigate('/challans')}
               >
-                <FaArrowLeft /> Back
+                <FaArrowLeft className="me-2" /> Back to Challans
               </Button>
-              <div>
-                <h4 className="mb-1">Challan Details</h4>
-                <p className="text-muted mb-0">View challan information</p>
-              </div>
+              <h2 className="page-title mb-1">{isEditing ? "Edit Challan" : "Challan Details"}</h2>
+              <p className="text-muted mb-0">View and manage challan information</p>
             </div>
             {!isEditing && (
               <Button
-                variant="outline-primary"
+                variant="primary"
                 onClick={handleEdit}
-                className="d-flex align-items-center gap-2"
+                className="create-challan-btn"
               >
-                <FaEdit /> Edit
+                <FaEdit className="me-2" /> Edit Challan
               </Button>
             )}
           </div>
 
-          <Row className="mb-4">
-            <Col md={6}>
-              <Card className="border h-100">
+          {isEditing ? (
+            <Form onSubmit={handleSubmit} className="mt-4">
+              <Card className="border mb-4">
+                <Card.Header className="bg-light">
+                  <h5 className="mb-0">Basic Information</h5>
+                </Card.Header>
                 <Card.Body>
-                  <h5 className="mb-3">Basic Information</h5>
-                  {isEditing ? (
-                    <Form onSubmit={handleSubmit}>
+                  <Row>
+                    <Col md={6}>
                       <Form.Group className="mb-3">
-                        <Form.Label>Date</Form.Label>
+                        <Form.Label>Date <span className="text-danger">*</span></Form.Label>
                         <Form.Control
                           type="date"
                           value={formData.Date}
@@ -422,32 +423,13 @@ const ViewChallan = () => {
                             }))
                           }
                           required
+                          className="form-control-lg"
                         />
                       </Form.Group>
-
+                    </Col>
+                    <Col md={6}>
                       <Form.Group className="mb-3">
-                        <Form.Label>Supplier</Form.Label>
-                        <Form.Select
-                          value={formData.supplier_id}
-                          onChange={(e) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              supplier_id: e.target.value,
-                            }))
-                          }
-                          required
-                        >
-                          <option value="">Select Supplier</option>
-                          {suppliers.map((supplier) => (
-                            <option key={supplier.id} value={supplier.id}>
-                              {supplier.name}
-                            </option>
-                          ))}
-                        </Form.Select>
-                      </Form.Group>
-
-                      <Form.Group className="mb-3">
-                        <Form.Label>Delivery Price</Form.Label>
+                        <Form.Label>Delivery Price (৳) <span className="text-danger">*</span></Form.Label>
                         <Form.Control
                           type="number"
                           min="0"
@@ -460,540 +442,511 @@ const ViewChallan = () => {
                             }))
                           }
                           required
+                          className="form-control-lg"
                         />
                       </Form.Group>
+                    </Col>
+                  </Row>
 
-                      <div className="alert alert-info">
-                        <strong>Total Amount:</strong> ৳
-                        {parseFloat(challan.total).toLocaleString()}
-                      </div>
-
-                      <div className="d-flex gap-2">
-                        <Button
-                          type="submit"
-                          variant="primary"
-                          disabled={submitting}
-                          className="d-flex align-items-center gap-2"
-                        >
-                          {submitting ? (
-                            <>
-                              <FaSpinner className="spinner-border spinner-border-sm" />{" "}
-                              Saving...
-                            </>
-                          ) : (
-                            <>
-                              <FaSave /> Save Changes
-                            </>
-                          )}
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          onClick={handleCancel}
-                          disabled={submitting}
-                          className="d-flex align-items-center gap-2"
-                        >
-                          <FaTimes /> Cancel
-                        </Button>
-                      </div>
-                    </Form>
-                  ) : (
-                    <>
-                  <div className="mb-2">
-                    <strong>Challan ID:</strong> {challan.id}
-                  </div>
-                  <div className="mb-2">
-                    <strong>Date:</strong>{" "}
-                    {new Date(challan.Date).toLocaleDateString()}
-                  </div>
-                  <div className="mb-2">
-                    <strong>Created By:</strong> {challan.user.name}
-                  </div>
-                  <div className="mb-2">
-                    <strong>Delivery Price:</strong> ৳
-                    {parseFloat(challan.delivery_price).toLocaleString()}
-                  </div>
-                  <div>
-                    <div className="mt-2">
-                      <strong>Total Amount:</strong> ৳
-                      {parseFloat(challan.total).toLocaleString()}
-                    </div>
-                  </div>
-                    </>
-                  )}
-                </Card.Body>
-              </Card>
-            </Col>
-            <Col md={6}>
-              <Card className="border h-100">
-                <Card.Body>
-                  <h5 className="mb-3">Supplier Information</h5>
-                  <div className="mb-2">
-                    <strong>Name:</strong> {challan.supplier.name}
-                  </div>
-                  <div className="mb-2">
-                    <strong>Phone:</strong> {challan.supplier.phone}
-                  </div>
-                  <div>
-                    <strong>Address:</strong> {challan.supplier.address}
-                  </div>
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
-
-          <Card className="border mb-4">
-            <Card.Body>
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <h5 className="mb-0">Items</h5>
-                <Button
-                  variant="outline-primary"
-                  onClick={() => setIsAddingItems(!isAddingItems)}
-                  className="d-flex align-items-center gap-2"
-                >
-                  {isAddingItems ? <FaTimes /> : <FaPlus />}
-                  {isAddingItems ? "Cancel" : "Add Items"}
-                </Button>
-              </div>
-
-              {isAddingItems && (
-                <div className="mb-4">
                   <Form.Group className="mb-3">
-                    <Form.Label>Add Items</Form.Label>
-                    <Select
-                      cacheOptions
-                      defaultOptions
-                      loadOptions={loadItems}
-                      onChange={handleItemSelect}
-                      placeholder="Search and select items..."
-                      noOptionsMessage={() => "No items found"}
-                      loadingMessage={() => "Loading items..."}
-                    />
+                    <Form.Label>Supplier <span className="text-danger">*</span></Form.Label>
+                    <Form.Select
+                      value={formData.supplier_id}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          supplier_id: e.target.value,
+                        }))
+                      }
+                      required
+                      className="form-control-lg"
+                    >
+                      <option value="">Select Supplier</option>
+                      {suppliers.map((supplier) => (
+                        <option key={supplier.id} value={supplier.id}>
+                          {supplier.name}
+                        </option>
+                      ))}
+                    </Form.Select>
                   </Form.Group>
 
-                  {selectedItems.length > 0 && (
-                    <div className="mb-3">
-                      <h6>Selected Items</h6>
-                      {selectedItems.map((item, index) => (
-                        <div key={index} className="border rounded p-3 mb-2">
-                          <div className="d-flex justify-content-between align-items-center mb-2">
-                            <strong>{item.name}</strong>
-                            <Button
-                              variant="link"
-                              className="text-danger p-0"
-                              onClick={() => handleItemRemove(index)}
-                            >
-                              <FaTrash />
-                            </Button>
-                          </div>
-                          <Row>
-                            <Col md={6}>
-                              <Form.Group>
-                                <Form.Label>Buying Price</Form.Label>
-                                <Form.Control
-                                  type="number"
-                                  min="0"
-                                  step="0.01"
-                                  value={item.buying_price}
-                                  onChange={(e) =>
-                                    handleItemChange(
-                                      index,
-                                      "buying_price",
-                                      parseFloat(e.target.value)
-                                    )
-                                  }
-                                  required
-                                />
-                              </Form.Group>
-                            </Col>
-                            <Col md={6}>
-                              <Form.Group>
-                                <Form.Label>Quantity</Form.Label>
-                                <Form.Control
-                                  type="number"
-                                  min="1"
-                                  value={item.quantity}
-                                  onChange={(e) =>
-                                    handleItemChange(
-                                      index,
-                                      "quantity",
-                                      parseInt(e.target.value)
-                                    )
-                                  }
-                                  required
-                                />
-                              </Form.Group>
-                            </Col>
-                          </Row>
-                        </div>
-                      ))}
-                      <Button
-                        variant="primary"
-                        onClick={handleAddItems}
-                        disabled={addingItemsLoading}
-                        className="d-flex align-items-center gap-2"
-                      >
-                        {addingItemsLoading ? (
-                          <>
-                            <FaSpinner className="spinner-border spinner-border-sm" />{" "}
-                            Adding Items...
-                          </>
-                        ) : (
-                          <>
-                            <FaPlus /> Add Items to Challan
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              )}
+                  <div className="alert alert-info">
+                    <strong>Total Amount:</strong> ৳
+                    {parseFloat(challan.total).toLocaleString()}
+                  </div>
+                </Card.Body>
+              </Card>
 
-              <div className="table-responsive">
-                <Table className="table-hover">
-                  <thead className="bg-light">
-                    <tr>
-                      <th>Item Name</th>
-                      <th>Buying Price</th>
-                      <th>Quantity</th>
-                      <th>Total</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {challan.items.map((item, index) => (
-                      <tr key={index}>
-                        <td>{item.item_name}</td>
-                        <td>
-                          ৳{parseFloat(item.buying_price || 0).toLocaleString()}
-                        </td>
-                        <td>{item.quantity}</td>
-                        <td>
-                          ৳
-                          {(
-                            parseFloat(item.buying_price) *
-                            parseInt(item.quantity)
-                          ).toLocaleString()}
-                        </td>
-                        <td>
-                          <div className="d-flex gap-2">
-                            <Button
-                              variant="outline-primary"
-                              size="sm"
-                              className="d-flex align-items-center gap-1"
-                              onClick={() => openQuantityModal(item)}
-                            >
-                              <FaPencilAlt /> Edit
-                            </Button>
-                            <Button
-                              variant="outline-danger"
-                              size="sm"
-                              className="d-flex align-items-center gap-1"
-                              onClick={() => openDeleteModal(item)}
-                            >
-                              <FaTrash /> Delete
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                    <tr className="table-secondary fw-bold">
-                      <td colSpan="2">
-                        <h5>Total Items (Types)</h5>
-                      </td>
-                      <td>
-                        <h5>{challan.items.length}</h5>
-                      </td>
-                      <td colSpan="2">
-                        <h5>
-                          ৳
-                          {challan.items
-                            .reduce(
-                              (sum, item) =>
-                                sum +
-                                parseFloat(item.buying_price || 0) *
-                                  parseInt(item.quantity),
-                              0
-                            )
-                            .toLocaleString()}
-                        </h5>
-                      </td>
-                    </tr>
-                  </tbody>
-                </Table>
-              </div>
-
-              {/* Quantity Update Modal */}
-              <Modal
-                show={showQuantityModal}
-                onHide={() => setShowQuantityModal(false)}
-                centered
-              >
-                <Modal.Header closeButton>
-                  <Modal.Title>Update Item Quantity</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                  {selectedItem && (
-                    <Form onSubmit={handleUpdateQuantity}>
-                      <div className="mb-3">
-                        <strong>Item:</strong> {selectedItem.item_name}
-                      </div>
-                      <div className="mb-3">
-                        <strong>Current Quantity:</strong> {selectedItem.quantity}
-                      </div>
-                      <Form.Group>
-                        <Form.Label>New Quantity</Form.Label>
-                        <Form.Control
-                          type="number"
-                          min="1"
-                          value={newQuantity}
-                          onChange={(e) => setNewQuantity(e.target.value)}
-                          required
-                        />
-                      </Form.Group>
-                      <div className="d-flex justify-content-end gap-2 mt-3">
-                        <Button
-                          variant="secondary"
-                          onClick={() => setShowQuantityModal(false)}
-                          disabled={updatingQuantity}
-                        >
-                          Cancel
-                        </Button>
-                        <Button
-                          type="submit"
-                          variant="primary"
-                          disabled={updatingQuantity}
-                          className="d-flex align-items-center gap-2"
-                        >
-                          {updatingQuantity ? (
-                            <>
-                              <FaSpinner className="spinner-border spinner-border-sm" />{" "}
-                              Updating...
-                            </>
-                          ) : (
-                            <>
-                              <FaSave /> Update Quantity
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    </Form>
-                  )}
-                </Modal.Body>
-              </Modal>
-
-              {/* Delete Confirmation Modal */}
-              <Modal
-                show={showDeleteModal}
-                onHide={() => setShowDeleteModal(false)}
-                centered
-              >
-                <Modal.Header closeButton>
-                  <Modal.Title>Delete Item</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                  {selectedItem && (
-                    <>
-                      <p>Are you sure you want to delete this item?</p>
-                      <div className="alert alert-warning">
-                        <strong>Item:</strong> {selectedItem.item_name}
-                        <br />
-                        <strong>Quantity:</strong> {selectedItem.quantity}
-                        <br />
-                        <strong>Total:</strong> ৳
-                        {(
-                          parseFloat(selectedItem.buying_price) *
-                          parseInt(selectedItem.quantity)
-                        ).toLocaleString()}
-                      </div>
-                      <p className="text-danger">
-                        This action cannot be undone.
-                      </p>
-                    </>
-                  )}
-                </Modal.Body>
-                <Modal.Footer>
-                  <Button
-                    variant="secondary"
-                    onClick={() => setShowDeleteModal(false)}
-                    disabled={deletingItem}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="danger"
-                    onClick={handleDeleteItem}
-                    disabled={deletingItem}
-                    className="d-flex align-items-center gap-2"
-                  >
-                    {deletingItem ? (
-                      <>
-                        <FaSpinner className="spinner-border spinner-border-sm" />{" "}
-                        Deleting...
-                      </>
-                    ) : (
-                      <>
-                        <FaTrash /> Delete Item
-                      </>
-                    )}
-                  </Button>
-                </Modal.Footer>
-              </Modal>
-            </Card.Body>
-          </Card>
-
-          {/* Invoice Section */}
-          <Card className="border shadow-sm">
-              <Card.Body>
-              <div className="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                  <h5 className="mb-1">Invoices</h5>
-                  <p className="text-muted mb-0">
-                    {challan.invoices?.length || 0} {challan.invoices?.length === 1 ? 'Invoice' : 'Invoices'} attached
-                  </p>
-                </div>
+              <div className="d-flex justify-content-end gap-2">
                 <Button
-                  variant="primary"
-                  onClick={() => setShowInvoiceModal(true)}
-                  className="d-flex align-items-center gap-2 px-4"
+                  variant="secondary"
+                  onClick={handleCancel}
+                  disabled={submitting}
+                  className="px-4"
                 >
-                  <FaUpload /> Upload New Invoice
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  disabled={submitting}
+                  className="px-4"
+                >
+                  {submitting ? (
+                    <>
+                      <FaSpinner className="spinner me-2" /> Saving...
+                    </>
+                  ) : (
+                    "Save Changes"
+                  )}
                 </Button>
               </div>
+            </Form>
+          ) : (
+            <div className="mt-4">
+              <Row className="g-4 mb-4">
+                <Col md={6}>
+                  <Card className="border h-100">
+                    <Card.Header className="bg-light">
+                      <h5 className="mb-0">Basic Information</h5>
+                    </Card.Header>
+                    <Card.Body>
+                      <div className="mb-4">
+                        <label className="detail-label">Challan ID</label>
+                        <div className="detail-value">#{challan.id}</div>
+                      </div>
+                      <div className="mb-4">
+                        <label className="detail-label">Date</label>
+                        <div className="detail-value">
+                          {new Date(challan.Date).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <div className="mb-4">
+                        <label className="detail-label">Created By</label>
+                        <div className="detail-value">{challan.user.name}</div>
+                      </div>
+                      <div className="mb-4">
+                        <label className="detail-label">Delivery Price</label>
+                        <div className="detail-value challan-amount">
+                          ৳{parseFloat(challan.delivery_price).toLocaleString()}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="detail-label">Total Amount</label>
+                        <div className="detail-value challan-amount">
+                          ৳{parseFloat(challan.total).toLocaleString()}
+                        </div>
+                      </div>
+                    </Card.Body>
+                  </Card>
+                </Col>
+                <Col md={6}>
+                  <Card className="border h-100">
+                    <Card.Header className="bg-light">
+                      <h5 className="mb-0">Supplier Information</h5>
+                    </Card.Header>
+                    <Card.Body>
+                      <div className="mb-4">
+                        <label className="detail-label">Name</label>
+                        <div className="detail-value">{challan.supplier.name}</div>
+                      </div>
+                      <div className="mb-4">
+                        <label className="detail-label">Phone</label>
+                        <div className="detail-value">{challan.supplier.phone}</div>
+                      </div>
+                      <div>
+                        <label className="detail-label">Address</label>
+                        <div className="detail-value">{challan.supplier.address}</div>
+                      </div>
+                    </Card.Body>
+                  </Card>
+                </Col>
+              </Row>
 
-              {challan.invoices && challan.invoices.length > 0 ? (
-                <div className="table-responsive">
-                  <Table className="table-hover align-middle">
-                    <thead className="bg-light">
-                      <tr>
-                        <th style={{ width: '60px' }}>#</th>
-                        <th>Preview</th>
-                        <th>File Name</th>
-                        <th>Type</th>
-                        <th>Upload Date</th>
-                        <th style={{ width: '200px' }}>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {challan.invoices.map((invoice, index) => {
-                        const fileName = invoice.path.split('/').pop();
-                        const fileType = fileName.split('.').pop().toUpperCase();
-                        const isPDF = fileType === 'PDF';
-                        
-                        return (
-                          <tr key={invoice.id}>
-                            <td>{index + 1}</td>
-                            <td style={{ width: '120px' }}>
-                              {isPDF ? (
-                                <div className="bg-light rounded p-2 text-center" style={{ width: '100px' }}>
-                                  <FaDownload size={24} className="text-primary mb-1" />
-                                  <div className="small text-muted">PDF</div>
+              <Card className="border mb-4">
+                <Card.Header className="bg-light d-flex justify-content-between align-items-center">
+                  <h5 className="mb-0">Items</h5>
+                  <Button
+                    variant="outline-primary"
+                    onClick={() => setIsAddingItems(!isAddingItems)}
+                    className="d-flex align-items-center gap-2"
+                  >
+                    {isAddingItems ? <FaTimes /> : <FaPlus />}
+                    {isAddingItems ? "Cancel" : "Add Items"}
+                  </Button>
+                </Card.Header>
+                <Card.Body>
+                  {isAddingItems && (
+                    <div className="mb-4">
+                      <Form.Group className="mb-3">
+                        <Form.Label>Add Items</Form.Label>
+                        <Select
+                          cacheOptions
+                          defaultOptions
+                          loadOptions={loadItems}
+                          onChange={handleItemSelect}
+                          placeholder="Search and select items..."
+                          noOptionsMessage={() => "No items found"}
+                          loadingMessage={() => "Loading items..."}
+                          className="form-control-lg"
+                        />
+                      </Form.Group>
+
+                      {selectedItems.length > 0 && (
+                        <div className="mb-3">
+                          <h6>Selected Items</h6>
+                          <div className="selected-items-list">
+                            {selectedItems.map((item, index) => (
+                              <div key={index} className="selected-item-card">
+                                <div className="d-flex justify-content-between align-items-center mb-2">
+                                  <strong>{item.name}</strong>
+                                  <Button
+                                    variant="link"
+                                    className="text-danger p-0"
+                                    onClick={() => handleItemRemove(index)}
+                                  >
+                                    <FaTrash />
+                                  </Button>
                                 </div>
-                              ) : (
-                                <div 
-                                  className="position-relative rounded overflow-hidden" 
-                                  style={{ width: '100px', height: '60px' }}
-                                >
-                  <Image
-                                    src={invoice.path}
-                                    alt={`Invoice ${index + 1}`}
-                                    style={{ 
-                                      width: '100%', 
-                                      height: '100%', 
-                                      objectFit: 'cover' 
-                                    }}
-                                    className="rounded"
-                                  />
-                                  <div className="position-absolute top-0 start-0 w-100 h-100 bg-dark bg-opacity-0 hover-bg-opacity-10 transition-all d-flex align-items-center justify-content-center">
-                                    <Button
-                                      variant="light"
-                                      size="sm"
-                                      className="rounded-circle opacity-0 hover-opacity-100 transition-all"
-                                      href={invoice.path}
-                                      target="_blank"
-                                      style={{ width: '28px', height: '28px', padding: 0 }}
-                                    >
-                                      <FaDownload size={12} />
-                                    </Button>
-                                  </div>
-                                </div>
-                              )}
-                            </td>
-                            <td>
-                              <div className="d-flex flex-column">
-                                <span className="fw-medium">{fileName}</span>
-                                <small className="text-muted">
-                                  {(parseInt(fileName.split('.')[0]) / 1024 / 1024).toFixed(2)} MB
-                                </small>
+                                <Row>
+                                  <Col md={6}>
+                                    <Form.Group>
+                                      <Form.Label>Buying Price</Form.Label>
+                                      <Form.Control
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        value={item.buying_price}
+                                        onChange={(e) =>
+                                          handleItemChange(
+                                            index,
+                                            "buying_price",
+                                            parseFloat(e.target.value)
+                                          )
+                                        }
+                                        required
+                                        className="form-control-lg"
+                                      />
+                                    </Form.Group>
+                                  </Col>
+                                  <Col md={6}>
+                                    <Form.Group>
+                                      <Form.Label>Quantity</Form.Label>
+                                      <Form.Control
+                                        type="number"
+                                        min="1"
+                                        value={item.quantity}
+                                        onChange={(e) =>
+                                          handleItemChange(
+                                            index,
+                                            "quantity",
+                                            parseInt(e.target.value)
+                                          )
+                                        }
+                                        required
+                                        className="form-control-lg"
+                                      />
+                                    </Form.Group>
+                                  </Col>
+                                </Row>
                               </div>
-                            </td>
+                            ))}
+                            <Button
+                              variant="primary"
+                              onClick={handleAddItems}
+                              disabled={addingItemsLoading}
+                              className="d-flex align-items-center gap-2 mt-3"
+                            >
+                              {addingItemsLoading ? (
+                                <>
+                                  <FaSpinner className="spinner me-2" /> Adding Items...
+                                </>
+                              ) : (
+                                <>
+                                  <FaPlus /> Add Items to Challan
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="table-container">
+                    <Table responsive hover className="modern-table">
+                      <thead>
+                        <tr>
+                          <th>Item Name</th>
+                          <th>Buying Price</th>
+                          <th>Quantity</th>
+                          <th>Total</th>
+                          <th style={{ width: '150px' }}>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {challan.items.map((item, index) => (
+                          <tr key={index}>
+                            <td>{item.item_name}</td>
+                            <td>৳{parseFloat(item.buying_price || 0).toLocaleString()}</td>
+                            <td>{item.quantity}</td>
                             <td>
-                              <span className={`badge ${isPDF ? 'bg-danger' : 'bg-primary'}`}>
-                                {fileType}
-                              </span>
-                            </td>
-                            <td>
-                              {new Date(fileName.split('.')[0]).toLocaleDateString()}
+                              ৳
+                              {(
+                                parseFloat(item.buying_price) *
+                                parseInt(item.quantity)
+                              ).toLocaleString()}
                             </td>
                             <td>
                               <div className="d-flex gap-2">
                                 <Button
                                   variant="outline-primary"
                                   size="sm"
-                                  href={invoice.path}
-                                  target="_blank"
-                                  className="d-flex align-items-center gap-1"
+                                  onClick={() => openQuantityModal(item)}
+                                  className="view-btn"
                                 >
-                                  <FaDownload /> Download
+                                  <FaPencilAlt className="me-1" /> Edit
                                 </Button>
                                 <Button
                                   variant="outline-danger"
                                   size="sm"
-                                  onClick={() => openDeleteInvoiceModal(invoice)}
-                                  className="d-flex align-items-center gap-1"
+                                  onClick={() => openDeleteModal(item)}
+                                  className="delete-btn"
                                 >
-                                  <FaTrash /> Delete
+                                  <FaTrash />
                                 </Button>
                               </div>
                             </td>
                           </tr>
-                        );
-                      })}
-                    </tbody>
-                  </Table>
-                </div>
-              ) : (
-                <div className="text-center py-5 bg-light rounded">
-                  <FaUpload size={48} className="text-muted mb-3" />
-                  <h6 className="mb-2">No Invoices Uploaded</h6>
-                  <p className="text-muted mb-3">Upload invoices to keep track of your challan documents</p>
+                        ))}
+                        <tr className="table-secondary fw-bold">
+                          <td colSpan="2">
+                            <h5 className="mb-0">Total Items (Types)</h5>
+                          </td>
+                          <td>
+                            <h5 className="mb-0">{challan.items.length}</h5>
+                          </td>
+                          <td colSpan="2">
+                            <h5 className="mb-0 challan-amount">
+                              ৳
+                              {challan.items
+                                .reduce(
+                                  (sum, item) =>
+                                    sum +
+                                    parseFloat(item.buying_price || 0) *
+                                      parseInt(item.quantity),
+                                  0
+                                )
+                                .toLocaleString()}
+                            </h5>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </Table>
+                  </div>
+                </Card.Body>
+              </Card>
+
+              <Card className="border">
+                <Card.Header className="bg-light d-flex justify-content-between align-items-center">
+                  <div>
+                    <h5 className="mb-1">Invoices</h5>
+                    <p className="text-muted mb-0">
+                      {challan.invoices?.length || 0} {challan.invoices?.length === 1 ? 'Invoice' : 'Invoices'} attached
+                    </p>
+                  </div>
                   <Button
                     variant="primary"
                     onClick={() => setShowInvoiceModal(true)}
-                    className="d-flex align-items-center gap-2 mx-auto"
+                    className="d-flex align-items-center gap-2 px-4"
                   >
-                    <FaUpload /> Upload Invoice
+                    <FaUpload /> Upload New Invoice
                   </Button>
-                </div>
-              )}
-            </Card.Body>
-          </Card>
+                </Card.Header>
+                <Card.Body>
+                  {challan.invoices && challan.invoices.length > 0 ? (
+                    <div className="table-container">
+                      <Table responsive hover className="modern-table">
+                        <thead>
+                          <tr>
+                            <th style={{ width: '60px' }}>#</th>
+                            <th>Preview</th>
+                            <th>File Name</th>
+                            <th>Type</th>
+                            <th>Upload Date</th>
+                            <th style={{ width: '200px' }}>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {challan.invoices.map((invoice, index) => {
+                            const fileName = invoice.path.split('/').pop();
+                            const fileType = fileName.split('.').pop().toUpperCase();
+                            const isPDF = fileType === 'PDF';
+                            
+                            return (
+                              <tr key={invoice.id}>
+                                <td>{index + 1}</td>
+                                <td style={{ width: '120px' }}>
+                                  {isPDF ? (
+                                    <div className="prove-preview-table">
+                                      <FaDownload size={24} className="text-primary mb-1" />
+                                      <span>PDF Document</span>
+                                    </div>
+                                  ) : (
+                                    <div className="prove-preview-table">
+                                      <img 
+                                        src={invoice.path}
+                                        alt={`Invoice ${index + 1}`}
+                                        className="prove-image-table"
+                                        onClick={() => window.open(invoice.path, '_blank')}
+                                      />
+                                    </div>
+                                  )}
+                                </td>
+                                <td>
+                                  <div className="d-flex flex-column">
+                                    <span className="fw-medium">{fileName}</span>
+                                    <small className="text-muted">
+                                      {(parseInt(fileName.split('.')[0]) / 1024 / 1024).toFixed(2)} MB
+                                    </small>
+                                  </div>
+                                </td>
+                                <td>
+                                  <span className={`badge ${isPDF ? 'bg-danger' : 'bg-primary'}`}>
+                                    {fileType}
+                                  </span>
+                                </td>
+                                <td>
+                                  {new Date(fileName.split('.')[0]).toLocaleDateString()}
+                                </td>
+                                <td>
+                                  <div className="d-flex gap-2">
+                                    <Button
+                                      variant="outline-primary"
+                                      size="sm"
+                                      href={invoice.path}
+                                      target="_blank"
+                                      className="view-btn"
+                                    >
+                                      <FaEye className="me-1" /> View
+                                    </Button>
+                                    <Button
+                                      variant="outline-danger"
+                                      size="sm"
+                                      onClick={() => openDeleteInvoiceModal(invoice)}
+                                      className="delete-btn"
+                                    >
+                                      <FaTrash />
+                                    </Button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </Table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-5 bg-light rounded">
+                      <FaUpload size={48} className="text-muted mb-3" />
+                      <h6 className="mb-2">No Invoices Uploaded</h6>
+                      <p className="text-muted mb-3">Upload invoices to keep track of your challan documents</p>
+                      <Button
+                        variant="primary"
+                        onClick={() => setShowInvoiceModal(true)}
+                        className="d-flex align-items-center gap-2 mx-auto"
+                      >
+                        <FaUpload /> Upload Invoice
+                      </Button>
+                    </div>
+                  )}
+                </Card.Body>
+              </Card>
+            </div>
+          )}
 
-          {/* Delete Invoice Confirmation Modal */}
+          {/* Quantity Update Modal */}
           <Modal
-            show={showDeleteInvoiceModal}
-            onHide={() => setShowDeleteInvoiceModal(false)}
+            show={showQuantityModal}
+            onHide={() => setShowQuantityModal(false)}
             centered
           >
             <Modal.Header closeButton>
-              <Modal.Title>Delete Invoice</Modal.Title>
+              <Modal.Title>Update Item Quantity</Modal.Title>
             </Modal.Header>
             <Modal.Body>
-              {selectedInvoice && (
+              {selectedItem && (
+                <Form onSubmit={handleUpdateQuantity}>
+                  <div className="mb-3">
+                    <strong>Item:</strong> {selectedItem.item_name}
+                  </div>
+                  <div className="mb-3">
+                    <strong>Current Quantity:</strong> {selectedItem.quantity}
+                  </div>
+                  <Form.Group>
+                    <Form.Label>New Quantity</Form.Label>
+                    <Form.Control
+                      type="number"
+                      min="1"
+                      value={newQuantity}
+                      onChange={(e) => setNewQuantity(e.target.value)}
+                      required
+                    />
+                  </Form.Group>
+                  <div className="d-flex justify-content-end gap-2 mt-3">
+                    <Button
+                      variant="secondary"
+                      onClick={() => setShowQuantityModal(false)}
+                      disabled={updatingQuantity}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      disabled={updatingQuantity}
+                      className="d-flex align-items-center gap-2"
+                    >
+                      {updatingQuantity ? (
+                        <>
+                          <FaSpinner className="spinner-border spinner-border-sm" />{" "}
+                          Updating...
+                        </>
+                      ) : (
+                        <>
+                          <FaSave /> Update Quantity
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </Form>
+              )}
+            </Modal.Body>
+          </Modal>
+
+          {/* Delete Confirmation Modal */}
+          <Modal
+            show={showDeleteModal}
+            onHide={() => setShowDeleteModal(false)}
+            centered
+          >
+            <Modal.Header closeButton>
+              <Modal.Title>Delete Item</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+              {selectedItem && (
                 <>
-                  <p>Are you sure you want to delete this invoice?</p>
+                  <p>Are you sure you want to delete this item?</p>
                   <div className="alert alert-warning">
-                    <strong>File:</strong> {selectedInvoice.path.split('/').pop()}
+                    <strong>Item:</strong> {selectedItem.item_name}
+                    <br />
+                    <strong>Quantity:</strong> {selectedItem.quantity}
+                    <br />
+                    <strong>Total:</strong> ৳
+                    {(
+                      parseFloat(selectedItem.buying_price) *
+                      parseInt(selectedItem.quantity)
+                    ).toLocaleString()}
                   </div>
                   <p className="text-danger">
                     This action cannot be undone.
@@ -1004,25 +957,25 @@ const ViewChallan = () => {
             <Modal.Footer>
               <Button
                 variant="secondary"
-                onClick={() => setShowDeleteInvoiceModal(false)}
-                disabled={deletingInvoice}
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deletingItem}
               >
                 Cancel
               </Button>
               <Button
                 variant="danger"
-                onClick={handleDeleteInvoice}
-                disabled={deletingInvoice}
+                onClick={handleDeleteItem}
+                disabled={deletingItem}
                 className="d-flex align-items-center gap-2"
               >
-                {deletingInvoice ? (
+                {deletingItem ? (
                   <>
                     <FaSpinner className="spinner-border spinner-border-sm" />{" "}
                     Deleting...
                   </>
                 ) : (
                   <>
-                    <FaTrash /> Delete Invoice
+                    <FaTrash /> Delete Item
                   </>
                 )}
               </Button>
@@ -1099,30 +1052,55 @@ const ViewChallan = () => {
             </Modal.Body>
           </Modal>
 
-          {/* Add this CSS to your existing styles */}
-          <style>
-            {`
-              .hover-shadow:hover {
-                box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
-                transform: translateY(-2px);
-              }
-              .transition-all {
-                transition: all 0.2s ease-in-out;
-              }
-              .hover-bg-opacity-10:hover {
-                background-color: rgba(0, 0, 0, 0.1);
-              }
-              .hover-opacity-100:hover {
-                opacity: 1 !important;
-              }
-              .bg-opacity-0 {
-                background-color: rgba(0, 0, 0, 0);
-              }
-              .hover-bg-opacity-10:hover {
-                background-color: rgba(0, 0, 0, 0.1);
-              }
-            `}
-          </style>
+          {/* Delete Invoice Confirmation Modal */}
+          <Modal
+            show={showDeleteInvoiceModal}
+            onHide={() => setShowDeleteInvoiceModal(false)}
+            centered
+          >
+            <Modal.Header closeButton>
+              <Modal.Title>Delete Invoice</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+              {selectedInvoice && (
+                <>
+                  <p>Are you sure you want to delete this invoice?</p>
+                  <div className="alert alert-warning">
+                    <strong>File:</strong> {selectedInvoice.path.split('/').pop()}
+                  </div>
+                  <p className="text-danger">
+                    This action cannot be undone.
+                  </p>
+                </>
+              )}
+            </Modal.Body>
+            <Modal.Footer>
+              <Button
+                variant="secondary"
+                onClick={() => setShowDeleteInvoiceModal(false)}
+                disabled={deletingInvoice}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                onClick={handleDeleteInvoice}
+                disabled={deletingInvoice}
+                className="d-flex align-items-center gap-2"
+              >
+                {deletingInvoice ? (
+                  <>
+                    <FaSpinner className="spinner-border spinner-border-sm" />{" "}
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <FaTrash /> Delete Invoice
+                  </>
+                )}
+              </Button>
+            </Modal.Footer>
+          </Modal>
         </Card.Body>
       </Card>
     </div>

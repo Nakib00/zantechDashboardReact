@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { FaPlus, FaSearch, FaSpinner, FaTimes, FaEye } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
 import axiosInstance from '../../config/axios';
-import { Card, Form, InputGroup, Button, Pagination } from 'react-bootstrap';
+import { Card, Form, InputGroup, Button, Pagination, Row, Col } from 'react-bootstrap';
 import Loading from '../../components/Loading';
-import '../Categories/Categories.css';
+import './Customers.css';
 
 const Customers = () => {
   const navigate = useNavigate();
@@ -160,106 +160,120 @@ const Customers = () => {
   }
 
   return (
-    <div className="categories-container">
-      <div className="categories-header">
-        <h2>Customers</h2>
-        <button className="btn btn-primary" onClick={openAddModal}>
-          <FaPlus /> Add Customer
-        </button>
-      </div>
-
-      <Card className="mb-4">
-        <Card.Body>
+    <div className="customers-container">
+      <Card className="modern-card">
+        <Card.Body className="p-4">
           <div className="d-flex justify-content-between align-items-center mb-4">
-            <Form onSubmit={(e) => e.preventDefault()} className="d-flex gap-2">
-              <InputGroup>
-                <InputGroup.Text>
-                  {isSearching ? (
-                    <FaSpinner className="spinner-border spinner-border-sm" />
-                  ) : (
-                    <FaSearch />
-                  )}
-                </InputGroup.Text>
-                <Form.Control
-                  type="text"
-                  placeholder="Search customers..."
-                  value={searchParams.search}
-                  onChange={handleSearch}
-                  disabled={loading}
-                  className={isSearching ? "searching" : ""}
-                />
-                {searchParams.search && !isSearching && (
-                  <Button
-                    variant="outline-secondary"
-                    onClick={() => {
-                      setSearchParams((prev) => ({ ...prev, search: "" }));
-                      fetchCustomers(1);
-                    }}
-                    disabled={loading}
-                  >
-                    <FaTimes />
-                  </Button>
-                )}
-              </InputGroup>
-            </Form>
-
-            <Form.Select
-              value={searchParams.limit}
-              onChange={handleLimitChange}
-              style={{ width: "auto" }}
-              disabled={loading}
+            <div>
+              <h2 className="page-title mb-1">Customers</h2>
+              <p className="text-muted mb-0">Manage and track all your customers</p>
+            </div>
+            <Button 
+              variant="primary" 
+              onClick={openAddModal}
+              className="create-customer-btn"
             >
-              <option value="5">5 per page</option>
-              <option value="10">10 per page</option>
-              <option value="20">20 per page</option>
-              <option value="50">50 per page</option>
-            </Form.Select>
+              <FaPlus className="me-2" /> Add Customer
+            </Button>
           </div>
 
-          <div className="table-responsive">
-            <table className="table table-hover align-middle">
-              <thead className="bg-light">
-                <tr>
-                  <th>ID</th>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Phone</th>
-                  <th>Address</th>
-                  <th>Total Orders</th>
-                  <th>Total Spend</th>
-                  <th>Due Amount</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {customers.map((customer) => (
-                  <tr key={customer.id}>
-                    <td>{customer.id}</td>
-                    <td>{customer.name}</td>
-                    <td>{customer.email}</td>
-                    <td>{customer.phone}</td>
-                    <td>{customer.address || "N/A"}</td>
-                    <td>{customer.order_summary.total_orders}</td>
-                    <td>৳{customer.order_summary.total_spend.toLocaleString()}</td>
-                    <td>৳{customer.payment_summary.due_amount.toLocaleString()}</td>
-                    <td>
-                      <button
-                        className="btn btn-sm btn-info"
-                        onClick={() => navigate(`/customers/${customer.id}`)}
-                        title="View Details"
+          <div className="filters-section mb-4">
+            <Row className="g-3">
+              <Col md={6}>
+                <div className="search-box">
+                  <InputGroup>
+                    <InputGroup.Text className="search-icon">
+                      {isSearching ? <FaSpinner className="spinner" /> : <FaSearch />}
+                    </InputGroup.Text>
+                    <Form.Control
+                      type="text"
+                      placeholder="Search customers..."
+                      value={searchParams.search}
+                      onChange={handleSearch}
+                      className="search-input"
+                      disabled={loading}
+                    />
+                    {searchParams.search && !isSearching && (
+                      <Button
+                        variant="link"
+                        className="clear-search"
+                        onClick={() => {
+                          setSearchParams((prev) => ({ ...prev, search: "" }));
+                          fetchCustomers(1);
+                        }}
+                        disabled={loading}
                       >
-                        <FaEye />
-                      </button>
-                    </td>
+                        <FaTimes />
+                      </Button>
+                    )}
+                  </InputGroup>
+                </div>
+              </Col>
+              <Col md={2}>
+                <Form.Select
+                  value={searchParams.limit}
+                  onChange={handleLimitChange}
+                  className="limit-select"
+                  disabled={loading}
+                >
+                  <option value="5">5 per page</option>
+                  <option value="10">10 per page</option>
+                  <option value="20">20 per page</option>
+                  <option value="50">50 per page</option>
+                </Form.Select>
+              </Col>
+            </Row>
+          </div>
+
+          <div className="table-container">
+            <div className="table-responsive">
+              <table className="table table-hover modern-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Address</th>
+                    <th>Total Orders</th>
+                    <th>Total Spend</th>
+                    <th>Due Amount</th>
+                    <th>Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {customers.map((customer) => (
+                    <tr key={customer.id}>
+                      <td className="fw-medium">#{customer.id}</td>
+                      <td>{customer.name}</td>
+                      <td>{customer.email}</td>
+                      <td>{customer.phone}</td>
+                      <td>{customer.address || "N/A"}</td>
+                      <td>{customer.order_summary.total_orders}</td>
+                      <td className="fw-medium">৳{customer.order_summary.total_spend.toLocaleString()}</td>
+                      <td className={customer.payment_summary.due_amount > 0 ? "text-danger" : "text-success"}>
+                        ৳{customer.payment_summary.due_amount.toLocaleString()}
+                      </td>
+                      <td>
+                        <Button
+                          variant="outline-primary"
+                          size="sm"
+                          className="view-btn"
+                          onClick={() => navigate(`/customers/${customer.id}`)}
+                        >
+                          <FaEye className="me-1" /> View
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           {pagination.total_pages > 1 && (
-            <div className="d-flex justify-content-center mt-4">
-              <Pagination>
+            <div className="pagination-container mt-4">
+              <Pagination className="modern-pagination">
                 <Pagination.Prev
                   onClick={() => handlePageChange(pagination.current_page - 1)}
                   disabled={pagination.current_page === 1}
@@ -360,16 +374,15 @@ const Customers = () => {
                 </div>
               </div>
               <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
+                <Button
+                  variant="secondary"
                   onClick={closeModal}
                 >
                   Cancel
-                </button>
-                <button type="submit" className="btn btn-primary">
+                </Button>
+                <Button type="submit" variant="primary">
                   Add Customer
-                </button>
+                </Button>
               </div>
             </form>
           </div>

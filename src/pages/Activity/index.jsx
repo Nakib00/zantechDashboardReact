@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { FaSpinner, FaUser, FaCalendarAlt, FaInfoCircle } from 'react-icons/fa';
+import { FaSpinner, FaUser, FaCalendarAlt, FaInfoCircle, FaSearch, FaTimes, FaFilter } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
 import axiosInstance from '../../config/axios';
-import { Card, Modal, Button, Pagination, Badge } from 'react-bootstrap';
-import '../Categories/Categories.css';
+import { Card, Modal, Button, Pagination, Badge, Form, InputGroup, Row, Col } from 'react-bootstrap';
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import Loading from '../../components/Loading';
 import './Activity.css';
 
 const Activity = () => {
@@ -12,8 +14,12 @@ const Activity = () => {
   const [showUserModal, setShowUserModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [searchParams, setSearchParams] = useState({
+    search: "",
     page: 1,
     limit: 10,
+    startDate: null,
+    endDate: null,
+    type: "",
   });
   const [pagination, setPagination] = useState({
     total_rows: 0,
@@ -22,10 +28,33 @@ const Activity = () => {
     total_pages: 1,
     has_more_pages: false,
   });
+  const [searchTimeout, setSearchTimeout] = useState(null);
+  const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
     fetchActivities();
-  }, [searchParams.page, searchParams.limit]);
+  }, [searchParams.page, searchParams.limit, searchParams.startDate, searchParams.endDate, searchParams.type]);
+
+  useEffect(() => {
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+
+    const timeoutId = setTimeout(() => {
+      if (searchParams.search !== "") {
+        setIsSearching(true);
+        fetchActivities(1);
+      }
+    }, 500);
+
+    setSearchTimeout(timeoutId);
+
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [searchParams.search]);
 
   const fetchActivities = async (page = searchParams.page) => {
     setLoading(true);
@@ -33,6 +62,14 @@ const Activity = () => {
       const params = {
         page,
         limit: searchParams.limit,
+        ...(searchParams.search && { search: searchParams.search }),
+        ...(searchParams.startDate && { 
+          start_date: searchParams.startDate.toISOString().split('T')[0] 
+        }),
+        ...(searchParams.endDate && { 
+          end_date: searchParams.endDate.toISOString().split('T')[0] 
+        }),
+        ...(searchParams.type && { type: searchParams.type }),
       };
 
       const response = await axiosInstance.get("/activitys", { params });
@@ -51,7 +88,17 @@ const Activity = () => {
       setActivities([]);
     } finally {
       setLoading(false);
+      setIsSearching(false);
     }
+  };
+
+  const handleSearch = (e) => {
+    const { value } = e.target;
+    setSearchParams((prev) => ({
+      ...prev,
+      search: value,
+      page: 1,
+    }));
   };
 
   const handlePageChange = (page) => {
@@ -67,6 +114,42 @@ const Activity = () => {
       ...prev,
       limit,
       page: 1,
+    }));
+  };
+
+  const handleTypeChange = (e) => {
+    setSearchParams((prev) => ({
+      ...prev,
+      type: e.target.value,
+      page: 1,
+    }));
+  };
+
+  const handleDateChange = (dates) => {
+    const [start, end] = dates;
+    
+    if (start && end && start > end) {
+      toast.error("Start date cannot be after end date");
+      return;
+    }
+
+    const formattedStart = start ? new Date(start.setHours(0, 0, 0, 0)) : null;
+    const formattedEnd = end ? new Date(end.setHours(23, 59, 59, 999)) : null;
+    
+    setSearchParams(prev => ({
+      ...prev,
+      startDate: formattedStart,
+      endDate: formattedEnd,
+      page: 1
+    }));
+  };
+
+  const clearDateFilter = () => {
+    setSearchParams(prev => ({
+      ...prev,
+      startDate: null,
+      endDate: null,
+      page: 1
     }));
   };
 
@@ -102,21 +185,28 @@ const Activity = () => {
       startPage = Math.max(1, endPage - maxPages + 1);
     }
 
+    // Previous button
+    items.push(
+      <Pagination.Prev
+        key="prev"
+        onClick={() => handlePageChange(pagination.current_page - 1)}
+        disabled={pagination.current_page === 1}
+      />
+    );
+
+    // First page
     if (startPage > 1) {
       items.push(
-        <Pagination.First
-          key="first"
-          onClick={() => handlePageChange(1)}
-          disabled={pagination.current_page === 1}
-        />,
-        <Pagination.Prev
-          key="prev"
-          onClick={() => handlePageChange(pagination.current_page - 1)}
-          disabled={pagination.current_page === 1}
-        />
+        <Pagination.Item key={1} onClick={() => handlePageChange(1)}>
+          1
+        </Pagination.Item>
       );
+      if (startPage > 2) {
+        items.push(<Pagination.Ellipsis key="ellipsis1" disabled />);
+      }
     }
 
+    // Page numbers
     for (let number = startPage; number <= endPage; number++) {
       items.push(
         <Pagination.Item
@@ -129,93 +219,126 @@ const Activity = () => {
       );
     }
 
+    // Last page
     if (endPage < pagination.total_pages) {
+      if (endPage < pagination.total_pages - 1) {
+        items.push(<Pagination.Ellipsis key="ellipsis2" disabled />);
+      }
       items.push(
-        <Pagination.Next
-          key="next"
-          onClick={() => handlePageChange(pagination.current_page + 1)}
-          disabled={pagination.current_page === pagination.total_pages}
-        />,
-        <Pagination.Last
-          key="last"
+        <Pagination.Item
+          key={pagination.total_pages}
           onClick={() => handlePageChange(pagination.total_pages)}
-          disabled={pagination.current_page === pagination.total_pages}
-        />
+        >
+          {pagination.total_pages}
+        </Pagination.Item>
       );
     }
+
+    // Next button
+    items.push(
+      <Pagination.Next
+        key="next"
+        onClick={() => handlePageChange(pagination.current_page + 1)}
+        disabled={pagination.current_page === pagination.total_pages}
+      />
+    );
 
     return items;
   };
 
   if (loading && activities.length === 0) {
-    return (
-      <div className="loading-container">
-        <div className="loading-text">Zantech</div>
-      </div>
-    );
+    return <Loading />;
   }
 
   return (
     <div className="activity-container">
-      <Card>
-        <Card.Body>
-          <div className="categories-header">
-            <h2>Activity Logs</h2>
-            <div className="d-flex align-items-center gap-3">
-              <select
-                className="form-select"
-                value={searchParams.limit}
-                onChange={handleLimitChange}
-                style={{ width: 'auto' }}
-              >
-                <option value="5">5 per page</option>
-                <option value="10">10 per page</option>
-                <option value="20">20 per page</option>
-                <option value="50">50 per page</option>
-              </select>
+      <Card className="modern-card">
+        <Card.Body className="p-4">
+          <div className="d-flex justify-content-between align-items-center mb-4">
+            <div>
+              <h2 className="page-title mb-1">Activity Logs</h2>
+              <p className="text-muted mb-0">Track and monitor all system activities</p>
             </div>
           </div>
 
-          <div className="table-responsive">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Type</th>
-                  <th>User</th>
-                  <th>Description</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {activities.map((activity) => (
-                  <tr key={activity.id}>
-                    <td>{activity.id}</td>
-                    <td className="text-capitalize">{getActivityTypeText(activity.type)}</td>
-                    <td>
-                      <Button
-                        variant="link"
-                        className="p-0 text-decoration-none"
-                        onClick={() => handleUserClick(activity.user)}
-                      >
-                        <FaUser className="me-1" />
-                        {activity.user.name}
-                      </Button>
-                    </td>
-                    <td>{activity.description}</td>
-                    <td>
-                      <FaCalendarAlt className="me-1" />
-                      {new Date(activity.created_at).toLocaleString()}
-                    </td>
+          <div className="filters-section mb-4">
+            <Row className="g-3">
+              <Col md={2}>
+                <Form.Select
+                  value={searchParams.limit}
+                  onChange={handleLimitChange}
+                  className="limit-select"
+                >
+                  <option value="5">5 per page</option>
+                  <option value="10">10 per page</option>
+                  <option value="20">20 per page</option>
+                  <option value="50">50 per page</option>
+                </Form.Select>
+              </Col>
+              <Col md={2}>
+                {(searchParams.startDate || searchParams.endDate) && (
+                  <Button
+                    variant="outline-secondary"
+                    onClick={clearDateFilter}
+                    className="clear-dates-btn w-100"
+                  >
+                    <FaTimes className="me-2" /> Clear Dates
+                  </Button>
+                )}
+              </Col>
+            </Row>
+          </div>
+
+          <div className="table-container">
+            <div className="table-responsive">
+              <table className="table table-hover modern-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Type</th>
+                    <th>User</th>
+                    <th>Description</th>
+                    <th>Date</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {activities.map((activity) => (
+                    <tr key={activity.id}>
+                      <td className="fw-medium">#{activity.id}</td>
+                      <td>
+                        <Badge bg="info" className="text-capitalize">
+                          {getActivityTypeText(activity.type)}
+                        </Badge>
+                      </td>
+                      <td>
+                        <Button
+                          variant="link"
+                          className="p-0 text-decoration-none user-link"
+                          onClick={() => handleUserClick(activity.user)}
+                        >
+                          <FaUser className="me-1" />
+                          {activity.user.name}
+                        </Button>
+                      </td>
+                      <td>{activity.description}</td>
+                      <td>
+                        <div className="d-flex align-items-center">
+                          <FaCalendarAlt className="me-2 text-muted" />
+                          {new Date(activity.created_at).toLocaleString()}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           {pagination.total_pages > 1 && (
-            <div className="d-flex justify-content-center mt-4">
-              <Pagination>{renderPagination()}</Pagination>
+            <div className="pagination-container mt-4">
+              <Pagination className="modern-pagination">
+                {renderPagination()}
+              </Pagination>
             </div>
           )}
         </Card.Body>

@@ -1,12 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { FaSpinner, FaCalendarAlt } from 'react-icons/fa';
-import { toast } from 'react-hot-toast';
-import axiosInstance from '../../config/axios';
-import { Card, Form, Pagination, Modal, Button, Row, Col } from 'react-bootstrap';
-import Loading from '../../components/Loading';
-import DatePicker from 'react-datepicker';
+import React, { useState, useEffect } from "react";
+import {
+  FaSpinner,
+  FaCalendarAlt,
+  FaSearch,
+  FaTimes,
+  FaEye,
+} from "react-icons/fa";
+import { toast } from "react-hot-toast";
+import axiosInstance from "../../config/axios";
+import {
+  Card,
+  Form,
+  Pagination,
+  Modal,
+  Button,
+  Row,
+  Col,
+  InputGroup,
+} from "react-bootstrap";
+import Loading from "../../components/Loading";
+import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import '../Categories/Categories.css';
+import "./Transitions.css";
+import "../Categories/Categories.css";
 
 const Transitions = () => {
   const [transitions, setTransitions] = useState([]);
@@ -16,7 +32,7 @@ const Transitions = () => {
     limit: 10,
     start_date: null,
     end_date: null,
-    duration: '',
+    duration: "",
   });
   const [pagination, setPagination] = useState({
     total: 0,
@@ -24,14 +40,20 @@ const Transitions = () => {
     per_page: 10,
     last_page: 1,
     from: 1,
-    to: 1
+    to: 1,
   });
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState(null);
 
   useEffect(() => {
     fetchTransitions();
-  }, [searchParams.page, searchParams.limit, searchParams.duration, searchParams.start_date, searchParams.end_date]);
+  }, [
+    searchParams.page,
+    searchParams.limit,
+    searchParams.duration,
+    searchParams.start_date,
+    searchParams.end_date,
+  ]);
 
   const fetchTransitions = async (page = searchParams.page) => {
     setLoading(true);
@@ -40,8 +62,12 @@ const Transitions = () => {
         page,
         limit: searchParams.limit,
         duration: searchParams.duration,
-        start_date: searchParams.start_date ? searchParams.start_date.toISOString().split('T')[0] : null,
-        end_date: searchParams.end_date ? searchParams.end_date.toISOString().split('T')[0] : null,
+        start_date: searchParams.start_date
+          ? searchParams.start_date.toISOString().split("T")[0]
+          : null,
+        end_date: searchParams.end_date
+          ? searchParams.end_date.toISOString().split("T")[0]
+          : null,
       };
 
       const response = await axiosInstance.get("/transiions", { params });
@@ -56,7 +82,9 @@ const Transitions = () => {
         setPagination(result.pagination);
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to fetch transitions");
+      toast.error(
+        error.response?.data?.message || "Failed to fetch transitions"
+      );
       setTransitions([]);
     } finally {
       setLoading(false);
@@ -65,33 +93,33 @@ const Transitions = () => {
 
   const handleDurationChange = (e) => {
     const duration = e.target.value;
-    setSearchParams(prev => ({
+    setSearchParams((prev) => ({
       ...prev,
       duration,
       start_date: null,
       end_date: null,
-      page: 1
+      page: 1,
     }));
   };
 
   const handleDateRangeChange = (dates) => {
     const [start, end] = dates;
-    setSearchParams(prev => ({
+    setSearchParams((prev) => ({
       ...prev,
       start_date: start,
       end_date: end,
-      duration: '',
-      page: 1
+      duration: "",
+      page: 1,
     }));
   };
 
   const clearFilters = () => {
-    setSearchParams(prev => ({
+    setSearchParams((prev) => ({
       ...prev,
       start_date: null,
       end_date: null,
-      duration: '',
-      page: 1
+      duration: "",
+      page: 1,
     }));
   };
 
@@ -123,10 +151,14 @@ const Transitions = () => {
 
   const getPaymentTypeText = (type) => {
     switch (type) {
-      case "1": return "Cash";
-      case "2": return "Bank";
-      case "3": return "Mobile Banking";
-      default: return "Unknown";
+      case "1":
+        return "Cash";
+      case "2":
+        return "Bank";
+      case "3":
+        return "Mobile Banking";
+      default:
+        return "Unknown";
     }
   };
 
@@ -137,7 +169,10 @@ const Transitions = () => {
   const renderPagination = () => {
     const items = [];
     const maxPages = 5;
-    let startPage = Math.max(1, pagination.current_page - Math.floor(maxPages / 2));
+    let startPage = Math.max(
+      1,
+      pagination.current_page - Math.floor(maxPages / 2)
+    );
     let endPage = Math.min(pagination.last_page, startPage + maxPages - 1);
 
     if (endPage - startPage + 1 < maxPages) {
@@ -201,29 +236,38 @@ const Transitions = () => {
   }
 
   return (
-    <div className="categories-container">
-      <Card>
-        <Card.Body>
+    <div className="transitions-container">
+      <Card className="modern-card">
+        <Card.Body className="p-4">
           <div className="d-flex justify-content-between align-items-center mb-4">
-            <h2 className="mb-0">Transitions</h2>
-            <div className="d-flex gap-3 align-items-center flex-wrap">
-              <Row className="g-2 align-items-center me-3">
-                <Col xs="auto">
-                  <Form.Select
-                    value={searchParams.duration}
-                    onChange={handleDurationChange}
-                    style={{ width: 'auto' }}
-                  >
-                    <option value="">All Time</option>
-                    <option value="today">Today</option>
-                    <option value="this_week">This Week</option>
-                    <option value="this_month">This Month</option>
-                  </Form.Select>
-                </Col>
-                <Col xs="auto">
-                  <div className="d-flex align-items-center date-range-picker-container">
-                    <span className="text-muted me-2">Date Range:</span>
-                    <FaCalendarAlt className="me-2" />
+            <div>
+              <h2 className="page-title mb-1">Transitions</h2>
+              <p className="text-muted mb-0">
+                Manage and track all payment transitions
+              </p>
+            </div>
+          </div>
+
+          <div className="filters-section mb-4">
+            <Row className="g-3">
+              <Col md={3}>
+                <Form.Select
+                  value={searchParams.duration}
+                  onChange={handleDurationChange}
+                  className="status-filter"
+                >
+                  <option value="">All Time</option>
+                  <option value="today">Today</option>
+                  <option value="this_week">This Week</option>
+                  <option value="this_month">This Month</option>
+                </Form.Select>
+              </Col>
+              <Col md={3}>
+                <div className="date-filter-box">
+                  <InputGroup>
+                    <InputGroup.Text>
+                      <FaCalendarAlt />
+                    </InputGroup.Text>
                     <DatePicker
                       selected={searchParams.start_date}
                       onChange={handleDateRangeChange}
@@ -232,148 +276,279 @@ const Transitions = () => {
                       selectsRange
                       dateFormat="yyyy-MM-dd"
                       placeholderText="Select date range"
-                      className="form-control"
+                      className="form-control date-picker-input"
                       isClearable
                     />
-                  </div>
-                </Col>
-                <Col xs="auto">
-                  <Button 
-                    variant="outline-secondary" 
+                  </InputGroup>
+                </div>
+              </Col>
+              <Col md={2}>
+                <Form.Select
+                  value={searchParams.limit}
+                  onChange={handleLimitChange}
+                  className="limit-select"
+                >
+                  <option value="5">5 per page</option>
+                  <option value="10">10 per page</option>
+                  <option value="20">20 per page</option>
+                  <option value="50">50 per page</option>
+                </Form.Select>
+              </Col>
+              <Col md={1}>
+                {(searchParams.duration ||
+                  searchParams.start_date ||
+                  searchParams.end_date) && (
+                  <Button
+                    variant="outline-secondary"
                     onClick={clearFilters}
-                    disabled={!searchParams.duration && !searchParams.start_date && !searchParams.end_date}
+                    className="clear-dates-btn w-100"
                   >
-                    Clear Filters
+                    <FaTimes />
                   </Button>
-                </Col>
-              </Row>
-              
-              <Form.Select
-                style={{ width: 'auto' }}
-                value={searchParams.limit}
-                onChange={handleLimitChange}
-              >
-                <option value="5">5 per page</option>
-                <option value="10">10 per page</option>
-                <option value="20">20 per page</option>
-                <option value="50">50 per page</option>
-              </Form.Select>
+                )}
+              </Col>
+            </Row>
+          </div>
+
+          <div className="table-container">
+            <div className="table-responsive">
+              <table className="table table-hover modern-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Payment ID</th>
+                    <th>Amount</th>
+                    <th>Order ID</th>
+                    <th>Status</th>
+                    <th>Payment Type</th>
+                    <th>Date</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {transitions.map((transition) => (
+                    <tr key={transition.transition_id}>
+                      <td className="fw-medium">#{transition.transition_id}</td>
+                      <td>{transition.payment_id}</td>
+                      <td className="fw-medium">
+                        ৳{parseFloat(transition.amount).toLocaleString()}
+                      </td>
+                      <td>{transition.payment_details.order_id}</td>
+                      <td>
+                        <span
+                          className={`status-badge ${
+                            transition.payment_details.status === "1"
+                              ? "active"
+                              : "inactive"
+                          }`}
+                        >
+                          {getStatusText(transition.payment_details.status)}
+                        </span>
+                      </td>
+                      <td>
+                        {getPaymentTypeText(
+                          transition.payment_details.payment_type
+                        )}
+                      </td>
+                      <td>
+                        {new Date(transition.created_at).toLocaleString()}
+                      </td>
+                      <td>
+                        <Button
+                          variant="outline-primary"
+                          size="sm"
+                          className="view-btn"
+                          onClick={() => handleRowClick(transition)}
+                        >
+                          <FaEye className="me-1" /> View
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
 
-          <div className="table-responsive">
-            <table className="table table-hover align-middle">
-              <thead className="bg-light">
-                <tr>
-                  <th>ID</th>
-                  <th>Payment ID</th>
-                  <th>Amount</th>
-                  <th>Order ID</th>
-                  <th>Status</th>
-                  <th>Payment Type</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {transitions.map((transition) => (
-                  <tr 
-                    key={transition.transition_id}
-                    onClick={() => handleRowClick(transition)}
-                    style={{ cursor: 'pointer' }}
-                    className="hover-bg-light"
-                  >
-                    <td>{transition.transition_id}</td>
-                    <td>{transition.payment_id}</td>
-                    <td>৳{parseFloat(transition.amount).toLocaleString()}</td>
-                    <td>{transition.payment_details.order_id}</td>
-                    <td>
-                      <span className={`status-badge ${transition.payment_details.status === "1" ? "active" : "inactive"}`}>
-                        {getStatusText(transition.payment_details.status)}
-                      </span>
-                    </td>
-                    <td>
-                      {getPaymentTypeText(transition.payment_details.payment_type)}
-                    </td>
-                    <td>{new Date(transition.created_at).toLocaleDateString()}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
           {pagination.last_page > 1 && (
-            <div className="d-flex justify-content-center mt-4">
-              <Pagination className="mb-0">{renderPagination()}</Pagination>
+            <div className="pagination-container mt-4">
+              <Pagination className="modern-pagination">
+                {renderPagination()}
+              </Pagination>
             </div>
           )}
         </Card.Body>
       </Card>
 
       {/* Payment Details Modal */}
-      <Modal show={showPaymentModal} onHide={handleCloseModal} centered>
+      <Modal
+        show={showPaymentModal}
+        onHide={handleCloseModal}
+        centered
+        className="modern-modal"
+      >
         <Modal.Header closeButton>
           <Modal.Title>Payment Details</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {selectedPayment && (
             <div className="payment-details">
-              <div className="mb-3">
-                <h6 className="text-muted mb-2">Basic Information</h6>
-                <div className="d-flex justify-content-between mb-2">
-                  <span className="text-muted">Transition ID:</span>
-                  <span className="fw-medium">{selectedPayment.transition_id}</span>
-                </div>
-                <div className="d-flex justify-content-between mb-2">
-                  <span className="text-muted">Payment ID:</span>
-                  <span className="fw-medium">{selectedPayment.payment_id}</span>
-                </div>
-                <div className="d-flex justify-content-between mb-2">
-                  <span className="text-muted">Order ID:</span>
-                  <span className="fw-medium">{selectedPayment.payment_details.order_id}</span>
-                </div>
-                <div className="d-flex justify-content-between mb-2">
-                  <span className="text-muted">Date:</span>
-                  <span className="fw-medium">{new Date(selectedPayment.created_at).toLocaleString()}</span>
-                </div>
-              </div>
+              <Card className="border mb-4">
+                <Card.Header className="bg-light">
+                  <h5 className="mb-0">Basic Information</h5>
+                </Card.Header>
+                <Card.Body>
+                  <Row>
+                    <Col md={6}>
+                      <div className="mb-3">
+                        <label className="text-muted d-block mb-1">
+                          Transition ID
+                        </label>
+                        <span className="fw-medium">
+                          #{selectedPayment.transition_id}
+                        </span>
+                      </div>
+                      <div className="mb-3">
+                        <label className="text-muted d-block mb-1">
+                          Payment ID
+                        </label>
+                        <span className="fw-medium">
+                          {selectedPayment.payment_id}
+                        </span>
+                      </div>
+                    </Col>
+                    <Col md={6}>
+                      <div className="mb-3">
+                        <label className="text-muted d-block mb-1">
+                          Order ID
+                        </label>
+                        <span className="fw-medium">
+                          {selectedPayment.payment_details.order_id}
+                        </span>
+                      </div>
+                      <div className="mb-3">
+                        <label className="text-muted d-block mb-1">Date</label>
+                        <span className="fw-medium">
+                          {new Date(
+                            selectedPayment.created_at
+                          ).toLocaleString()}
+                        </span>
+                      </div>
+                    </Col>
+                  </Row>
+                </Card.Body>
+              </Card>
 
-              <div className="mb-3">
-                <h6 className="text-muted mb-2">Payment Information</h6>
-                <div className="d-flex justify-content-between mb-2">
-                  <span className="text-muted">Total Amount:</span>
-                  <span className="fw-medium">৳{parseFloat(selectedPayment.payment_details.total_amount).toLocaleString()}</span>
-                </div>
-                <div className="d-flex justify-content-between mb-2">
-                  <span className="text-muted">Paid Amount:</span>
-                  <span className="fw-medium">৳{parseFloat(selectedPayment.payment_details.padi_amount).toLocaleString()}</span>
-                </div>
-                <div className="d-flex justify-content-between mb-2">
-                  <span className="text-muted">Due Amount:</span>
-                  <span className="fw-medium">৳{parseFloat(selectedPayment.payment_details.due_amount).toLocaleString()}</span>
-                </div>
-                <div className="d-flex justify-content-between mb-2">
-                  <span className="text-muted">Payment Type:</span>
-                  <span className="fw-medium">{getPaymentTypeText(selectedPayment.payment_details.payment_type)}</span>
-                </div>
-                <div className="d-flex justify-content-between mb-2">
-                  <span className="text-muted">Status:</span>
-                  <span className={`status-badge ${selectedPayment.payment_details.status === "1" ? "active" : "inactive"}`}>
-                    {getStatusText(selectedPayment.payment_details.status)}
-                  </span>
-                </div>
-                {selectedPayment.payment_details.trxed && (
-                  <div className="d-flex justify-content-between mb-2">
-                    <span className="text-muted">Transaction ID:</span>
-                    <span className="fw-medium">{selectedPayment.payment_details.trxed}</span>
-                  </div>
-                )}
-                {selectedPayment.payment_details.phone && (
-                  <div className="d-flex justify-content-between mb-2">
-                    <span className="text-muted">Phone:</span>
-                    <span className="fw-medium">{selectedPayment.payment_details.phone}</span>
-                  </div>
-                )}
-              </div>
+              <Card className="border">
+                <Card.Header className="bg-light">
+                  <h5 className="mb-0">Payment Information</h5>
+                </Card.Header>
+                <Card.Body>
+                  <Row>
+                    <Col md={6}>
+                      <div className="mb-3">
+                        <label className="text-muted d-block mb-1">
+                          Total Amount
+                        </label>
+                        <span className="fw-medium">
+                          ৳
+                          {parseFloat(
+                            selectedPayment.payment_details.total_amount
+                          ).toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="mb-3">
+                        <label className="text-muted d-block mb-1">
+                          Paid Amount
+                        </label>
+                        <span className="fw-medium text-success">
+                          ৳
+                          {parseFloat(
+                            selectedPayment.payment_details.padi_amount
+                          ).toLocaleString()}
+                        </span>
+                      </div>
+                    </Col>
+                    <Col md={6}>
+                      <div className="mb-3">
+                        <label className="text-muted d-block mb-1">
+                          Due Amount
+                        </label>
+                        <span
+                          className={`fw-medium ${
+                            parseFloat(
+                              selectedPayment.payment_details.due_amount
+                            ) > 0
+                              ? "text-danger"
+                              : "text-success"
+                          }`}
+                        >
+                          ৳
+                          {parseFloat(
+                            selectedPayment.payment_details.due_amount
+                          ).toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="mb-3">
+                        <label className="text-muted d-block mb-1">
+                          Payment Type
+                        </label>
+                        <span className="fw-medium">
+                          {getPaymentTypeText(
+                            selectedPayment.payment_details.payment_type
+                          )}
+                        </span>
+                      </div>
+                    </Col>
+                  </Row>
+                  <Row>
+                    <Col md={6}>
+                      <div className="mb-3">
+                        <label className="text-muted d-block mb-1">
+                          Status
+                        </label>
+                        <span
+                          className={`status-badge ${
+                            selectedPayment.payment_details.status === "1"
+                              ? "active"
+                              : "inactive"
+                          }`}
+                        >
+                          {getStatusText(
+                            selectedPayment.payment_details.status
+                          )}
+                        </span>
+                      </div>
+                    </Col>
+                    {selectedPayment.payment_details.trxed && (
+                      <Col md={6}>
+                        <div className="mb-3">
+                          <label className="text-muted d-block mb-1">
+                            Transaction ID
+                          </label>
+                          <span className="fw-medium">
+                            {selectedPayment.payment_details.trxed}
+                          </span>
+                        </div>
+                      </Col>
+                    )}
+                  </Row>
+                  {selectedPayment.payment_details.phone && (
+                    <Row>
+                      <Col md={6}>
+                        <div className="mb-3">
+                          <label className="text-muted d-block mb-1">
+                            Phone
+                          </label>
+                          <span className="fw-medium">
+                            {selectedPayment.payment_details.phone}
+                          </span>
+                        </div>
+                      </Col>
+                    </Row>
+                  )}
+                </Card.Body>
+              </Card>
             </div>
           )}
         </Modal.Body>
@@ -387,4 +562,4 @@ const Transitions = () => {
   );
 };
 
-export default Transitions; 
+export default Transitions;
