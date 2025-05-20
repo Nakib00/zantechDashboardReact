@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { FaSearch, FaSpinner, FaEye, FaTimes, FaPlus, FaCalendarAlt } from "react-icons/fa";
+import { FaSearch, FaSpinner, FaEye, FaTimes, FaPlus, FaCalendarAlt, FaFilter } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import axiosInstance from "../../config/axios";
-import { Card, Form, InputGroup, Button, Pagination, Row, Col } from "react-bootstrap";
+import { Card, Form, InputGroup, Button, Pagination, Row, Col, Badge } from "react-bootstrap";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import Loading from "../../components/Loading";
-import "../Categories/Categories.css";
+import "./Orders.css";
 
 const Orders = () => {
   const navigate = useNavigate();
@@ -125,15 +125,21 @@ const Orders = () => {
 
   const handleDateChange = (dates) => {
     const [start, end] = dates;
+    
+    // Validate dates
     if (start && end && start > end) {
       toast.error("Start date cannot be after end date");
       return;
     }
+
+    // Format dates to start and end of day
+    const formattedStart = start ? new Date(start.setHours(0, 0, 0, 0)) : null;
+    const formattedEnd = end ? new Date(end.setHours(23, 59, 59, 999)) : null;
     
     setSearchParams(prev => ({
       ...prev,
-      startDate: start,
-      endDate: end,
+      startDate: formattedStart,
+      endDate: formattedEnd,
       page: 1
     }));
   };
@@ -293,169 +299,199 @@ const Orders = () => {
   }
 
   return (
-    <div className="categories-container">
-      <Card>
-        <Card.Body>
+    <div className="orders-container">
+      <Card className="modern-card">
+        <Card.Body className="p-4">
           <div className="d-flex justify-content-between align-items-center mb-4">
-            <h2 className="mb-0">Orders</h2>
-            <div className="d-flex gap-3">
-              <Button 
-                variant="primary" 
-                onClick={() => navigate('/orders/create')}
-                className="d-flex align-items-center gap-2"
-              >
-                <FaPlus /> Create Order
-              </Button>
-              <div className="d-flex align-items-center gap-2">
-                <InputGroup>
-                  <InputGroup.Text>
-                    <FaCalendarAlt />
-                  </InputGroup.Text>
-                  <DatePicker
-                    selected={searchParams.startDate}
-                    onChange={handleDateChange}
-                    startDate={searchParams.startDate}
-                    endDate={searchParams.endDate}
-                    selectsRange
-                    className="form-control"
-                    placeholderText="Select date range"
-                    dateFormat="yyyy-MM-dd"
-                    isClearable
-                    onClear={clearDateFilter}
-                    maxDate={new Date()}
-                    showMonthDropdown
-                    showYearDropdown
-                    dropdownMode="select"
-                  />
-                </InputGroup>
+            <div>
+              <h2 className="page-title mb-1">Orders</h2>
+              <p className="text-muted mb-0">Manage and track all your orders</p>
+            </div>
+            <Button 
+              variant="primary" 
+              onClick={() => navigate('/orders/create')}
+              className="create-order-btn"
+            >
+              <FaPlus className="me-2" /> Create Order
+            </Button>
+          </div>
+
+          <div className="filters-section mb-4">
+            <Row className="g-3">
+              <Col md={3}>
+                <div className="search-box">
+                  <InputGroup>
+                    <InputGroup.Text className="search-icon">
+                      {isSearching ? <FaSpinner className="spinner" /> : <FaSearch />}
+                    </InputGroup.Text>
+                    <Form.Control
+                      type="text"
+                      placeholder="Search orders..."
+                      value={searchParams.search}
+                      onChange={handleSearch}
+                      className="search-input"
+                    />
+                    {searchParams.search && (
+                      <Button
+                        variant="link"
+                        className="clear-search"
+                        onClick={() => {
+                          setSearchParams((prev) => ({ ...prev, search: "" }));
+                          fetchOrders(1);
+                        }}
+                      >
+                        <FaTimes />
+                      </Button>
+                    )}
+                  </InputGroup>
+                </div>
+              </Col>
+              <Col md={3}>
+                <div className="date-filter-box">
+                  <InputGroup>
+                    <InputGroup.Text>
+                      <FaCalendarAlt />
+                    </InputGroup.Text>
+                    <DatePicker
+                      selected={searchParams.startDate}
+                      onChange={handleDateChange}
+                      startDate={searchParams.startDate}
+                      endDate={searchParams.endDate}
+                      selectsRange
+                      className="form-control date-picker-input"
+                      placeholderText="Select date range"
+                      dateFormat="yyyy-MM-dd - yyyy-MM-dd"
+                      isClearable
+                      onClear={clearDateFilter}
+                      maxDate={new Date()}
+                      showMonthDropdown
+                      showYearDropdown
+                      dropdownMode="select"
+                      monthsShown={2}
+                      calendarStartDay={1}
+                      popperClassName="date-range-popper"
+                      popperPlacement="bottom-start"
+                      popperModifiers={[
+                        {
+                          name: "preventOverflow",
+                          options: {
+                            boundary: "viewport"
+                          }
+                        }
+                      ]}
+                    />
+                  </InputGroup>
+                </div>
+              </Col>
+              <Col md={2}>
+                <Form.Select
+                  value={filterStatus}
+                  onChange={handleFilterStatusChange}
+                  className="status-filter"
+                >
+                  <option value="">All Statuses</option>
+                  <option value="0">On Processing</option>
+                  <option value="1">Completed</option>
+                  <option value="2">On Hold</option>
+                  <option value="3">Cancelled</option>
+                  <option value="4">Refunded</option>
+                </Form.Select>
+              </Col>
+              <Col md={2}>
+                <Form.Select
+                  value={searchParams.limit}
+                  onChange={handleLimitChange}
+                  className="limit-select"
+                >
+                  <option value="5">5 per page</option>
+                  <option value="10">10 per page</option>
+                  <option value="20">20 per page</option>
+                  <option value="50">50 per page</option>
+                </Form.Select>
+              </Col>
+              <Col md={2}>
                 {(searchParams.startDate || searchParams.endDate) && (
                   <Button
                     variant="outline-secondary"
                     onClick={clearDateFilter}
-                    className="d-flex align-items-center gap-1"
+                    className="clear-dates-btn w-100"
                   >
-                    <FaTimes /> Clear Dates
+                    <FaTimes className="me-2" /> Clear Dates
                   </Button>
                 )}
-              </div>
-              <InputGroup style={{ width: "300px" }}>
-                <InputGroup.Text>
-                  {isSearching ? (
-                    <FaSpinner className="spinner" />
-                  ) : (
-                    <FaSearch />
-                  )}
-                </InputGroup.Text>
-                <Form.Control
-                  type="text"
-                  placeholder="Search orders..."
-                  value={searchParams.search}
-                  onChange={handleSearch}
-                />
-                {searchParams.search && (
-                  <Button
-                    variant="outline-secondary"
-                    onClick={() => {
-                      setSearchParams((prev) => ({ ...prev, search: "" }));
-                      fetchOrders(1);
-                    }}
-                  >
-                    <FaTimes />
-                  </Button>
-                )}
-              </InputGroup>
-              <Form.Select
-                style={{ width: "auto" }}
-                value={filterStatus}
-                onChange={handleFilterStatusChange}
-              >
-                <option value="">All Statuses</option>
-                <option value="0">On Processing</option>
-                <option value="1">Completed</option>
-                <option value="2">On Hold</option>
-                <option value="3">Cancelled</option>
-                <option value="4">Refunded</option>
-              </Form.Select>
-              <Form.Select
-                style={{ width: "auto" }}
-                value={searchParams.limit}
-                onChange={handleLimitChange}
-              >
-                <option value="5">5 per page</option>
-                <option value="10">10 per page</option>
-                <option value="20">20 per page</option>
-                <option value="50">50 per page</option>
-              </Form.Select>
+              </Col>
+            </Row>
+          </div>
+
+          <div className="table-container">
+            <div className="table-responsive">
+              <table className="table table-hover modern-table">
+                <thead>
+                  <tr>
+                    <th>Order ID</th>
+                    <th>Invoice Code</th>
+                    <th>Customer Name</th>
+                    <th>Phone</th>
+                    <th>Email</th>
+                    <th>Total Amount</th>
+                    <th>Paid Amount</th>
+                    <th>Due Amount</th>
+                    <th>Status</th>
+                    <th>Order Date</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredOrders.map((order) => (
+                    <tr key={order.order_id}>
+                      <td className="fw-medium">#{order.order_id}</td>
+                      <td>{order.invoice_code}</td>
+                      <td>{order.user_name}</td>
+                      <td>{order.user_phone}</td>
+                      <td>{order.user_email}</td>
+                      <td className="fw-medium">৳{parseFloat(order.total_amount).toLocaleString()}</td>
+                      <td className="text-success">৳{parseFloat(order.paid_amount || 0).toLocaleString()}</td>
+                      <td className={parseFloat(order.due_amount || 0) > 0 ? "text-danger" : "text-success"}>
+                        ৳{parseFloat(order.due_amount || 0).toLocaleString()}
+                      </td>
+                      <td>
+                        <Form.Select
+                          value={order.status?.toString() || "0"}
+                          onChange={(e) => handleStatusChange(order.order_id, e.target.value)}
+                          disabled={updatingStatus[order.order_id]}
+                          size="sm"
+                          className="status-select"
+                        >
+                          <option value="0">On Processing</option>
+                          <option value="1">Completed</option>
+                          <option value="2">On Hold</option>
+                          <option value="3">Cancelled</option>
+                          <option value="4">Refunded</option>
+                        </Form.Select>
+                      </td>
+                      <td>{new Date(order.order_placed_date_time).toLocaleString()}</td>
+                      <td>
+                        <Button
+                          variant="outline-primary"
+                          size="sm"
+                          className="view-btn"
+                          onClick={() => navigate(`/orders/${order.order_id}`)}
+                        >
+                          <FaEye className="me-1" /> View
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
 
-          <div className="table-responsive">
-            <table className="table table-hover align-middle">
-              <thead className="bg-light">
-                <tr>
-                  <th>Order ID</th>
-                  <th>Invoice Code</th>
-                  <th>Customer Name</th>
-                  <th>Phone</th>
-                  <th>Email</th>
-                  <th>Total Amount</th>
-                  <th>Paid Amount</th>
-                  <th>Due Amount</th>
-                  <th>Status</th>
-                  <th>Order Date</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredOrders.map((order) => (
-                  <tr key={order.order_id}>
-                    <td>{order.order_id}</td>
-                    <td>{order.invoice_code}</td>
-                    <td>{order.user_name}</td>
-                    <td>{order.user_phone}</td>
-                    <td>{order.user_email}</td>
-                    <td>৳{parseFloat(order.total_amount).toLocaleString()}</td>
-                    <td>৳{parseFloat(order.paid_amount || 0).toLocaleString()}</td>
-                    <td>৳{parseFloat(order.due_amount || 0).toLocaleString()}</td>
-                    <td>
-                      <Form.Select
-                        value={order.status?.toString() || "0"}
-                        onChange={(e) =>
-                          handleStatusChange(order.order_id, e.target.value)
-                        }
-                        disabled={updatingStatus[order.order_id]}
-                        size="sm"
-                        style={{ width: "auto", minWidth: "120px" }}
-                      >
-                        <option value="0">On Processing</option>
-                        <option value="1">Completed</option>
-                        <option value="2">On Hold</option>
-                        <option value="3">Cancelled</option>
-                        <option value="4">Refunded</option>
-                      </Form.Select>
-                    </td>
-                    <td>
-                      {new Date(order.order_placed_date_time).toLocaleString()}
-                    </td>
-                    <td>
-                      <Button
-                        variant="outline-primary"
-                        size="sm"
-                        className="d-flex align-items-center gap-1"
-                        onClick={() => navigate(`/orders/${order.order_id}`)}
-                      >
-                        <FaEye /> View
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
           {pagination.last_page > 1 && (
-            <div className="d-flex justify-content-center mt-4">
-              <Pagination className="mb-0">{renderPagination()}</Pagination>
+            <div className="pagination-container mt-4">
+              <Pagination className="modern-pagination">
+                {renderPagination()}
+              </Pagination>
             </div>
           )}
         </Card.Body>

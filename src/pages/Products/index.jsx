@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { FaPlus, FaEdit, FaTrash, FaSpinner, FaChevronLeft, FaChevronRight, FaSearch, FaFilter, FaEye, FaPencilAlt, FaChevronDown } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaSpinner, FaChevronLeft, FaChevronRight, FaSearch, FaFilter, FaEye, FaPencilAlt, FaChevronDown, FaTimes } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { Card, Badge, Pagination, Form, InputGroup, Button, Modal, Row, Col, Dropdown } from 'react-bootstrap';
 import axiosInstance from '../../config/axios';
 import Loading from '../../components/Loading';
+import './Products.css';
 
 const Products = () => {
   const [products, setProducts] = useState([]);
@@ -20,11 +21,8 @@ const Products = () => {
   });
   const [searchParams, setSearchParams] = useState({
     search: '',
-    minPrice: '',
-    maxPrice: '',
     limit: 10
   });
-  const [showFilters, setShowFilters] = useState(false);
   const [showQuickEdit, setShowQuickEdit] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -62,8 +60,10 @@ const Products = () => {
       if (searchParams.search !== '') {
         setIsSearching(true);
         fetchProducts(1);
+      } else if (searchParams.search === '' && !pageLoading) {
+        fetchProducts(1);
       }
-    }, 500); // 500ms debounce
+    }, 500);
 
     setSearchTimeout(timeoutId);
 
@@ -74,17 +74,14 @@ const Products = () => {
     };
   }, [searchParams.search]);
 
-  const fetchProducts = async (page = 1) => {
+  const fetchProducts = async (page = pagination.currentPage) => {
     setLoading(true);
     setTableLoading(true);
     try {
-      // Build query parameters
       const params = {
         page,
         limit: searchParams.limit,
-        ...(searchParams.search && { search: searchParams.search }),
-        ...(searchParams.minPrice && { min_price: searchParams.minPrice }),
-        ...(searchParams.maxPrice && { max_price: searchParams.maxPrice })
+        ...(searchParams.search && { search: searchParams.search })
       };
 
       const response = await axiosInstance.get('/products', { params });
@@ -111,7 +108,7 @@ const Products = () => {
       
       setProducts([]);
       setPagination({
-        currentPage: 1,
+        currentPage: page,
         perPage: searchParams.limit,
         totalPages: 1,
         totalRows: 0,
@@ -131,45 +128,21 @@ const Products = () => {
       [name]: value
     }));
 
-    if (name === 'search') {
-      setPagination(prev => ({
-        ...prev,
-        currentPage: 1
-      }));
-    }
+    // Limit change triggers fetchProducts via useEffect dependency.
+    // Search change triggers fetchProducts via useEffect debounce.
   };
 
   const handleSearch = (e) => {
     e.preventDefault();
-    if (searchTimeout) {
-      clearTimeout(searchTimeout);
-    }
-    setIsSearching(true);
-    fetchProducts(1);
-  };
-
-  const handleFilterSubmit = (e) => {
-    e.preventDefault();
-    setShowFilters(false);
-    fetchProducts(1);
-  };
-
-  const handleResetFilters = () => {
-    setSearchParams({
-      search: '',
-      minPrice: '',
-      maxPrice: '',
-      limit: 5
-    });
-    setShowFilters(false);
-    fetchProducts(1);
+    // Debounce logic is in useEffect
+    // No direct fetchProducts call needed here
   };
 
   const handleDeleteProduct = async (id) => {
     if (window.confirm('Are you sure you want to delete this product?')) {
       try {
-        setTableLoading(true); // Show loading state during deletion
-        const token = localStorage.getItem('token'); // Get token from localStorage
+        setTableLoading(true);
+        const token = localStorage.getItem('token');
         
         if (!token) {
           throw new Error('Authentication token not found. Please login again.');
@@ -187,13 +160,11 @@ const Products = () => {
           throw new Error(result.message || 'Failed to delete product');
         }
 
-        // Add a small delay to make the transition smoother
         await new Promise(resolve => setTimeout(resolve, 300));
 
         setProducts(products.filter(prod => prod.id !== id));
         toast.success('Product deleted successfully');
         
-        // Refresh current page if it becomes empty
         if (products.length === 1 && pagination.currentPage > 1) {
           fetchProducts(pagination.currentPage - 1);
         }
@@ -202,13 +173,12 @@ const Products = () => {
         const errorMessage = err.response?.data?.message || err.message || 'Failed to delete product';
         toast.error(errorMessage);
         
-        // If token is invalid or expired, redirect to login
         if (err.response?.status === 401) {
-          localStorage.removeItem('token'); // Clear invalid token
-          navigate('/login'); // Redirect to login page
+          localStorage.removeItem('token');
+          navigate('/login');
         }
       } finally {
-        setTableLoading(false); // Hide loading state
+        setTableLoading(false);
       }
     }
   };
@@ -223,7 +193,7 @@ const Products = () => {
       name: product.name || '',
       price: product.price || '',
       quantity: product.quantity || '',
-      discount: product.discount || '0'
+      discount: product.discount?.toString() || '0' // Ensure discount is a string
     });
     setShowQuickEdit(true);
   };
@@ -244,7 +214,9 @@ const Products = () => {
       const token = localStorage.getItem('token');
       
       if (!token) {
-        throw new Error('Authentication token not found. Please login again.');
+        toast.error('Authentication token not found. Please login again.');
+        navigate('/login');
+        return;
       }
 
       const response = await axiosInstance.put(`/products/update/${selectedProduct.id}`, editForm, {
@@ -259,10 +231,9 @@ const Products = () => {
         throw new Error(result.message || 'Failed to update product');
       }
 
-      // Update the product in the list
       setProducts(products.map(prod => 
         prod.id === selectedProduct.id 
-          ? { ...prod, ...editForm }
+          ? { ...prod, ...editForm, quantity: parseInt(editForm.quantity) }
           : prod
       ));
 
@@ -283,7 +254,7 @@ const Products = () => {
   };
 
   const handleStatusToggle = async (productId) => {
-    if (statusToggleLoading[productId]) return; // Prevent multiple clicks
+    if (statusToggleLoading[productId]) return;
     
     try {
       setStatusToggleLoading(prev => ({ ...prev, [productId]: true }));
@@ -295,7 +266,6 @@ const Products = () => {
         return;
       }
 
-      // Using the exact API endpoint format provided
       const response = await axiosInstance.post(`/products/toggle-status/${productId}`, {}, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -306,7 +276,6 @@ const Products = () => {
         throw new Error('No response received from server');
       }
 
-      // Update the product status in the list
       setProducts(prevProducts => 
         prevProducts.map(prod => 
           prod.id === productId 
@@ -345,7 +314,6 @@ const Products = () => {
       startPage = Math.max(1, endPage - maxVisiblePages + 1);
     }
 
-    // Previous button
     items.push(
       <Pagination.Prev 
         key="prev" 
@@ -356,7 +324,6 @@ const Products = () => {
       </Pagination.Prev>
     );
 
-    // First page
     if (startPage > 1) {
       items.push(
         <Pagination.Item key={1} onClick={() => handlePageChange(1)}>
@@ -368,7 +335,6 @@ const Products = () => {
       }
     }
 
-    // Page numbers
     for (let number = startPage; number <= endPage; number++) {
       items.push(
         <Pagination.Item 
@@ -381,7 +347,6 @@ const Products = () => {
       );
     }
 
-    // Last page
     if (endPage < pagination.totalPages) {
       if (endPage < pagination.totalPages - 1) {
         items.push(<Pagination.Ellipsis key="ellipsis2" disabled />);
@@ -396,7 +361,6 @@ const Products = () => {
       );
     }
 
-    // Next button
     items.push(
       <Pagination.Next 
         key="next" 
@@ -415,148 +379,88 @@ const Products = () => {
   }
 
   return (
-    <div className="container-fluid p-0">
-      <Card className="border-0 shadow-sm">
-        <Card.Body>
+    <div className="products-container">
+      <Card className="modern-card">
+        <Card.Body className="p-4">
           <div className="d-flex justify-content-between align-items-center mb-4">
             <div>
-              <h4 className="mb-1">Products</h4>
-              {loading ? (
+              <h4 className="page-title mb-1">Products</h4>
+              {loading && tableLoading ? (
                 <div className="d-flex align-items-center">
                   <FaSpinner className="spinner-border spinner-border-sm me-2" />
-                  <p className="text-muted mb-0">Loading products...</p>
+                  <p className="page-subtitle mb-0">Loading products...</p>
                 </div>
               ) : (
-                <p className="text-muted mb-0">
+                <p className="page-subtitle mb-0">
                   Showing {products.length} of {pagination.totalRows} products
                 </p>
               )}
             </div>
-            <div className="d-flex gap-2">
-              <Form onSubmit={handleSearch} className="d-flex gap-2">
-                <InputGroup>
-                  <InputGroup.Text>
-                    {isSearching ? (
-                      <FaSpinner className="spinner-border spinner-border-sm" />
-                    ) : (
-                      <FaSearch />
-                    )}
-                  </InputGroup.Text>
-                  <Form.Control
-                    type="text"
-                    placeholder="Search products..."
-                    name="search"
-                    value={searchParams.search}
-                    onChange={handleFilterChange}
-                    disabled={loading}
-                    className={isSearching ? 'searching' : ''}
-                  />
-                  {searchParams.search && !isSearching && (
-                    <Button
-                      variant="outline-secondary"
-                      onClick={() => {
-                        setSearchParams(prev => ({ ...prev, search: '' }));
-                        fetchProducts(1);
-                      }}
-                      disabled={loading}
-                    >
-                      ×
-                    </Button>
-                  )}
-                </InputGroup>
-                <Button 
-                  variant="outline-secondary" 
-                  onClick={() => setShowFilters(true)}
-                  title="Filter"
-                  disabled={loading}
-                >
-                  <FaFilter />
-                </Button>
-              </Form>
-              <button 
-                className="btn btn-primary d-flex align-items-center gap-2"
+            <Button 
+                variant="primary" 
                 onClick={() => navigate('/products/add')}
                 disabled={loading}
+                className="add-product-btn"
               >
-                {loading ? <FaSpinner className="spinner-border spinner-border-sm" /> : <FaPlus />} Add Product
-              </button>
-            </div>
+                {loading ? <FaSpinner className="spinner-border spinner-border-sm me-2" /> : <FaPlus className="me-2" />} Add Product
+            </Button>
           </div>
 
-          {/* Filter Modal */}
-          <Modal show={showFilters} onHide={() => !loading && setShowFilters(false)}>
-            <Modal.Header closeButton>
-              <Modal.Title>Filter Products</Modal.Title>
-            </Modal.Header>
-            <Form onSubmit={handleFilterSubmit}>
-              <Modal.Body>
-                {loading ? (
-                  <div className="text-center py-4">
-                    <Loading />
-                    <p className="text-muted mt-2 mb-0">Applying filters...</p>
-                  </div>
-                ) : (
-                  <>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Price Range</Form.Label>
-                      <div className="d-flex gap-2">
-                        <Form.Control
-                          type="number"
-                          placeholder="Min Price"
-                          name="minPrice"
-                          value={searchParams.minPrice}
-                          onChange={handleFilterChange}
-                          min="0"
-                          disabled={loading}
-                        />
-                        <Form.Control
-                          type="number"
-                          placeholder="Max Price"
-                          name="maxPrice"
-                          value={searchParams.maxPrice}
-                          onChange={handleFilterChange}
-                          min="0"
-                          disabled={loading}
-                        />
-                      </div>
-                    </Form.Group>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Items per page</Form.Label>
-                      <Form.Select
-                        name="limit"
-                        value={searchParams.limit}
-                        onChange={handleFilterChange}
+          <div className="filters-section mb-4">
+            <Row className="g-3 align-items-center">
+              <Col md={4}>
+                <Form onSubmit={handleSearch}>
+                  <InputGroup className="search-box">
+                    <InputGroup.Text className="search-icon">
+                      {isSearching ? (
+                        <FaSpinner className="spinner-border spinner-border-sm" />
+                      ) : (
+                        <FaSearch />
+                      )}
+                    </InputGroup.Text>
+                    <Form.Control
+                      type="text"
+                      placeholder="Search products..."
+                      name="search"
+                      value={searchParams.search}
+                      onChange={handleFilterChange}
+                      disabled={loading}
+                      className={`search-input ${isSearching ? 'searching' : ''}`}
+                    />
+                    {searchParams.search && !isSearching && (
+                      <Button
+                        variant="link"
+                        className="clear-search"
+                        onClick={() => {
+                          setSearchParams(prev => ({ ...prev, search: '' }));
+                        }}
                         disabled={loading}
                       >
-                        <option value="5">5 per page</option>
-                        <option value="10">10 per page</option>
-                        <option value="20">20 per page</option>
-                        <option value="50">50 per page</option>
-                      </Form.Select>
-                    </Form.Group>
-                  </>
-                )}
-              </Modal.Body>
-              <Modal.Footer>
-                <Button variant="secondary" onClick={handleResetFilters} disabled={loading}>
-                  Reset Filters
-                </Button>
-                <Button variant="primary" type="submit" disabled={loading}>
-                  {loading ? (
-                    <>
-                      <FaSpinner className="spinner-border spinner-border-sm me-2" />
-                      Applying...
-                    </>
-                  ) : (
-                    'Apply Filters'
-                  )}
-                </Button>
-              </Modal.Footer>
-            </Form>
-          </Modal>
+                        <FaTimes />
+                      </Button>
+                    )}
+                  </InputGroup>
+                </Form>
+              </Col>
+               <Col md={8} className="d-flex justify-content-end gap-2">
+                 <Form.Select
+                    name="limit"
+                    value={searchParams.limit}
+                    onChange={handleFilterChange}
+                    disabled={loading}
+                    style={{ width: 'auto' }}
+                    className="limit-select"
+                  >
+                    <option value="5">5 per page</option>
+                    <option value="10">10 per page</option>
+                    <option value="20">20 per page</option>
+                    <option value="50">50 per page</option>
+                  </Form.Select>
+               </Col>
+            </Row>
+          </div>
 
-          {/* Quick Edit Modal */}
-          <Modal show={showQuickEdit} onHide={() => !editLoading && setShowQuickEdit(false)}>
+          <Modal show={showQuickEdit} onHide={() => !editLoading && setShowQuickEdit(false)} centered>
             <Modal.Header closeButton>
               <Modal.Title>Quick Edit Product</Modal.Title>
             </Modal.Header>
@@ -568,7 +472,7 @@ const Products = () => {
                     <p className="text-muted mt-2 mb-0">Updating product...</p>
                   </div>
                 ) : (
-                  <Row>
+                  <Row className="g-3">
                     <Col md={12}>
                       <Form.Group className="mb-3">
                         <Form.Label>Product Name</Form.Label>
@@ -614,7 +518,7 @@ const Products = () => {
                         <Form.Control
                           type="number"
                           name="discount"
-                          value={editForm.discount || '0'}
+                          value={editForm.discount}
                           onChange={handleEditFormChange}
                           min="0"
                           max="100"
@@ -649,7 +553,7 @@ const Products = () => {
                     </>
                   ) : (
                     <>
-                      <FaPencilAlt /> Update Product
+                      <FaPencilAlt className="me-2" /> Update Product
                     </>
                   )}
                 </Button>
@@ -657,7 +561,7 @@ const Products = () => {
             </Form>
           </Modal>
 
-          <div className="table-responsive position-relative">
+          <div className="table-container position-relative">
             {tableLoading && (
               <div 
                 className="position-absolute w-100 h-100 d-flex justify-content-center align-items-center"
@@ -684,141 +588,130 @@ const Products = () => {
                 <p className="text-muted mt-3 mb-0">Loading products...</p>
               </div>
             ) : products.length > 0 ? (
-              <table className="table table-hover align-middle">
-                <thead className="bg-light">
-                  <tr>
-                    <th>ID</th>
-                    <th>Image</th>
-                    <th>Name</th>
-                    <th>Description</th>
-                    <th>Price</th>
-                    <th>Paid</th>
-                    <th>Due</th>
-                    <th>Stock</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {products.map((product) => (
-                    <tr key={product.id}>
-                      <td>{product.id}</td>
-                      <td>
-                        {product.image_paths && product.image_paths.length > 0 ? (
-                          <img 
-                            src={product.image_paths[0]} 
-                            alt={product.name}
-                            className="rounded img-thumbnail"
-                            style={{ width: '50px', height: '50px', objectFit: 'cover' }}
-                          />
-                        ) : (
-                          <div 
-                            className="rounded bg-light d-flex align-items-center justify-content-center"
-                            style={{ width: '50px', height: '50px' }}
-                          >
-                            <span className="text-muted small">No image</span>
-                          </div>
-                        )}
-                      </td>
-                      <td>
-                        <div>
-                          <h6 className="mb-0">{product.name}</h6>
-                          <small className="text-muted">{product.short_description}</small>
-                        </div>
-                      </td>
-                      <td>
-                        <p className="mb-0 text-truncate" style={{ maxWidth: '200px' }}>
-                          {product.description}
-                        </p>
-                      </td>
-                      <td>
-                        <div>
-                          <span className="fw-semibold">৳{product.price}</span>
-                          {product.discount > 0 && (
-                            <Badge bg="danger" className="ms-2">
-                              -{product.discount}%
-                            </Badge>
-                          )}
-                        </div>
-                      </td>
-                      <td>
-                        <span className="fw-semibold text-success">৳{parseFloat(product.paid_amount || 0).toLocaleString()}</span>
-                      </td>
-                      <td>
-                        <span className="fw-semibold text-danger">৳{parseFloat(product.due_amount || 0).toLocaleString()}</span>
-                      </td>
-                      <td>
-                        <Badge 
-                          bg={product.quantity > 0 ? 'success' : 'danger'}
-                          className="px-2 py-1"
-                        >
-                          {product.quantity > 0 ? `${product.quantity} in stock` : 'Out of stock'}
-                        </Badge>
-                      </td>
-                      <td>
-                        <Badge 
-                          bg={product.status === "1" ? 'success' : 'secondary'}
-                          className="px-2 py-1"
-                          role="button"
-                          style={{ cursor: 'pointer' }}
-                          onClick={() => handleStatusToggle(product.id)}
-                          title="Click to toggle status"
-                        >
-                          {statusToggleLoading[product.id] ? (
-                            <FaSpinner className="spinner-border spinner-border-sm" />
+              <div className="table-responsive">
+                <table className="table table-hover align-middle modern-table">
+                  <thead className="bg-light">
+                    <tr>
+                      <th>ID</th>
+                      <th>Image</th>
+                      <th>Name</th>
+                      <th>Description</th>
+                      <th>Price</th>
+                      <th>Stock</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {products.map((product) => (
+                      <tr key={product.id}>
+                        <td data-label="ID">{product.id}</td>
+                        <td data-label="Image">
+                          {product.image_paths && product.image_paths.length > 0 ? (
+                            <img 
+                              src={product.image_paths[0]} 
+                              alt={product.name}
+                              className="product-image"
+                            />
                           ) : (
-                            product.status === "1" ? 'Active' : 'Inactive'
+                            <div className="no-image-placeholder">
+                              <span>No image</span>
+                            </div>
                           )}
-                        </Badge>
-                      </td>
-                      <td>
-                        <div className="d-flex gap-2">
-                          <button 
-                            className="btn btn-sm btn-outline-primary"
-                            onClick={() => navigate(`/products/${product.id}`)}
-                            title="View"
-                            disabled={loading}
+                        </td>
+                        <td data-label="Name">
+                          <div>
+                            <h6 className="mb-0">{product.name}</h6>
+                            <small className="text-muted">{product.short_description}</small>
+                          </div>
+                        </td>
+                        <td data-label="Description">
+                          <p className="mb-0 text-truncate" style={{ maxWidth: '200px' }}>
+                            {product.description}
+                          </p>
+                        </td>
+                        <td data-label="Price">
+                          <div>
+                            <span className="fw-semibold">৳{parseFloat(product.price).toLocaleString()}</span>
+                            {product.discount > 0 && (
+                              <span className="ms-2 text-danger">-{parseFloat(product.discount).toFixed(0)}%</span>
+                            )}
+                          </div>
+                        </td>
+                        <td data-label="Stock">
+                          <span 
+                            className={`px-2 py-1 ${product.quantity > 0 ? 'text-success' : 'text-danger'}`}
                           >
-                            <FaEye />
-                          </button>
-                          <Dropdown>
-                            <Dropdown.Toggle 
+                            {product.quantity > 0 ? `${product.quantity} In Stock` : 'Out of Stock'}
+                          </span>
+                        </td>
+                        <td data-label="Status">
+                          <span 
+                            className={`px-2 py-1 status-badge ${product.status === "1" ? 'text-success' : 'text-secondary'}`}
+                            role="button"
+                            onClick={() => handleStatusToggle(product.id)}
+                            title="Click to toggle status"
+                          >
+                            {statusToggleLoading[product.id] ? (
+                              <FaSpinner className="spinner-border spinner-border-sm" />
+                            ) : (
+                              product.status === "1" ? 'Active' : 'Inactive'
+                            )}
+                          </span>
+                        </td>
+                        <td data-label="Actions">
+                          <div className="d-flex gap-2">
+                            <Button 
                               variant="outline-primary" 
                               size="sm"
+                              onClick={() => navigate(`/products/${product.id}`)}
+                              title="View"
                               disabled={loading}
-                              className="d-flex align-items-center gap-1"
+                              className="view-btn"
                             >
-                              <FaEdit /> Edit <FaChevronDown size={10} />
-                            </Dropdown.Toggle>
-                            <Dropdown.Menu>
-                              <Dropdown.Item 
-                                onClick={() => handleQuickEdit(product)}
-                                className="d-flex align-items-center gap-2"
+                              <FaEye />
+                            </Button>
+                            <Dropdown>
+                              <Dropdown.Toggle 
+                                variant="outline-primary" 
+                                size="sm"
+                                disabled={loading}
+                                className="action-dropdown-toggle"
                               >
-                                <FaPencilAlt size={12} /> Quick Edit
-                              </Dropdown.Item>
-                              <Dropdown.Item 
-                                onClick={() => navigate(`/products/${product.id}`)}
-                                className="d-flex align-items-center gap-2"
-                              >
-                                <FaEdit size={12} /> Full Edit
-                              </Dropdown.Item>
-                            </Dropdown.Menu>
-                          </Dropdown>
-                          <button 
-                            className="btn btn-sm btn-outline-danger"
-                            onClick={() => handleDeleteProduct(product.id)}
-                            title="Delete"
-                            disabled={loading}
-                          >
-                            {loading ? <FaSpinner className="spinner-border spinner-border-sm" /> : <FaTrash />}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                                <FaEdit /> Edit <FaChevronDown size={10} />
+                              </Dropdown.Toggle>
+                              <Dropdown.Menu className="action-dropdown-menu">
+                                <Dropdown.Item 
+                                  onClick={() => handleQuickEdit(product)}
+                                  className="action-dropdown-item"
+                                >
+                                  <FaPencilAlt className="me-2" /> Quick Edit
+                                </Dropdown.Item>
+                                <Dropdown.Item 
+                                  onClick={() => navigate(`/products/${product.id}`)}
+                                  className="action-dropdown-item"
+                                >
+                                  <FaEdit className="me-2" /> Full Edit
+                                </Dropdown.Item>
+                              </Dropdown.Menu>
+                            </Dropdown>
+                            <Button 
+                              variant="outline-danger" 
+                              size="sm"
+                              onClick={() => handleDeleteProduct(product.id)}
+                              title="Delete"
+                              disabled={loading}
+                              className="delete-btn"
+                            >
+                              {loading ? <FaSpinner className="spinner-border spinner-border-sm" /> : <FaTrash />}
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             ) : (
               <div className="text-center py-5">
                 <p className="text-muted mb-0">No products found</p>
@@ -827,7 +720,7 @@ const Products = () => {
           </div>
 
           {pagination.totalPages > 1 && (
-            <div className="d-flex justify-content-center mt-4 position-relative">
+            <div className="pagination-container mt-4 position-relative">
               {tableLoading && (
                 <div 
                   className="position-absolute w-100 h-100 d-flex justify-content-center align-items-center"
@@ -845,26 +738,13 @@ const Products = () => {
                   </div>
                 </div>
               )}
-              <Pagination className="mb-0">
+              <Pagination className="mb-0 modern-pagination">
                 {renderPagination()}
               </Pagination>
             </div>
           )}
         </Card.Body>
       </Card>
-
-      <style jsx>{`
-        .searching {
-          background-color: #f8f9fa;
-        }
-        .form-control:focus {
-          box-shadow: none;
-          border-color: #dee2e6;
-        }
-        .form-control:focus.searching {
-          background-color: #f8f9fa;
-        }
-      `}</style>
     </div>
   );
 };
