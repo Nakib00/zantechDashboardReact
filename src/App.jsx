@@ -27,6 +27,7 @@ import Activity from './pages/Activity';
 import Orders from './pages/Orders';
 import ViewOrder from './pages/Orders/ViewOrder';
 import CreateOrder from './pages/Orders/CreateOrder';
+import HeroImages from './pages/HeroImages';
 import { OrderProvider } from './context/OrderContext';
 
 const PrivateRoute = ({ children }) => {
@@ -76,6 +77,7 @@ const App = () => {
                         <Route path="/orders" element={<Orders />} />
                         <Route path="/orders/create" element={<CreateOrder />} />
                         <Route path="/orders/:id" element={<ViewOrder />} />
+                        <Route path="/settings/hero" element={<HeroImages />} />
                       </Routes>
                     </div>
                   </div>
