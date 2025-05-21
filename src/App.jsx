@@ -28,6 +28,7 @@ import Orders from './pages/Orders';
 import ViewOrder from './pages/Orders/ViewOrder';
 import CreateOrder from './pages/Orders/CreateOrder';
 import HeroImages from './pages/HeroImages';
+import Contact from './pages/Contact';
 import { OrderProvider } from './context/OrderContext';
 
 const PrivateRoute = ({ children }) => {
@@ -72,6 +73,7 @@ const App = () => {
                         <Route path="/expenses/:id" element={<ViewExpense />} />
                         <Route path="/coupons" element={<Coupons />} />
                         <Route path="/ratings" element={<Ratings />} />
+                        <Route path="/contact" element={<Contact />} />
                         <Route path="/transitions" element={<Transitions />} />
                         <Route path="/activity" element={<Activity />} />
                         <Route path="/orders" element={<Orders />} />

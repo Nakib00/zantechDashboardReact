@@ -19,7 +19,8 @@ import {
   MdAttachMoney,
   MdLocalOffer,
   MdStar,
-  MdSwapHoriz
+  MdSwapHoriz,
+  MdContactMail
 } from 'react-icons/md';
 import { Nav, Badge } from 'react-bootstrap';
 import { useOrderContext } from '../../context/OrderContext';
@@ -95,6 +96,12 @@ const Sidebar = () => {
           path: '/customers', 
           icon: <MdPeople size={22} />, 
           label: 'Customers',
+          badge: null
+        },
+        { 
+          path: '/contact', 
+          icon: <MdContactMail size={22} />, 
+          label: 'Contacts',
           badge: null
         },
       ]
