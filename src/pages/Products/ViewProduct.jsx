@@ -77,6 +77,7 @@ const ViewProduct = () => {
   const [editingQuantity, setEditingQuantity] = useState({});
   const [statusLoading, setStatusLoading] = useState(false);
   const [showImagePreview, setShowImagePreview] = useState(false);
+  const [bundleToggleLoading, setBundleToggleLoading] = useState(false);
   const editorRef = useRef(null);
 
   const editorConfig = useMemo(() => ({
@@ -894,6 +895,52 @@ const ViewProduct = () => {
     }
   };
 
+  // Add this function after other handler functions
+  const handleBundleToggle = async () => {
+    setBundleToggleLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Authentication token not found. Please login again.");
+      }
+
+      const response = await axiosInstance.post(
+        `/products/bundles/toggle-bundle/${id}`,
+        { is_bundle: product.is_bundle === 1 ? 0 : 1 },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Failed to toggle bundle status");
+      }
+
+      // Update local product state
+      setProduct(prev => ({
+        ...prev,
+        is_bundle: prev.is_bundle === 1 ? 0 : 1
+      }));
+      
+      toast.success(`Product ${product.is_bundle === 1 ? "unmarked" : "marked"} as bundle successfully`);
+    } catch (err) {
+      console.error("Error toggling bundle status:", err);
+      const errorMessage =
+        err.response?.data?.message || err.message || "Failed to toggle bundle status";
+      toast.error(errorMessage);
+
+      if (err.response?.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+      }
+    } finally {
+      setBundleToggleLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="container-fluid py-4">
@@ -1275,359 +1322,385 @@ const ViewProduct = () => {
 
             {/* Bundle Products Card */}
             <Card className="border">
-              <Card.Header className="bg-light">
+              <Card.Header className="bg-light d-flex justify-content-between align-items-center">
                 <h5 className="mb-0">Bundle Products</h5>
+                <div className="d-flex align-items-center gap-3">
+                  <label className="toggle-switch" style={{ marginBottom: 0 }}>
+                    <input
+                      type="checkbox"
+                      checked={product.is_bundle === 1}
+                      onChange={handleBundleToggle}
+                      disabled={bundleToggleLoading}
+                    />
+                    <span className="toggle-slider"></span>
+                    <span className="toggle-label">
+                      {bundleToggleLoading ? (
+                        <Spinner animation="border" size="sm" className="me-2" />
+                      ) : null}
+                      {product.is_bundle === 1 ? 'Bundle Product' : 'Not a Bundle'}
+                    </span>
+                  </label>
+                </div>
               </Card.Header>
               <Card.Body>
-                {/* Add Bundle Items Section */}
-                <div className="bundle-form-section mb-4">
-                  <Card className="border-0 shadow-sm">
-                    <Card.Body>
-                      <div className="d-flex justify-content-between align-items-center mb-3">
-                        <h6 className="mb-0">Add Bundle Items</h6>
-                      </div>
-                      
-                      {/* Search Section */}
-                      <div className="mb-4">
-                        <Form.Group>
-                          <Form.Label className="fw-medium">Search Products</Form.Label>
-                          <InputGroup className="search-box">
-                            <InputGroup.Text>
-                              <FaSearch />
-                            </InputGroup.Text>
-                            <Form.Control
-                              type="text"
-                              placeholder="Type product name to search..."
-                              value={searchQuery}
-                              onChange={(e) => setSearchQuery(e.target.value)}
-                              className="search-input"
-                            />
-                          </InputGroup>
-                        </Form.Group>
-                        {searchLoading && (
-                          <div className="text-center mt-3">
-                            <Spinner animation="border" size="sm" />
-                            <span className="ms-2">Searching products...</span>
-                          </div>
-                        )}
-                        {searchResults.length > 0 && (
-                          <div className="mt-3">
-                            <h6 className="mb-2">Search Results</h6>
-                            <div className="search-results-list">
-                              {searchResults.map((product) => (
-                                <div
-                                  key={product.id}
-                                  className="search-result-item"
-                                  onClick={() => handleSelectProduct(product)}
-                                >
-                                  <div className="d-flex align-items-center gap-3">
-                                    {product.images && product.images.length > 0 ? (
-                                      <div className="product-thumbnail">
-                                        <Image
-                                          src={product.images[0].path}
-                                          alt={product.name}
-                                          fluid
-                                        />
-                                      </div>
-                                    ) : (
-                                      <div className="product-thumbnail empty">
-                                        <FaShoppingCart />
-                                      </div>
-                                    )}
-                                    <div>
-                                      <h6 className="mb-1">{product.name}</h6>
-                                      <div className="d-flex gap-3 text-muted small">
-                                        <span>Price: ৳{product.price}</span>
-                                        <span>Stock: {product.quantity}</span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <Button
-                                    variant="outline-primary"
-                                    size="sm"
-                                    className="add-btn"
-                                  >
-                                    <FaPlus size={12} className="me-1" /> Add
-                                  </Button>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Selected Items Section */}
-                      {selectedItems.length > 0 && (
-                        <div className="selected-items-section">
+                {product.is_bundle === 1 ? (
+                  <>
+                    {/* Add Bundle Items Section */}
+                    <div className="bundle-form-section mb-4">
+                      <Card className="border-0 shadow-sm">
+                        <Card.Body>
                           <div className="d-flex justify-content-between align-items-center mb-3">
-                            <h6 className="mb-0">Selected Items ({selectedItems.length})</h6>
-                            <Button
-                              variant="outline-danger"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedItems([]);
-                                setBundleQuantity({});
-                              }}
-                              className="clear-btn"
-                            >
-                              <FaTrash size={12} className="me-1" /> Clear All
-                            </Button>
+                            <h6 className="mb-0">Add Bundle Items</h6>
                           </div>
-                          <div className="table-container">
-                            <Table hover className="modern-table">
-                              <thead>
-                                <tr>
-                                  <th style={{ width: "60px" }}>Image</th>
-                                  <th>Product</th>
-                                  <th style={{ width: "120px" }}>Price</th>
-                                  <th style={{ width: "150px" }}>Quantity</th>
-                                  <th style={{ width: "100px" }}>Actions</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {selectedItems.map((item) => (
-                                  <tr key={item.id}>
-                                    <td>
-                                      {item.images && item.images.length > 0 ? (
-                                        <div className="product-thumbnail">
-                                          <Image
-                                            src={item.images[0].path}
-                                            alt={item.name}
-                                            fluid
-                                          />
-                                        </div>
-                                      ) : (
-                                        <div className="product-thumbnail empty">
-                                          <FaShoppingCart />
-                                        </div>
-                                      )}
-                                    </td>
-                                    <td>
-                                      <div>
-                                        <div className="fw-medium">{item.name}</div>
-                                        <small className="text-muted">Stock: {item.quantity}</small>
-                                      </div>
-                                    </td>
-                                    <td>৳{item.price}</td>
-                                    <td>
-                                      <Form.Control
-                                        type="number"
-                                        size="sm"
-                                        min="1"
-                                        max={item.quantity}
-                                        value={bundleQuantity[item.id] || ""}
-                                        onChange={(e) =>
-                                          setBundleQuantity({
-                                            ...bundleQuantity,
-                                            [item.id]: e.target.value,
-                                          })
-                                        }
-                                        placeholder="Qty"
-                                        className="quantity-input"
-                                      />
-                                    </td>
-                                    <td>
-                                      <Button
-                                        variant="outline-danger"
-                                        size="sm"
-                                        onClick={() => handleRemoveSelectedItem(item.id)}
-                                        className="delete-btn"
-                                      >
-                                        <FaTrash size={12} />
-                                      </Button>
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                              <tfoot>
-                                <tr>
-                                  <td colSpan="2" className="text-end fw-bold">Total:</td>
-                                  <td colSpan="3" className="fw-bold text-primary">
-                                    ৳{selectedItems.reduce((total, item) => 
-                                      total + (item.price * (parseInt(bundleQuantity[item.id]) || 0)), 0
-                                    )}
-                                  </td>
-                                </tr>
-                              </tfoot>
-                            </Table>
-                          </div>
-
-                          {bundleError && (
-                            <Alert variant="danger" className="mt-3 mb-0">
-                              {bundleError}
-                            </Alert>
-                          )}
-
-                          <div className="d-flex justify-content-end mt-3">
-                            <Button
-                              variant="primary"
-                              onClick={handleAddToBundle}
-                              disabled={bundleLoading || selectedItems.length === 0}
-                              className="add-bundle-btn"
-                            >
-                              {bundleLoading ? (
-                                <>
-                                  <Spinner animation="border" size="sm" className="me-2" />
-                                  Adding...
-                                </>
-                              ) : (
-                                <>
-                                  <FaPlus className="me-2" /> Add to Bundle
-                                </>
-                              )}
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-                    </Card.Body>
-                  </Card>
-                </div>
-
-                {/* Existing Bundle Items */}
-                {product.bundle_items && product.bundle_items.length > 0 ? (
-                  <div className="table-container">
-                    <Table hover className="modern-table">
-                      <thead>
-                        <tr>
-                          <th style={{ width: "60px" }}>Image</th>
-                          <th>Product Name</th>
-                          <th>Price</th>
-                          <th>Quantity</th>
-                          <th>Total</th>
-                          <th style={{ width: "150px" }}>Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {product.bundle_items.map((item) => (
-                          <tr key={item.bundle_id}>
-                            <td>
-                              {item.image ? (
-                                <div className="product-thumbnail">
-                                  <Image
-                                    src={item.image}
-                                    alt={item.name}
-                                    fluid
-                                  />
-                                </div>
-                              ) : (
-                                <div className="product-thumbnail empty">
-                                  <FaShoppingCart />
-                                </div>
-                              )}
-                            </td>
-                            <td>
-                              <div>
-                                <div className="fw-medium">{item.name}</div>
-                                {item.discount > 0 && (
-                                  <Badge bg="danger" className="mt-1">
-                                    -{item.discount}%
-                                  </Badge>
-                                )}
+                          
+                          {/* Search Section */}
+                          <div className="mb-4">
+                            <Form.Group>
+                              <Form.Label className="fw-medium">Search Products</Form.Label>
+                              <InputGroup className="search-box">
+                                <InputGroup.Text>
+                                  <FaSearch />
+                                </InputGroup.Text>
+                                <Form.Control
+                                  type="text"
+                                  placeholder="Type product name to search..."
+                                  value={searchQuery}
+                                  onChange={(e) => setSearchQuery(e.target.value)}
+                                  className="search-input"
+                                />
+                              </InputGroup>
+                            </Form.Group>
+                            {searchLoading && (
+                              <div className="text-center mt-3">
+                                <Spinner animation="border" size="sm" />
+                                <span className="ms-2">Searching products...</span>
                               </div>
-                            </td>
-                            <td>৳{item.price}</td>
-                            <td>
-                              {editingQuantity[item.bundle_id] ? (
-                                <div className="d-flex align-items-center gap-2">
-                                  <Form.Control
-                                    type="number"
-                                    size="sm"
-                                    style={{ width: "80px" }}
-                                    min="1"
-                                    value={editingQuantity[item.bundle_id]}
-                                    onChange={(e) => setEditingQuantity({
-                                      ...editingQuantity,
-                                      [item.bundle_id]: e.target.value
-                                    })}
-                                    className="quantity-input"
-                                  />
-                                  <Button
-                                    variant="success"
-                                    size="sm"
-                                    onClick={() => handleUpdateBundleQuantity(item.bundle_id, editingQuantity[item.bundle_id])}
-                                    disabled={updateQuantityLoading === item.bundle_id}
-                                    className="save-btn"
-                                  >
-                                    {updateQuantityLoading === item.bundle_id ? (
-                                      <Spinner animation="border" size="sm" />
-                                    ) : (
-                                      "Save"
-                                    )}
-                                  </Button>
-                                  <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    onClick={() => setEditingQuantity({})}
-                                    disabled={updateQuantityLoading === item.bundle_id}
-                                    className="cancel-btn"
-                                  >
-                                    Cancel
-                                  </Button>
+                            )}
+                            {searchResults.length > 0 && (
+                              <div className="mt-3">
+                                <h6 className="mb-2">Search Results</h6>
+                                <div className="search-results-list">
+                                  {searchResults.map((product) => (
+                                    <div
+                                      key={product.id}
+                                      className="search-result-item"
+                                      onClick={() => handleSelectProduct(product)}
+                                    >
+                                      <div className="d-flex align-items-center gap-3">
+                                        {product.images && product.images.length > 0 ? (
+                                          <div className="product-thumbnail">
+                                            <Image
+                                              src={product.images[0].path}
+                                              alt={product.name}
+                                              fluid
+                                            />
+                                          </div>
+                                        ) : (
+                                          <div className="product-thumbnail empty">
+                                            <FaShoppingCart />
+                                          </div>
+                                        )}
+                                        <div>
+                                          <h6 className="mb-1">{product.name}</h6>
+                                          <div className="d-flex gap-3 text-muted small">
+                                            <span>Price: ৳{product.price}</span>
+                                            <span>Stock: {product.quantity}</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <Button
+                                        variant="outline-primary"
+                                        size="sm"
+                                        className="add-btn"
+                                      >
+                                        <FaPlus size={12} className="me-1" /> Add
+                                      </Button>
+                                    </div>
+                                  ))}
                                 </div>
-                              ) : (
-                                <div className="d-flex align-items-center gap-2">
-                                  <span>{item.bundle_quantity}</span>
-                                  <Button
-                                    variant="outline-primary"
-                                    size="sm"
-                                    onClick={() => setEditingQuantity({
-                                      ...editingQuantity,
-                                      [item.bundle_id]: item.bundle_quantity
-                                    })}
-                                    disabled={updateQuantityLoading === item.bundle_id}
-                                    className="edit-btn"
-                                  >
-                                    <FaPencilAlt size={12} />
-                                  </Button>
-                                </div>
-                              )}
-                            </td>
-                            <td className="fw-bold text-primary">৳{item.price * item.bundle_quantity}</td>
-                            <td>
-                              <div className="d-flex gap-2">
-                                <Button
-                                  variant="outline-primary"
-                                  size="sm"
-                                  onClick={() => navigate(`/products/${item.item_id}`)}
-                                  className="view-btn"
-                                >
-                                  <FaEye className="me-1" /> View
-                                </Button>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Selected Items Section */}
+                          {selectedItems.length > 0 && (
+                            <div className="selected-items-section">
+                              <div className="d-flex justify-content-between align-items-center mb-3">
+                                <h6 className="mb-0">Selected Items ({selectedItems.length})</h6>
                                 <Button
                                   variant="outline-danger"
                                   size="sm"
-                                  onClick={() => handleDeleteBundleItem(item.bundle_id)}
-                                  disabled={deleteBundleLoading === item.bundle_id || updateQuantityLoading === item.bundle_id}
-                                  className="delete-btn"
+                                  onClick={() => {
+                                    setSelectedItems([]);
+                                    setBundleQuantity({});
+                                  }}
+                                  className="clear-btn"
                                 >
-                                  {deleteBundleLoading === item.bundle_id ? (
-                                    <Spinner animation="border" size="sm" />
+                                  <FaTrash size={12} className="me-1" /> Clear All
+                                </Button>
+                              </div>
+                              <div className="table-container">
+                                <Table hover className="modern-table">
+                                  <thead>
+                                    <tr>
+                                      <th style={{ width: "60px" }}>Image</th>
+                                      <th>Product</th>
+                                      <th style={{ width: "120px" }}>Price</th>
+                                      <th style={{ width: "150px" }}>Quantity</th>
+                                      <th style={{ width: "100px" }}>Actions</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {selectedItems.map((item) => (
+                                      <tr key={item.id}>
+                                        <td>
+                                          {item.images && item.images.length > 0 ? (
+                                            <div className="product-thumbnail">
+                                              <Image
+                                                src={item.images[0].path}
+                                                alt={item.name}
+                                                fluid
+                                              />
+                                            </div>
+                                          ) : (
+                                            <div className="product-thumbnail empty">
+                                              <FaShoppingCart />
+                                            </div>
+                                          )}
+                                        </td>
+                                        <td>
+                                          <div>
+                                            <div className="fw-medium">{item.name}</div>
+                                            <small className="text-muted">Stock: {item.quantity}</small>
+                                          </div>
+                                        </td>
+                                        <td>৳{item.price}</td>
+                                        <td>
+                                          <Form.Control
+                                            type="number"
+                                            size="sm"
+                                            min="1"
+                                            max={item.quantity}
+                                            value={bundleQuantity[item.id] || ""}
+                                            onChange={(e) =>
+                                              setBundleQuantity({
+                                                ...bundleQuantity,
+                                                [item.id]: e.target.value,
+                                              })
+                                            }
+                                            placeholder="Qty"
+                                            className="quantity-input"
+                                          />
+                                        </td>
+                                        <td>
+                                          <Button
+                                            variant="outline-danger"
+                                            size="sm"
+                                            onClick={() => handleRemoveSelectedItem(item.id)}
+                                            className="delete-btn"
+                                          >
+                                            <FaTrash size={12} />
+                                          </Button>
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                  <tfoot>
+                                    <tr>
+                                      <td colSpan="2" className="text-end fw-bold">Total:</td>
+                                      <td colSpan="3" className="fw-bold text-primary">
+                                        ৳{selectedItems.reduce((total, item) => 
+                                          total + (item.price * (parseInt(bundleQuantity[item.id]) || 0)), 0
+                                        )}
+                                      </td>
+                                    </tr>
+                                  </tfoot>
+                                </Table>
+                              </div>
+
+                              {bundleError && (
+                                <Alert variant="danger" className="mt-3 mb-0">
+                                  {bundleError}
+                                </Alert>
+                              )}
+
+                              <div className="d-flex justify-content-end mt-3">
+                                <Button
+                                  variant="primary"
+                                  onClick={handleAddToBundle}
+                                  disabled={bundleLoading || selectedItems.length === 0}
+                                  className="add-bundle-btn"
+                                >
+                                  {bundleLoading ? (
+                                    <>
+                                      <Spinner animation="border" size="sm" className="me-2" />
+                                      Adding...
+                                    </>
                                   ) : (
-                                    <FaTrash />
+                                    <>
+                                      <FaPlus className="me-2" /> Add to Bundle
+                                    </>
                                   )}
                                 </Button>
                               </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                      <tfoot>
-                        <tr>
-                          <td colSpan="4" className="text-end fw-bold"><h4>Bundle Total:</h4></td>
-                          <td colSpan="2" className="fw-bold text-primary">
-                            <h4>৳{product.bundle_items.reduce((total, item) => total + (item.price * item.bundle_quantity), 0)}</h4>
-                            <div className="text-muted small">
-                              <h6>Total of {product.bundle_items.length} items</h6>
                             </div>
-                          </td>
-                        </tr>
-                      </tfoot>
-                    </Table>
-                  </div>
+                          )}
+                        </Card.Body>
+                      </Card>
+                    </div>
+
+                    {/* Existing Bundle Items */}
+                    {product.bundle_items && product.bundle_items.length > 0 ? (
+                      <div className="table-container">
+                        <Table hover className="modern-table">
+                          <thead>
+                            <tr>
+                              <th style={{ width: "60px" }}>Image</th>
+                              <th>Product Name</th>
+                              <th>Price</th>
+                              <th>Quantity</th>
+                              <th>Total</th>
+                              <th style={{ width: "150px" }}>Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {product.bundle_items.map((item) => (
+                              <tr key={item.bundle_id}>
+                                <td>
+                                  {item.image ? (
+                                    <div className="product-thumbnail">
+                                      <Image
+                                        src={item.image}
+                                        alt={item.name}
+                                        fluid
+                                      />
+                                    </div>
+                                  ) : (
+                                    <div className="product-thumbnail empty">
+                                      <FaShoppingCart />
+                                    </div>
+                                  )}
+                                </td>
+                                <td>
+                                  <div>
+                                    <div className="fw-medium">{item.name}</div>
+                                    {item.discount > 0 && (
+                                      <Badge bg="danger" className="mt-1">
+                                        -{item.discount}%
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </td>
+                                <td>৳{item.price}</td>
+                                <td>
+                                  {editingQuantity[item.bundle_id] ? (
+                                    <div className="d-flex align-items-center gap-2">
+                                      <Form.Control
+                                        type="number"
+                                        size="sm"
+                                        style={{ width: "80px" }}
+                                        min="1"
+                                        value={editingQuantity[item.bundle_id]}
+                                        onChange={(e) => setEditingQuantity({
+                                          ...editingQuantity,
+                                          [item.bundle_id]: e.target.value
+                                        })}
+                                        className="quantity-input"
+                                      />
+                                      <Button
+                                        variant="success"
+                                        size="sm"
+                                        onClick={() => handleUpdateBundleQuantity(item.bundle_id, editingQuantity[item.bundle_id])}
+                                        disabled={updateQuantityLoading === item.bundle_id}
+                                        className="save-btn"
+                                      >
+                                        {updateQuantityLoading === item.bundle_id ? (
+                                          <Spinner animation="border" size="sm" />
+                                        ) : (
+                                          "Save"
+                                        )}
+                                      </Button>
+                                      <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        onClick={() => setEditingQuantity({})}
+                                        disabled={updateQuantityLoading === item.bundle_id}
+                                        className="cancel-btn"
+                                      >
+                                        Cancel
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    <div className="d-flex align-items-center gap-2">
+                                      <span>{item.bundle_quantity}</span>
+                                      <Button
+                                        variant="outline-primary"
+                                        size="sm"
+                                        onClick={() => setEditingQuantity({
+                                          ...editingQuantity,
+                                          [item.bundle_id]: item.bundle_quantity
+                                        })}
+                                        disabled={updateQuantityLoading === item.bundle_id}
+                                        className="edit-btn"
+                                      >
+                                        <FaPencilAlt size={12} />
+                                      </Button>
+                                    </div>
+                                  )}
+                                </td>
+                                <td className="fw-bold text-primary">৳{item.price * item.bundle_quantity}</td>
+                                <td>
+                                  <div className="d-flex gap-2">
+                                    <Button
+                                      variant="outline-primary"
+                                      size="sm"
+                                      onClick={() => navigate(`/products/${item.item_id}`)}
+                                      className="view-btn"
+                                    >
+                                      <FaEye className="me-1" /> View
+                                    </Button>
+                                    <Button
+                                      variant="outline-danger"
+                                      size="sm"
+                                      onClick={() => handleDeleteBundleItem(item.bundle_id)}
+                                      disabled={deleteBundleLoading === item.bundle_id || updateQuantityLoading === item.bundle_id}
+                                      className="delete-btn"
+                                    >
+                                      {deleteBundleLoading === item.bundle_id ? (
+                                        <Spinner animation="border" size="sm" />
+                                      ) : (
+                                        <FaTrash />
+                                      )}
+                                    </Button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                          <tfoot>
+                            <tr>
+                              <td colSpan="4" className="text-end fw-bold"><h4>Bundle Total:</h4></td>
+                              <td colSpan="2" className="fw-bold text-primary">
+                                <h4>৳{product.bundle_items.reduce((total, item) => total + (item.price * item.bundle_quantity), 0)}</h4>
+                                <div className="text-muted small">
+                                  <h6>Total of {product.bundle_items.length} items</h6>
+                                </div>
+                              </td>
+                            </tr>
+                          </tfoot>
+                        </Table>
+                      </div>
+                    ) : (
+                      <div className="empty-state">
+                        <FaShoppingCart className="empty-icon" />
+                        <p className="text-muted mb-0">No bundle items added yet</p>
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <div className="empty-state">
                     <FaShoppingCart className="empty-icon" />
-                    <p className="text-muted mb-0">No bundle items added yet</p>
+                    <p className="text-muted mb-0">Enable bundle mode to add bundle items</p>
                   </div>
                 )}
               </Card.Body>
