@@ -24,6 +24,13 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Add validation
+    if (!formData.email.trim() || !formData.password.trim()) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
     setLoading(true);
 
     try {

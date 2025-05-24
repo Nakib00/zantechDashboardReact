@@ -1290,26 +1290,55 @@ const ViewProduct = () => {
               </Card.Header>
               <Card.Body>
                 {product.tags && product.tags.length > 0 ? (
-                  <div className="tags-grid">
-                    {product.tags.map((tag) => (
-                      <div key={tag.id} className="tag-item">
-                        <div className="tag-content">
-                          <span className="tag-name">{tag.tag}</span>
-                          <Button
-                            variant="link"
-                            className="tag-remove-btn"
-                            onClick={() => handleDeleteTag(tag.id)}
-                            disabled={deleteTagLoading === tag.id}
-                          >
-                            {deleteTagLoading === tag.id ? (
-                              <Spinner animation="border" size="sm" />
-                            ) : (
-                              <FaTrash size={12} />
-                            )}
-                          </Button>
-                        </div>
+                  <div className="table-container" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                    <Table hover className="modern-table mb-0">
+                      <thead style={{ position: 'sticky', top: 0, backgroundColor: '#fff', zIndex: 1 }}>
+                        <tr>
+                          <th>Tag Name</th>
+                          <th style={{ width: "100px" }}>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {product.tags.map((tag, index) => (
+                          <tr key={tag.id} style={{ 
+                            backgroundColor: index >= 7 ? '#fff' : 'inherit',
+                            borderTop: index === 7 ? '2px solid #dee2e6' : 'inherit'
+                          }}>
+                            <td>
+                              <div className="d-flex align-items-center">
+                                <FaTag className="me-2 text-muted" />
+                                <span>{tag.tag}</span>
+                                {index >= 7 && (
+                                  <Badge bg="secondary" className="ms-2">Scroll to view more</Badge>
+                                )}
+                              </div>
+                            </td>
+                            <td>
+                              <Button
+                                variant="outline-danger"
+                                size="sm"
+                                onClick={() => handleDeleteTag(tag.id)}
+                                disabled={deleteTagLoading === tag.id}
+                                className="delete-btn"
+                              >
+                                {deleteTagLoading === tag.id ? (
+                                  <Spinner animation="border" size="sm" />
+                                ) : (
+                                  <FaTrash size={12} />
+                                )}
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </Table>
+                    {product.tags.length > 7 && (
+                      <div className="text-center py-2 bg-light border-top">
+                        <small className="text-muted">
+                          Showing 7 of {product.tags.length} tags. Scroll to view more.
+                        </small>
                       </div>
-                    ))}
+                    )}
                   </div>
                 ) : (
                   <div className="empty-state">

@@ -429,7 +429,12 @@ const AddProduct = () => {
                       short_description: newContent
                     }));
                   }}
-                  onChange={newContent => {}}
+                  onChange={(newContent) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      short_description: newContent
+                    }));
+                  }}
                 />
               </div>
             </div>
@@ -442,7 +447,12 @@ const AddProduct = () => {
                 config={editorConfig}
                 tabIndex={1}
                 onBlur={handleEditorChange}
-                onChange={newContent => {}}
+                onChange={(newContent) => {
+                  setFormData(prev => ({
+                    ...prev,
+                    description: newContent
+                  }));
+                }}
               />
             </div>
           </div>
@@ -592,14 +602,18 @@ const AddProduct = () => {
                     <FaTag className="input-icon" />
                     <input
                       type="text"
-                      placeholder="Type tag and press Enter"
+                      placeholder="Type tags separated by commas (e.g. L298N, Motor Driver, DC Motor)"
                       className="form-control tag-input-main"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && e.target.value.trim()) {
                           e.preventDefault();
-                          const newTag = e.target.value.trim();
-                          if (!selectedTags.includes(newTag)) {
-                            setSelectedTags([...selectedTags.filter(tag => tag.trim() !== ''), newTag, '']);
+                          // Split the input by commas and trim each tag
+                          const newTags = e.target.value.split(',')
+                            .map(tag => tag.trim())
+                            .filter(tag => tag !== '' && !selectedTags.includes(tag));
+                          
+                          if (newTags.length > 0) {
+                            setSelectedTags([...selectedTags.filter(tag => tag.trim() !== ''), ...newTags, '']);
                           }
                           e.target.value = '';
                         }
@@ -624,7 +638,7 @@ const AddProduct = () => {
                 </div>
                 
                 <div className="tags-hint">
-                  <small className="form-text">Type tags and press Enter to add them. Tags help customers find your product.</small>
+                  <small className="form-text">Type tags separated by commas and press Enter to add them. Tags help customers find your product.</small>
                 </div>
               </div>
             </div>
