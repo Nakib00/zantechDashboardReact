@@ -32,10 +32,14 @@ axiosInstance.interceptors.response.use(
       // Handle unauthorized access
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      window.location.href = '/login';
+      
+      // Only redirect if not already on the login page
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
 );
 
-export default axiosInstance; 
+export default axiosInstance;
