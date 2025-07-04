@@ -167,9 +167,9 @@ const Transitions = () => {
     switch (type) {
       case "1":
         return "Cash";
-      case "2":
-        return "Bank";
       case "3":
+        return "Bank";
+      case "4":
         return "Mobile Banking";
       default:
         return "Unknown";
