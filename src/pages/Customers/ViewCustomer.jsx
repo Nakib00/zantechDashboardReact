@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { FaArrowLeft } from "react-icons/fa";
+import { FaArrowLeft, FaPlus, FaEdit } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import axiosInstance from "../../config/axios";
 import { Card, Button, Row, Col, Table } from "react-bootstrap";
 import Loading from "../../components/Loading";
+import AddShippingAddressModal from "../../components/Customers/AddShippingAddressModal";
+import EditShippingAddressModal from "../../components/Customers/EditShippingAddressModal";
 import "./Customers.css";
 
 const ViewCustomer = () => {
@@ -12,6 +14,9 @@ const ViewCustomer = () => {
   const navigate = useNavigate();
   const [customer, setCustomer] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showAddAddressModal, setShowAddAddressModal] = useState(false);
+  const [showEditAddressModal, setShowEditAddressModal] = useState(false);
+  const [selectedAddress, setSelectedAddress] = useState(null);
 
   useEffect(() => {
     fetchCustomerDetails();
@@ -37,6 +42,27 @@ const ViewCustomer = () => {
     }
   };
 
+  const handleAddressAdded = (newAddress) => {
+    setCustomer((prevCustomer) => ({
+      ...prevCustomer,
+      shipping_addresses: [...prevCustomer.shipping_addresses, newAddress],
+    }));
+  };
+
+  const handleAddressUpdated = (updatedAddress) => {
+    setCustomer((prevCustomer) => ({
+      ...prevCustomer,
+      shipping_addresses: prevCustomer.shipping_addresses.map((address) =>
+        address.id === updatedAddress.id ? updatedAddress : address
+      ),
+    }));
+  };
+
+  const handleEditClick = (address) => {
+    setSelectedAddress(address);
+    setShowEditAddressModal(true);
+  };
+
   if (loading) {
     return <Loading />;
   }
@@ -60,12 +86,14 @@ const ViewCustomer = () => {
               <Button
                 variant="link"
                 className="p-0 mb-2 text-decoration-none"
-                onClick={() => navigate('/customers')}
+                onClick={() => navigate("/customers")}
               >
                 <FaArrowLeft className="me-2" /> Back to Customers
               </Button>
               <h2 className="page-title mb-1">Customer Details</h2>
-              <p className="text-muted mb-0">View and manage customer information</p>
+              <p className="text-muted mb-0">
+                View and manage customer information
+              </p>
             </div>
           </div>
 
@@ -91,7 +119,6 @@ const ViewCustomer = () => {
                     </div>
                   </Col>
                 </Row>
-
                 <Row>
                   <Col md={6}>
                     <div className="mb-4">
@@ -106,7 +133,6 @@ const ViewCustomer = () => {
                     </div>
                   </Col>
                 </Row>
-
                 <Row>
                   <Col md={6}>
                     <div className="mb-4">
@@ -117,7 +143,9 @@ const ViewCustomer = () => {
                   <Col md={6}>
                     <div className="mb-4">
                       <label className="detail-label">Address</label>
-                      <div className="detail-value">{user.address || "N/A"}</div>
+                      <div className="detail-value">
+                        {user.address || "N/A"}
+                      </div>
                     </div>
                   </Col>
                 </Row>
@@ -133,7 +161,9 @@ const ViewCustomer = () => {
                   <Col md={4}>
                     <div className="mb-4">
                       <label className="detail-label">Total Orders</label>
-                      <div className="detail-value">{order_summary.total_orders}</div>
+                      <div className="detail-value">
+                        {order_summary.total_orders}
+                      </div>
                     </div>
                   </Col>
                   <Col md={4}>
@@ -147,7 +177,13 @@ const ViewCustomer = () => {
                   <Col md={4}>
                     <div className="mb-4">
                       <label className="detail-label">Due Amount</label>
-                      <div className={`detail-value ${payment_summary.due_amount > 0 ? "text-danger" : "text-success"}`}>
+                      <div
+                        className={`detail-value ${
+                          payment_summary.due_amount > 0
+                            ? "text-danger"
+                            : "text-success"
+                        }`}
+                      >
                         ৳{payment_summary.due_amount.toLocaleString()}
                       </div>
                     </div>
@@ -157,8 +193,15 @@ const ViewCustomer = () => {
             </Card>
 
             <Card className="border">
-              <Card.Header className="bg-light">
+              <Card.Header className="bg-light d-flex justify-content-between align-items-center">
                 <h5 className="mb-0">Shipping Addresses</h5>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => setShowAddAddressModal(true)}
+                >
+                  <FaPlus className="me-2" /> Add New Address
+                </Button>
               </Card.Header>
               <Card.Body>
                 {shipping_addresses.length > 0 ? (
@@ -167,39 +210,46 @@ const ViewCustomer = () => {
                       <div key={index} className="col-md-6">
                         <Card className="address-card h-100">
                           <Card.Body className="p-4">
-                            <div className="address-header mb-3">
-                              <h6 className="mb-0 text-primary">Address #{index + 1}</h6>
+                            <div className="address-header mb-3 d-flex justify-content-between align-items-center">
+                              <h6 className="mb-0 text-primary">
+                                Address #{index + 1}
+                              </h6>
+                              <Button
+                                variant="outline-primary"
+                                size="sm"
+                                onClick={() => handleEditClick(address)}
+                              >
+                                <FaEdit />
+                              </Button>
                             </div>
                             <div className="address-details">
                               <div className="mb-3">
-                                <label className="detail-label">Street Address</label>
-                                <div className="detail-value">{address.address}</div>
+                                <label className="detail-label">
+                                  Street Address
+                                </label>
+                                <div className="detail-value">
+                                  {address.address}
+                                </div>
                               </div>
                               <div className="row g-3">
                                 <div className="col-6">
                                   <div className="mb-3">
                                     <label className="detail-label">City</label>
-                                    <div className="detail-value">{address.city}</div>
-                                  </div>
-                                </div>
-                                <div className="col-6">
-                                  <div className="mb-3">
-                                    <label className="detail-label">State</label>
-                                    <div className="detail-value">{address.state}</div>
+                                    <div className="detail-value">
+                                      {address.city}
+                                    </div>
                                   </div>
                                 </div>
                               </div>
                               <div className="row g-3">
                                 <div className="col-6">
                                   <div className="mb-3">
-                                    <label className="detail-label">Postal Code</label>
-                                    <div className="detail-value">{address.postal_code}</div>
-                                  </div>
-                                </div>
-                                <div className="col-6">
-                                  <div className="mb-3">
-                                    <label className="detail-label">Country</label>
-                                    <div className="detail-value">{address.country}</div>
+                                    <label className="detail-label">
+                                      Postal Code
+                                    </label>
+                                    <div className="detail-value">
+                                      {address.zip}
+                                    </div>
                                   </div>
                                 </div>
                               </div>
@@ -210,13 +260,31 @@ const ViewCustomer = () => {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-muted p-3 bg-light rounded">No shipping addresses found</div>
+                  <div className="text-muted p-3 bg-light rounded">
+                    No shipping addresses found
+                  </div>
                 )}
               </Card.Body>
             </Card>
           </div>
         </Card.Body>
       </Card>
+
+      <AddShippingAddressModal
+        show={showAddAddressModal}
+        onHide={() => setShowAddAddressModal(false)}
+        userId={user.id}
+        onAdd={handleAddressAdded}
+      />
+
+      {selectedAddress && (
+        <EditShippingAddressModal
+          show={showEditAddressModal}
+          onHide={() => setShowEditAddressModal(false)}
+          address={selectedAddress}
+          onUpdate={handleAddressUpdated}
+        />
+      )}
     </div>
   );
 };
