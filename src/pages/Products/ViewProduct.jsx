@@ -1044,28 +1044,15 @@ const ViewProduct = () => {
                       <Col md={12}>
                         <Form.Group className="mb-3">
                           <Form.Label>Short Description</Form.Label>
-                          <JoditEditor
-                            ref={editorRef}
+                          <Form.Control
+                            as="textarea"
+                            rows={4}
                             value={editForm.short_description}
-                            config={{
-                              ...editorConfig,
-                              height: 200,
-                              placeholder: 'Enter a brief description (displayed in listings)...',
-                              buttons: [
-                                'bold', 'italic', 'underline', '|',
-                                'ul', 'ol', '|',
-                                'link', '|',
-                                'align', '|',
-                                'source'
-                              ]
-                            }}
-                            tabIndex={1}
-                            onBlur={(newContent) => {
-                              setEditForm(prev => ({
-                                ...prev,
-                                short_description: newContent
-                              }));
-                            }}
+                            onChange={e => setEditForm(prev => ({
+                              ...prev,
+                              short_description: e.target.value
+                            }))}
+                            placeholder="Enter a brief description (displayed in listings)..."
                           />
                         </Form.Group>
                       </Col>

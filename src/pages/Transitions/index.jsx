@@ -171,6 +171,8 @@ const Transitions = () => {
         return "Bank";
       case "4":
         return "Mobile Banking";
+      case "0":
+        return "Not Paid";
       default:
         return "Unknown";
     }
