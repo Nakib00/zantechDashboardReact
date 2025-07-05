@@ -306,9 +306,7 @@ const Activity = () => {
                     <tr key={activity.id}>
                       <td className="fw-medium">#{activity.id}</td>
                       <td>
-                        <Badge bg="info" className="text-capitalize">
                           {getActivityTypeText(activity.type)}
-                        </Badge>
                       </td>
                       <td>
                         <Button
