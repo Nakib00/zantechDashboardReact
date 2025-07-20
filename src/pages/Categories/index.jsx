@@ -7,11 +7,20 @@ import {
   FaSpinner,
   FaChevronLeft,
   FaChevronRight,
-  FaTimes
+  FaTimes,
 } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import axiosInstance from "../../config/axios";
-import { Card, Form, InputGroup, Button, Pagination, Row, Col, Modal } from "react-bootstrap";
+import {
+  Card,
+  Form,
+  InputGroup,
+  Button,
+  Pagination,
+  Row,
+  Col,
+  Modal,
+} from "react-bootstrap";
 import Loading from "../../components/Loading";
 import "./Categories.css";
 
@@ -51,13 +60,12 @@ const Categories = () => {
         setPageLoading(false);
       }
     };
-    
-    if(pageLoading) {
-        loadInitialData();
-    } else {
-        fetchCategories();
-    }
 
+    if (pageLoading) {
+      loadInitialData();
+    } else {
+      fetchCategories();
+    }
   }, [searchParams.page, searchParams.limit]);
 
   useEffect(() => {
@@ -70,7 +78,7 @@ const Categories = () => {
         setIsSearching(true);
         fetchCategories(1);
       } else if (searchParams.search === "" && !pageLoading) {
-         fetchCategories(1);
+        fetchCategories(1);
       }
     }, 500);
 
@@ -99,8 +107,8 @@ const Categories = () => {
       if (!result.success) {
         throw new Error(result.message || "Failed to fetch categories");
       }
-      
-      await new Promise(resolve => setTimeout(resolve, 300));
+
+      await new Promise((resolve) => setTimeout(resolve, 300));
 
       setCategories(result.data);
       if (result.pagination) {
@@ -111,15 +119,15 @@ const Categories = () => {
       toast.error(
         error.response?.data?.message || "Failed to fetch categories"
       );
-       setCategories([]);
-        setPagination(prev => ({
-            ...prev,
-            current_page: page,
-            total: 0,
-            last_page: 1,
-            from: 0,
-            to: 0,
-        }));
+      setCategories([]);
+      setPagination((prev) => ({
+        ...prev,
+        current_page: page,
+        total: 0,
+        last_page: 1,
+        from: 0,
+        to: 0,
+      }));
     } finally {
       setLoading(false);
       setTableLoading(false);
@@ -143,10 +151,7 @@ const Categories = () => {
   const handleEditCategory = async (e) => {
     e.preventDefault();
     try {
-      await axiosInstance.put(
-        `/categories/${selectedCategory.id}`,
-        formData
-      );
+      await axiosInstance.put(`/categories/${selectedCategory.id}`, formData);
       fetchCategories(pagination.current_page);
       setShowModal(false);
       setFormData({ name: "", description: "" });
@@ -163,7 +168,11 @@ const Categories = () => {
         setTableLoading(true);
         await axiosInstance.delete(`/categories/${id}`);
         toast.success("Category deleted successfully");
-        fetchCategories(categories.length === 1 && pagination.current_page > 1 ? pagination.current_page - 1 : pagination.current_page);
+        fetchCategories(
+          categories.length === 1 && pagination.current_page > 1
+            ? pagination.current_page - 1
+            : pagination.current_page
+        );
       } catch (error) {
         toast.error(
           error.response?.data?.message || "Failed to delete category"
@@ -220,7 +229,7 @@ const Categories = () => {
     setFormData({ name: "", description: "" });
     setSelectedCategory(null);
   };
-  
+
   const renderPagination = () => {
     const items = [];
     const maxPages = 5;
@@ -301,7 +310,7 @@ const Categories = () => {
           <div className="d-flex justify-content-between align-items-center mb-4">
             <div>
               <h2 className="page-title mb-1">Categories</h2>
-                {loading && tableLoading ? (
+              {loading && tableLoading ? (
                 <div className="d-flex align-items-center">
                   <FaSpinner className="spinner-border spinner-border-sm me-2" />
                   <p className="page-subtitle mb-0">Loading categories...</p>
@@ -312,8 +321,8 @@ const Categories = () => {
                 </p>
               )}
             </div>
-            <Button 
-              variant="primary" 
+            <Button
+              variant="primary"
               onClick={openAddModal}
               className="create-category-btn"
             >
@@ -340,14 +349,16 @@ const Categories = () => {
                       value={searchParams.search}
                       onChange={handleSearch}
                       disabled={loading}
-                      className={`search-input ${isSearching ? 'searching' : ''}`}
+                      className={`search-input ${
+                        isSearching ? "searching" : ""
+                      }`}
                     />
                     {searchParams.search && !isSearching && (
                       <Button
                         variant="link"
                         className="clear-search"
                         onClick={() => {
-                          setSearchParams(prev => ({ ...prev, search: "" }));
+                          setSearchParams((prev) => ({ ...prev, search: "" }));
                         }}
                         disabled={loading}
                       >
@@ -357,40 +368,40 @@ const Categories = () => {
                   </InputGroup>
                 </Form>
               </Col>
-               <Col md={8} className="d-flex justify-content-end gap-2">
-                 <Form.Select
-                    name="limit"
-                    value={searchParams.limit}
-                    onChange={handleLimitChange}
-                    disabled={loading}
-                    style={{ width: "auto" }}
-                    className="limit-select"
-                  >
-                    <option value="5">5 per page</option>
-                    <option value="10">10 per page</option>
-                    <option value="20">20 per page</option>
-                    <option value="50">50 per page</option>
-                  </Form.Select>
-               </Col>
+              <Col md={8} className="d-flex justify-content-end gap-2">
+                <Form.Select
+                  name="limit"
+                  value={searchParams.limit}
+                  onChange={handleLimitChange}
+                  disabled={loading}
+                  style={{ width: "auto" }}
+                  className="limit-select"
+                >
+                  <option value="5">5 per page</option>
+                  <option value="10">10 per page</option>
+                  <option value="20">20 per page</option>
+                  <option value="50">50 per page</option>
+                </Form.Select>
+              </Col>
             </Row>
           </div>
 
           <div className="table-container position-relative">
-             {tableLoading && (
-              <div 
+            {tableLoading && (
+              <div
                 className="position-absolute w-100 h-100 d-flex justify-content-center align-items-center"
                 style={{
                   top: 0,
                   left: 0,
-                  backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                  backgroundColor: "rgba(255, 255, 255, 0.8)",
                   zIndex: 1000,
-                  backdropFilter: 'blur(2px)'
+                  backdropFilter: "blur(2px)",
                 }}
               >
                 <div className="text-center">
                   <Loading />
                   <p className="text-muted mt-2 mb-0">
-                    {loading ? 'Loading categories...' : 'Updating...'}
+                    {loading ? "Loading categories..." : "Updating..."}
                   </p>
                 </div>
               </div>
@@ -421,7 +432,11 @@ const Categories = () => {
                         <td data-label="Description">{category.description}</td>
                         <td data-label="Status">
                           <span
-                            className={`px-2 py-1 ${ category.status === 0 ? "text-success" : "text-secondary"}`}
+                            className={`px-2 py-1 ${
+                              category.status === 0
+                                ? "text-success"
+                                : "text-secondary"
+                            }`}
                           >
                             {category.status === 0 ? "Active" : "Inactive"}
                           </span>
@@ -455,24 +470,24 @@ const Categories = () => {
                   </tbody>
                 </table>
               </div>
-             ) : (
+            ) : (
               <div className="text-center py-5">
                 <p className="text-muted mb-0">No categories found</p>
               </div>
             )}
           </div>
 
-           {pagination.last_page > 1 && (
+          {pagination.last_page > 1 && (
             <div className="pagination-container mt-4 position-relative">
               {tableLoading && (
-                <div 
+                <div
                   className="position-absolute w-100 h-100 d-flex justify-content-center align-items-center"
                   style={{
                     top: 0,
                     left: 0,
-                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                    backgroundColor: "rgba(255, 255, 255, 0.8)",
                     zIndex: 1000,
-                    backdropFilter: 'blur(2px)'
+                    backdropFilter: "blur(2px)",
                   }}
                 >
                   <div className="text-center">
@@ -523,10 +538,7 @@ const Categories = () => {
                 </Form.Group>
               </Modal.Body>
               <Modal.Footer>
-                <Button
-                  variant="secondary"
-                  onClick={closeModal}
-                >
+                <Button variant="secondary" onClick={closeModal}>
                   Cancel
                 </Button>
                 <Button type="submit" variant="primary">

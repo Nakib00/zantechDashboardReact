@@ -46,6 +46,14 @@
     background-color: #36b9cc;
 }
 
+.dashboard-icon.today-orders {
+    background-color: #f6c23e;
+}
+
+.dashboard-icon.today-revenue {
+    background-color: #e74a3b;
+}
+
 .card-subtitle {
     font-size: 0.875rem;
     font-weight: 500;
@@ -68,4 +76,4 @@
     color: #6c757d;
     font-size: 1.1rem;
     font-weight: 500;
-} 
+}
