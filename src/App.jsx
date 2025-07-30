@@ -27,6 +27,7 @@ import Activity from './pages/Activity';
 import Orders from './pages/Orders';
 import ViewOrder from './pages/Orders/ViewOrder';
 import CreateOrder from './pages/Orders/CreateOrder';
+import CustomInvoice from './pages/Orders/CustomInvoice';
 import HeroImages from './pages/HeroImages';
 import Contact from './pages/Contact';
 import { OrderProvider } from './context/OrderContext';
@@ -78,6 +79,7 @@ const App = () => {
                         <Route path="/activity" element={<Activity />} />
                         <Route path="/orders" element={<Orders />} />
                         <Route path="/orders/create" element={<CreateOrder />} />
+                        <Route path="/orders/custom-invoice" element={<CustomInvoice />} />
                         <Route path="/orders/:id" element={<ViewOrder />} />
                         <Route path="/settings/hero" element={<HeroImages />} />
                       </Routes>

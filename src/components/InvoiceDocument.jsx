@@ -206,6 +206,12 @@ const InvoiceDocument = ({ orderData }) => {
               order.item_subtotal
             ).toLocaleString()}</td>
           </tr>
+          <tr>
+            <td class="label">Delivery Cost</td>
+            <td class="amount">৳${parseFloat(
+              order.shipping_charge || 0
+            ).toLocaleString()}</td>
+          </tr>
           ${
             parseFloat(order.discount) > 0
               ? `

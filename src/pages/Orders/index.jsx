@@ -328,13 +328,22 @@ const Orders = () => {
                 Manage and track all your orders
               </p>
             </div>
-            <Button
-              variant="primary"
-              onClick={() => navigate("/orders/create")}
-              className="create-order-btn"
-            >
-              <FaPlus className="me-2" /> Create Order
-            </Button>
+            <div className="d-flex gap-2">
+                <Button
+                  variant="info"
+                  onClick={() => navigate("/orders/custom-invoice")}
+                  className="create-order-btn"
+                >
+                  <FaPlus className="me-2" /> Custom Invoice
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={() => navigate("/orders/create")}
+                  className="create-order-btn"
+                >
+                  <FaPlus className="me-2" /> Create Order
+                </Button>
+            </div>
           </div>
 
           <div className="filters-section mb-4">
