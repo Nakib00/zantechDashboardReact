@@ -511,8 +511,9 @@ const Challen = () => {
                     <th>ID</th>
                     <th>Date</th>
                     <th>Supplier</th>
-                    <th>Total</th>
+                    <th>Total product price</th>
                     <th>Delivery Price</th>
+                    <th>Total</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -529,8 +530,9 @@ const Challen = () => {
                           {challan.supplier.name}
                         </button>
                       </td>
-                      <td className="fw-medium">৳{parseFloat(challan.total).toLocaleString()}</td>
+                      <td>৳{parseFloat(challan.totalproductprice).toLocaleString()}</td>
                       <td>৳{parseFloat(challan.delivery_price).toLocaleString()}</td>
+                      <td className="fw-medium">৳{parseFloat(challan.total).toLocaleString()}</td>
                       <td>
                         <Button
                           variant="outline-primary"

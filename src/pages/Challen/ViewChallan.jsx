@@ -15,7 +15,16 @@ import {
 } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import axiosInstance from "../../config/axios";
-import { Card, Button, Row, Col, Table, Image, Form, Modal } from "react-bootstrap";
+import {
+  Card,
+  Button,
+  Row,
+  Col,
+  Table,
+  Image,
+  Form,
+  Modal,
+} from "react-bootstrap";
 import Select from "react-select/async";
 import Loading from "../../components/Loading";
 import "./Challan.css";
@@ -285,9 +294,16 @@ const ViewChallan = () => {
       }
 
       // Check file type
-      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+      const allowedTypes = [
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "application/pdf",
+      ];
       if (!allowedTypes.includes(file.type)) {
-        toast.error("Invalid file type. Please upload JPG, JPEG, PNG, or PDF file");
+        toast.error(
+          "Invalid file type. Please upload JPG, JPEG, PNG, or PDF file"
+        );
         e.target.value = null;
         return;
       }
@@ -306,15 +322,15 @@ const ViewChallan = () => {
     setUploadingInvoice(true);
     try {
       const formData = new FormData();
-      formData.append('invoice', selectedFile);
+      formData.append("invoice", selectedFile);
 
       const response = await axiosInstance.post(
         `/challans/upload-invoice/${id}`,
         formData,
         {
           headers: {
-            'Content-Type': 'multipart/form-data',
-            'Authorization': `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         }
       );
@@ -384,12 +400,16 @@ const ViewChallan = () => {
               <Button
                 variant="link"
                 className="p-0 mb-2 text-decoration-none"
-                onClick={() => navigate('/challans')}
+                onClick={() => navigate("/challans")}
               >
                 <FaArrowLeft className="me-2" /> Back to Challans
               </Button>
-              <h2 className="page-title mb-1">{isEditing ? "Edit Challan" : "Challan Details"}</h2>
-              <p className="text-muted mb-0">View and manage challan information</p>
+              <h2 className="page-title mb-1">
+                {isEditing ? "Edit Challan" : "Challan Details"}
+              </h2>
+              <p className="text-muted mb-0">
+                View and manage challan information
+              </p>
             </div>
             {!isEditing && (
               <Button
@@ -412,7 +432,9 @@ const ViewChallan = () => {
                   <Row>
                     <Col md={6}>
                       <Form.Group className="mb-3">
-                        <Form.Label>Date <span className="text-danger">*</span></Form.Label>
+                        <Form.Label>
+                          Date <span className="text-danger">*</span>
+                        </Form.Label>
                         <Form.Control
                           type="date"
                           value={formData.Date}
@@ -429,7 +451,10 @@ const ViewChallan = () => {
                     </Col>
                     <Col md={6}>
                       <Form.Group className="mb-3">
-                        <Form.Label>Delivery Price (৳) <span className="text-danger">*</span></Form.Label>
+                        <Form.Label>
+                          Delivery Price (৳){" "}
+                          <span className="text-danger">*</span>
+                        </Form.Label>
                         <Form.Control
                           type="number"
                           min="0"
@@ -449,7 +474,9 @@ const ViewChallan = () => {
                   </Row>
 
                   <Form.Group className="mb-3">
-                    <Form.Label>Supplier <span className="text-danger">*</span></Form.Label>
+                    <Form.Label>
+                      Supplier <span className="text-danger">*</span>
+                    </Form.Label>
                     <Form.Select
                       value={formData.supplier_id}
                       onChange={(e) =>
@@ -526,6 +553,12 @@ const ViewChallan = () => {
                         <div className="detail-value">{challan.user.name}</div>
                       </div>
                       <div className="mb-4">
+                        <label className="detail-label">Total products Price</label>
+                        <div className="detail-value challan-amount">
+                          ৳{parseFloat(challan.totalproductprice).toLocaleString()}
+                        </div>
+                      </div>
+                      <div className="mb-4">
                         <label className="detail-label">Delivery Price</label>
                         <div className="detail-value challan-amount">
                           ৳{parseFloat(challan.delivery_price).toLocaleString()}
@@ -548,15 +581,21 @@ const ViewChallan = () => {
                     <Card.Body>
                       <div className="mb-4">
                         <label className="detail-label">Name</label>
-                        <div className="detail-value">{challan.supplier.name}</div>
+                        <div className="detail-value">
+                          {challan.supplier.name}
+                        </div>
                       </div>
                       <div className="mb-4">
                         <label className="detail-label">Phone</label>
-                        <div className="detail-value">{challan.supplier.phone}</div>
+                        <div className="detail-value">
+                          {challan.supplier.phone}
+                        </div>
                       </div>
                       <div>
                         <label className="detail-label">Address</label>
-                        <div className="detail-value">{challan.supplier.address}</div>
+                        <div className="detail-value">
+                          {challan.supplier.address}
+                        </div>
                       </div>
                     </Card.Body>
                   </Card>
@@ -659,7 +698,8 @@ const ViewChallan = () => {
                             >
                               {addingItemsLoading ? (
                                 <>
-                                  <FaSpinner className="spinner me-2" /> Adding Items...
+                                  <FaSpinner className="spinner me-2" /> Adding
+                                  Items...
                                 </>
                               ) : (
                                 <>
@@ -681,14 +721,19 @@ const ViewChallan = () => {
                           <th>Buying Price</th>
                           <th>Quantity</th>
                           <th>Total</th>
-                          <th style={{ width: '150px' }}>Actions</th>
+                          <th style={{ width: "150px" }}>Actions</th>
                         </tr>
                       </thead>
                       <tbody>
                         {challan.items.map((item, index) => (
                           <tr key={index}>
                             <td>{item.item_name}</td>
-                            <td>৳{parseFloat(item.buying_price || 0).toLocaleString()}</td>
+                            <td>
+                              ৳
+                              {parseFloat(
+                                item.buying_price || 0
+                              ).toLocaleString()}
+                            </td>
                             <td>{item.quantity}</td>
                             <td>
                               ৳
@@ -752,7 +797,9 @@ const ViewChallan = () => {
                   <div>
                     <h5 className="mb-1">Invoices</h5>
                     <p className="text-muted mb-0">
-                      {challan.invoices?.length || 0} {challan.invoices?.length === 1 ? 'Invoice' : 'Invoices'} attached
+                      {challan.invoices?.length || 0}{" "}
+                      {challan.invoices?.length === 1 ? "Invoice" : "Invoices"}{" "}
+                      attached
                     </p>
                   </div>
                   <Button
@@ -769,55 +816,76 @@ const ViewChallan = () => {
                       <Table responsive hover className="modern-table">
                         <thead>
                           <tr>
-                            <th style={{ width: '60px' }}>#</th>
+                            <th style={{ width: "60px" }}>#</th>
                             <th>Preview</th>
                             <th>File Name</th>
                             <th>Type</th>
                             <th>Upload Date</th>
-                            <th style={{ width: '200px' }}>Actions</th>
+                            <th style={{ width: "200px" }}>Actions</th>
                           </tr>
                         </thead>
                         <tbody>
                           {challan.invoices.map((invoice, index) => {
-                            const fileName = invoice.path.split('/').pop();
-                            const fileType = fileName.split('.').pop().toUpperCase();
-                            const isPDF = fileType === 'PDF';
-                            
+                            const fileName = invoice.path.split("/").pop();
+                            const fileType = fileName
+                              .split(".")
+                              .pop()
+                              .toUpperCase();
+                            const isPDF = fileType === "PDF";
+
                             return (
                               <tr key={invoice.id}>
                                 <td>{index + 1}</td>
-                                <td style={{ width: '120px' }}>
+                                <td style={{ width: "120px" }}>
                                   {isPDF ? (
                                     <div className="prove-preview-table">
-                                      <FaDownload size={24} className="text-primary mb-1" />
+                                      <FaDownload
+                                        size={24}
+                                        className="text-primary mb-1"
+                                      />
                                       <span>PDF Document</span>
                                     </div>
                                   ) : (
                                     <div className="prove-preview-table">
-                                      <img 
+                                      <img
                                         src={invoice.path}
                                         alt={`Invoice ${index + 1}`}
                                         className="prove-image-table"
-                                        onClick={() => window.open(invoice.path, '_blank')}
+                                        onClick={() =>
+                                          window.open(invoice.path, "_blank")
+                                        }
                                       />
                                     </div>
                                   )}
                                 </td>
                                 <td>
                                   <div className="d-flex flex-column">
-                                    <span className="fw-medium">{fileName}</span>
+                                    <span className="fw-medium">
+                                      {fileName}
+                                    </span>
                                     <small className="text-muted">
-                                      {(parseInt(fileName.split('.')[0]) / 1024 / 1024).toFixed(2)} MB
+                                      {(
+                                        parseInt(fileName.split(".")[0]) /
+                                        1024 /
+                                        1024
+                                      ).toFixed(2)}{" "}
+                                      MB
                                     </small>
                                   </div>
                                 </td>
                                 <td>
-                                  <span className={`badge ${isPDF ? 'bg-danger' : 'bg-primary'}`}>
+                                  <span
+                                    className={`badge ${
+                                      isPDF ? "bg-danger" : "bg-primary"
+                                    }`}
+                                  >
                                     {fileType}
                                   </span>
                                 </td>
                                 <td>
-                                  {new Date(fileName.split('.')[0]).toLocaleDateString()}
+                                  {new Date(
+                                    fileName.split(".")[0]
+                                  ).toLocaleDateString()}
                                 </td>
                                 <td>
                                   <div className="d-flex gap-2">
@@ -833,7 +901,9 @@ const ViewChallan = () => {
                                     <Button
                                       variant="outline-danger"
                                       size="sm"
-                                      onClick={() => openDeleteInvoiceModal(invoice)}
+                                      onClick={() =>
+                                        openDeleteInvoiceModal(invoice)
+                                      }
                                       className="delete-btn"
                                     >
                                       <FaTrash />
@@ -850,7 +920,9 @@ const ViewChallan = () => {
                     <div className="text-center py-5 bg-light rounded">
                       <FaUpload size={48} className="text-muted mb-3" />
                       <h6 className="mb-2">No Invoices Uploaded</h6>
-                      <p className="text-muted mb-3">Upload invoices to keep track of your challan documents</p>
+                      <p className="text-muted mb-3">
+                        Upload invoices to keep track of your challan documents
+                      </p>
                       <Button
                         variant="primary"
                         onClick={() => setShowInvoiceModal(true)}
@@ -948,9 +1020,7 @@ const ViewChallan = () => {
                       parseInt(selectedItem.quantity)
                     ).toLocaleString()}
                   </div>
-                  <p className="text-danger">
-                    This action cannot be undone.
-                  </p>
+                  <p className="text-danger">This action cannot be undone.</p>
                 </>
               )}
             </Modal.Body>
@@ -1013,7 +1083,8 @@ const ViewChallan = () => {
                   <div className="alert alert-info">
                     <strong>Selected file:</strong> {selectedFile.name}
                     <br />
-                    <strong>Size:</strong> {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                    <strong>Size:</strong>{" "}
+                    {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
                     <br />
                     <strong>Type:</strong> {selectedFile.type}
                   </div>
@@ -1066,11 +1137,10 @@ const ViewChallan = () => {
                 <>
                   <p>Are you sure you want to delete this invoice?</p>
                   <div className="alert alert-warning">
-                    <strong>File:</strong> {selectedInvoice.path.split('/').pop()}
+                    <strong>File:</strong>{" "}
+                    {selectedInvoice.path.split("/").pop()}
                   </div>
-                  <p className="text-danger">
-                    This action cannot be undone.
-                  </p>
+                  <p className="text-danger">This action cannot be undone.</p>
                 </>
               )}
             </Modal.Body>
