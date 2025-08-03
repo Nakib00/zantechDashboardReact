@@ -77,3 +77,24 @@
     font-size: 1.1rem;
     font-weight: 500;
 }
+
+.due-orders-table-container {
+    max-height: 220px; /* Approximately 3 rows */
+    overflow-y: auto;
+    position: relative;
+}
+
+.due-orders-table-container table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+.due-orders-table-container thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.due-orders-table-container thead th {
+    background-color: #f8f9fa;
+}
