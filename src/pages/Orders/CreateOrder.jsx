@@ -7,6 +7,7 @@ import { toast } from 'react-hot-toast';
 import Select from 'react-select/async';
 import '../Categories/Categories.css';
 import '../Products/AddProduct.css';
+import AddShippingAddressModal from '../../components/Customers/AddShippingAddressModal';
 
 const CreateOrder = () => {
   const navigate = useNavigate();
@@ -33,6 +34,7 @@ const CreateOrder = () => {
   const [coupons, setCoupons] = useState([]);
   const [isGuest, setIsGuest] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
+  const [showAddAddressModal, setShowAddAddressModal] = useState(false);
 
   // Add ref for menu portal
   const menuPortalTarget = document.body;
@@ -447,6 +449,15 @@ const CreateOrder = () => {
     }
   };
 
+  const handleAddressAdded = (newAddress) => {
+    setShippingAddresses(prev => [...prev, newAddress]);
+    setFormData(prev => ({
+      ...prev,
+      shipping_id: newAddress.id
+    }));
+    setShowAddAddressModal(false);
+  };
+
   const renderProgressBar = () => (
     <div className="mb-4">
       <div className="d-flex justify-content-between mb-2">
@@ -644,19 +655,24 @@ const CreateOrder = () => {
                     {!isGuest && formData.user_id && (
                       <Form.Group className="mb-3">
                         <Form.Label className="fw-medium">Shipping Address</Form.Label>
-                        <Form.Select
-                          value={formData.shipping_id || ''}
-                          onChange={handleShippingAddressChange}
-                          isInvalid={!!validationErrors.shipping_id}
-                          className="modern-select"
-                        >
-                          <option value="">Select shipping address</option>
-                          {shippingAddresses.map(address => (
-                            <option key={address.id} value={address.id}>
-                              {address.f_name} {address.l_name} - {address.address}, {address.city}
-                            </option>
-                          ))}
-                        </Form.Select>
+                        <div className="d-flex align-items-center gap-2">
+                          <Form.Select
+                            value={formData.shipping_id || ''}
+                            onChange={handleShippingAddressChange}
+                            isInvalid={!!validationErrors.shipping_id}
+                            className="modern-select"
+                          >
+                            <option value="">Select shipping address</option>
+                            {shippingAddresses.map(address => (
+                              <option key={address.id} value={address.id}>
+                                {address.f_name} {address.l_name} - {address.address}, {address.city}
+                              </option>
+                            ))}
+                          </Form.Select>
+                          <Button variant="outline-primary" onClick={() => setShowAddAddressModal(true)}>
+                            <FaPlus />
+                          </Button>
+                        </div>
                         <Form.Control.Feedback type="invalid">
                           {validationErrors.shipping_id}
                         </Form.Control.Feedback>
@@ -871,8 +887,15 @@ const CreateOrder = () => {
           </Form>
         </Card.Body>
       </Card>
+
+      <AddShippingAddressModal
+        show={showAddAddressModal}
+        onHide={() => setShowAddAddressModal(false)}
+        userId={formData.user_id}
+        onAdd={handleAddressAdded}
+      />
     </div>
   );
 };
 
-export default CreateOrder; 
+export default CreateOrder;
