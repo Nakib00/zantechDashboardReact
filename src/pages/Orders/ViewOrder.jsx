@@ -35,6 +35,7 @@ import Loading from "../../components/Loading";
 import "../Categories/Categories.css";
 import Select from "react-select/async";
 import InvoiceDocument from '../../components/InvoiceDocument';
+import EditShippingAddressModal from "../../components/Orders/EditShippingAddressModal";
 
 const ViewOrder = () => {
   const { id } = useParams();
@@ -60,6 +61,7 @@ const ViewOrder = () => {
   const [editingPaidAmount, setEditingPaidAmount] = useState(null);
   const [generatingInvoice, setGeneratingInvoice] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showEditAddressModal, setShowEditAddressModal] = useState(false);
 
   useEffect(() => {
     fetchOrder();
@@ -474,6 +476,10 @@ const ViewOrder = () => {
     }
   };
 
+  const handleAddressUpdated = (updatedData) => {
+    refreshOrderData();
+  };
+
   const loadProducts = async (inputValue) => {
     try {
       const response = await axiosInstance.get('/products', {
@@ -543,6 +549,12 @@ const ViewOrder = () => {
 
   return (
     <div className="orders-container">
+      <EditShippingAddressModal
+        show={showEditAddressModal}
+        onHide={() => setShowEditAddressModal(false)}
+        orderData={orderData}
+        onUpdate={handleAddressUpdated}
+      />
       <Card className="modern-card">
         <Card.Body className="p-4">
           <div className="d-flex justify-content-between align-items-center mb-4">
@@ -810,10 +822,17 @@ const ViewOrder = () => {
           </Card>
 
           <Card className="modern-card mb-4">
-            <Card.Header className="bg-light">
+            <Card.Header className="bg-light d-flex justify-content-between align-items-center">
               <h5 className="mb-0 d-flex align-items-center">
                 <FaUser className="me-2" /> Customer Information
               </h5>
+              <Button
+                variant="outline-primary"
+                size="sm"
+                onClick={() => setShowEditAddressModal(true)}
+              >
+                <FaEdit />
+              </Button>
             </Card.Header>
             <Card.Body>
               <Row>
