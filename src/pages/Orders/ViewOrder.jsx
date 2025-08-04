@@ -12,6 +12,8 @@ import {
   Card,
   Button,
   Form,
+  Row,
+  Col,
 } from "react-bootstrap";
 import Loading from "../../components/Loading";
 import "../Categories/Categories.css";
@@ -261,16 +263,19 @@ const ViewOrder = () => {
             updatingStatus={updatingStatus}
             confirmStatusChange={confirmStatusChange}
           />
-
-          <OrderInformation order={order} />
-
-          <CustomerInformation
-            user={user}
-            shipping_address={shipping_address}
-            order={order}
-            setShowEditAddressModal={setShowEditAddressModal}
-          />
-          
+          <Row>
+            <Col md={6}>
+              <OrderInformation order={order} />
+            </Col>
+            <Col md={6}>
+              <CustomerInformation
+                user={user}
+                shipping_address={shipping_address}
+                order={order}
+                setShowEditAddressModal={setShowEditAddressModal}
+              />
+            </Col>
+          </Row>
           <PaymentInformation
             payments={payments}
             refreshOrderData={refreshOrderData}
