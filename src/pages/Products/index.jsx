@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { FaPlus, FaEdit, FaTrash, FaSpinner, FaChevronLeft, FaChevronRight, FaSearch, FaFilter, FaEye, FaPencilAlt, FaChevronDown, FaTimes } from 'react-icons/fa';
+import { FaPlus, FaSpinner } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { Card, Badge, Pagination, Form, InputGroup, Button, Modal, Row, Col, Dropdown } from 'react-bootstrap';
+import { Card, Button } from 'react-bootstrap';
 import axiosInstance from '../../config/axios';
 import Loading from '../../components/Loading';
+import ProductFilters from '../../components/Products/ProductsList/ProductFilters';
+import ProductTable from '../../components/Products/ProductsList/ProductTable';
+import ProductPagination from '../../components/Products/ProductsList/ProductPagination';
+import QuickEditModal from '../../components/Products/ProductsList/QuickEditModal';
 import './Products.css';
 
 const Products = () => {
@@ -127,17 +131,8 @@ const Products = () => {
       ...prev,
       [name]: value
     }));
-
-    // Limit change triggers fetchProducts via useEffect dependency.
-    // Search change triggers fetchProducts via useEffect debounce.
   };
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    // Debounce logic is in useEffect
-    // No direct fetchProducts call needed here
-  };
-
+  
   const handleDeleteProduct = async (id) => {
     if (window.confirm('Are you sure you want to delete this product?')) {
       try {
@@ -193,7 +188,7 @@ const Products = () => {
       name: product.name || '',
       price: product.price || '',
       quantity: product.quantity || '',
-      discount: product.discount?.toString() || '0' // Ensure discount is a string
+      discount: product.discount?.toString() || '0'
     });
     setShowQuickEdit(true);
   };
@@ -304,76 +299,6 @@ const Products = () => {
     }
   };
 
-  const renderPagination = () => {
-    const items = [];
-    const maxVisiblePages = 5;
-    let startPage = Math.max(1, pagination.currentPage - Math.floor(maxVisiblePages / 2));
-    let endPage = Math.min(pagination.totalPages, startPage + maxVisiblePages - 1);
-
-    if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
-    }
-
-    items.push(
-      <Pagination.Prev 
-        key="prev" 
-        onClick={() => handlePageChange(pagination.currentPage - 1)}
-        disabled={pagination.currentPage === 1}
-      >
-        <FaChevronLeft size={12} />
-      </Pagination.Prev>
-    );
-
-    if (startPage > 1) {
-      items.push(
-        <Pagination.Item key={1} onClick={() => handlePageChange(1)}>
-          1
-        </Pagination.Item>
-      );
-      if (startPage > 2) {
-        items.push(<Pagination.Ellipsis key="ellipsis1" disabled />);
-      }
-    }
-
-    for (let number = startPage; number <= endPage; number++) {
-      items.push(
-        <Pagination.Item 
-          key={number} 
-          active={number === pagination.currentPage}
-          onClick={() => handlePageChange(number)}
-        >
-          {number}
-        </Pagination.Item>
-      );
-    }
-
-    if (endPage < pagination.totalPages) {
-      if (endPage < pagination.totalPages - 1) {
-        items.push(<Pagination.Ellipsis key="ellipsis2" disabled />);
-      }
-      items.push(
-        <Pagination.Item 
-          key={pagination.totalPages} 
-          onClick={() => handlePageChange(pagination.totalPages)}
-        >
-          {pagination.totalPages}
-        </Pagination.Item>
-      );
-    }
-
-    items.push(
-      <Pagination.Next 
-        key="next" 
-        onClick={() => handlePageChange(pagination.currentPage + 1)}
-        disabled={!pagination.hasMorePages}
-      >
-        <FaChevronRight size={12} />
-      </Pagination.Next>
-    );
-
-    return items;
-  };
-
   if (pageLoading) {
     return <Loading />;
   }
@@ -406,340 +331,43 @@ const Products = () => {
             </Button>
           </div>
 
-          <div className="filters-section mb-4">
-            <Row className="g-3 align-items-center">
-              <Col md={4}>
-                <Form onSubmit={handleSearch}>
-                  <InputGroup className="search-box">
-                    <InputGroup.Text className="search-icon">
-                      {isSearching ? (
-                        <FaSpinner className="spinner-border spinner-border-sm" />
-                      ) : (
-                        <FaSearch />
-                      )}
-                    </InputGroup.Text>
-                    <Form.Control
-                      type="text"
-                      placeholder="Search products..."
-                      name="search"
-                      value={searchParams.search}
-                      onChange={handleFilterChange}
-                      disabled={loading}
-                      className={`search-input ${isSearching ? 'searching' : ''}`}
-                    />
-                    {searchParams.search && !isSearching && (
-                      <Button
-                        variant="link"
-                        className="clear-search"
-                        onClick={() => {
-                          setSearchParams(prev => ({ ...prev, search: '' }));
-                        }}
-                        disabled={loading}
-                      >
-                        <FaTimes />
-                      </Button>
-                    )}
-                  </InputGroup>
-                </Form>
-              </Col>
-               <Col md={8} className="d-flex justify-content-end gap-2">
-                 <Form.Select
-                    name="limit"
-                    value={searchParams.limit}
-                    onChange={handleFilterChange}
-                    disabled={loading}
-                    style={{ width: 'auto' }}
-                    className="limit-select"
-                  >
-                    <option value="5">5 per page</option>
-                    <option value="10">10 per page</option>
-                    <option value="20">20 per page</option>
-                    <option value="50">50 per page</option>
-                  </Form.Select>
-               </Col>
-            </Row>
-          </div>
+          <ProductFilters
+            searchParams={searchParams}
+            handleFilterChange={handleFilterChange}
+            loading={loading}
+            isSearching={isSearching}
+            setSearchParams={setSearchParams}
+          />
 
-          <Modal show={showQuickEdit} onHide={() => !editLoading && setShowQuickEdit(false)} centered>
-            <Modal.Header closeButton>
-              <Modal.Title>Quick Edit Product</Modal.Title>
-            </Modal.Header>
-            <Form onSubmit={handleQuickEditSubmit}>
-              <Modal.Body>
-                {editLoading ? (
-                  <div className="text-center py-4">
-                    <Loading />
-                    <p className="text-muted mt-2 mb-0">Updating product...</p>
-                  </div>
-                ) : (
-                  <Row className="g-3">
-                    <Col md={12}>
-                      <Form.Group className="mb-3">
-                        <Form.Label>Product Name</Form.Label>
-                        <Form.Control
-                          type="text"
-                          name="name"
-                          value={editForm.name}
-                          onChange={handleEditFormChange}
-                          required
-                        />
-                      </Form.Group>
-                    </Col>
-                    <Col md={4}>
-                      <Form.Group className="mb-3">
-                        <Form.Label>Price (৳)</Form.Label>
-                        <Form.Control
-                          type="number"
-                          name="price"
-                          value={editForm.price}
-                          onChange={handleEditFormChange}
-                          min="0"
-                          step="0.01"
-                          required
-                        />
-                      </Form.Group>
-                    </Col>
-                    <Col md={4}>
-                      <Form.Group className="mb-3">
-                        <Form.Label>Quantity</Form.Label>
-                        <Form.Control
-                          type="number"
-                          name="quantity"
-                          value={editForm.quantity}
-                          onChange={handleEditFormChange}
-                          min="0"
-                          required
-                        />
-                      </Form.Group>
-                    </Col>
-                    <Col md={4}>
-                      <Form.Group className="mb-3">
-                        <Form.Label>Discount (%)</Form.Label>
-                        <Form.Control
-                          type="number"
-                          name="discount"
-                          value={editForm.discount}
-                          onChange={handleEditFormChange}
-                          min="0"
-                          max="100"
-                          placeholder="0"
-                        />
-                        <Form.Text className="text-muted">
-                          Enter 0 if no discount
-                        </Form.Text>
-                      </Form.Group>
-                    </Col>
-                  </Row>
-                )}
-              </Modal.Body>
-              <Modal.Footer>
-                <Button 
-                  variant="secondary" 
-                  onClick={() => setShowQuickEdit(false)}
-                  disabled={editLoading}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  variant="primary" 
-                  type="submit"
-                  disabled={editLoading}
-                  className="d-flex align-items-center gap-2"
-                >
-                  {editLoading ? (
-                    <>
-                      <FaSpinner className="spinner-border spinner-border-sm" />
-                      Updating...
-                    </>
-                  ) : (
-                    <>
-                      <FaPencilAlt className="me-2" /> Update Product
-                    </>
-                  )}
-                </Button>
-              </Modal.Footer>
-            </Form>
-          </Modal>
+          <QuickEditModal
+            show={showQuickEdit}
+            handleClose={() => !editLoading && setShowQuickEdit(false)}
+            editForm={editForm}
+            handleEditFormChange={handleEditFormChange}
+            handleSubmit={handleQuickEditSubmit}
+            editLoading={editLoading}
+          />
 
-          <div className="table-container position-relative">
-            {tableLoading && (
-              <div 
-                className="position-absolute w-100 h-100 d-flex justify-content-center align-items-center"
-                style={{
-                  top: 0,
-                  left: 0,
-                  backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                  zIndex: 1000,
-                  backdropFilter: 'blur(2px)'
-                }}
-              >
-                <div className="text-center">
-                  <Loading />
-                  <p className="text-muted mt-2 mb-0">
-                    {loading ? 'Loading products...' : 'Updating products...'}
-                  </p>
-                </div>
-              </div>
-            )}
-            
-            {loading && !tableLoading ? (
-              <div className="text-center py-5">
-                <Loading />
-                <p className="text-muted mt-3 mb-0">Loading products...</p>
-              </div>
-            ) : products.length > 0 ? (
-              <div className="table-responsive">
-                <table className="table table-hover align-middle modern-table">
-                  <thead className="bg-light">
-                    <tr>
-                      <th>ID</th>
-                      <th>Image</th>
-                      <th>Name</th>
-                      <th>Price</th>
-                      <th>Stock</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {products.map((product) => (
-                      <tr key={product.id}>
-                        <td data-label="ID">{product.id}</td>
-                        <td data-label="Image">
-                          {product.image_paths && product.image_paths.length > 0 ? (
-                            <img 
-                              src={product.image_paths[0]} 
-                              alt={product.name}
-                              className="product-image"
-                            />
-                          ) : (
-                            <div className="no-image-placeholder">
-                              <span>No image</span>
-                            </div>
-                          )}
-                        </td>
-                        <td data-label="Name">
-                          <div>
-                            <h6 className="mb-0">{product.name}</h6>
-                          </div>
-                        </td>
-                        <td data-label="Price">
-                          <div>
-                            <span className="fw-semibold">৳{parseFloat(product.price).toLocaleString()}</span>
-                            {product.discount > 0 && (
-                              <span className="ms-2 text-danger">-{parseFloat(product.discount).toFixed(0)}%</span>
-                            )}
-                          </div>
-                        </td>
-                        <td data-label="Stock">
-                          <span 
-                            className={`px-2 py-1 ${product.quantity > 0 ? 'text-success' : 'text-danger'}`}
-                          >
-                            {product.quantity > 0 ? `${product.quantity} In Stock` : 'Out of Stock'}
-                          </span>
-                        </td>
-                        <td data-label="Status">
-                          <span 
-                            className={`px-2 py-1 status-badge ${product.status === "1" ? 'text-success' : 'text-secondary'}`}
-                            role="button"
-                            onClick={() => handleStatusToggle(product.id)}
-                            title="Click to toggle status"
-                          >
-                            {statusToggleLoading[product.id] ? (
-                              <FaSpinner className="spinner-border spinner-border-sm" />
-                            ) : (
-                              product.status === "1" ? 'Active' : 'Inactive'
-                            )}
-                          </span>
-                        </td>
-                        <td data-label="Actions">
-                          <div className="d-flex gap-2">
-                            <Button 
-                              variant="outline-primary" 
-                              size="sm"
-                              onClick={() => navigate(`/products/${product.id}`)}
-                              title="View"
-                              disabled={loading}
-                              className="view-btn"
-                            >
-                              <FaEye />
-                            </Button>
-                            <Dropdown>
-                              <Dropdown.Toggle 
-                                variant="outline-primary" 
-                                size="sm"
-                                disabled={loading}
-                                className="action-dropdown-toggle"
-                              >
-                                <FaEdit /> Edit <FaChevronDown size={10} />
-                              </Dropdown.Toggle>
-                              <Dropdown.Menu className="action-dropdown-menu">
-                                <Dropdown.Item 
-                                  onClick={() => handleQuickEdit(product)}
-                                  className="action-dropdown-item"
-                                >
-                                  <FaPencilAlt className="me-2" /> Quick Edit
-                                </Dropdown.Item>
-                                <Dropdown.Item 
-                                  onClick={() => navigate(`/products/${product.id}`)}
-                                  className="action-dropdown-item"
-                                >
-                                  <FaEdit className="me-2" /> Full Edit
-                                </Dropdown.Item>
-                              </Dropdown.Menu>
-                            </Dropdown>
-                            <Button 
-                              variant="outline-danger" 
-                              size="sm"
-                              onClick={() => handleDeleteProduct(product.id)}
-                              title="Delete"
-                              disabled={loading}
-                              className="delete-btn"
-                            >
-                              {loading ? <FaSpinner className="spinner-border spinner-border-sm" /> : <FaTrash />}
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="text-center py-5">
-                <p className="text-muted mb-0">No products found</p>
-              </div>
-            )}
-          </div>
+          <ProductTable
+            products={products}
+            tableLoading={tableLoading}
+            loading={loading}
+            statusToggleLoading={statusToggleLoading}
+            handleStatusToggle={handleStatusToggle}
+            handleQuickEdit={handleQuickEdit}
+            handleDeleteProduct={handleDeleteProduct}
+            navigate={navigate}
+          />
 
-          {pagination.totalPages > 1 && (
-            <div className="pagination-container mt-4 position-relative">
-              {tableLoading && (
-                <div 
-                  className="position-absolute w-100 h-100 d-flex justify-content-center align-items-center"
-                  style={{
-                    top: 0,
-                    left: 0,
-                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                    zIndex: 1000,
-                    backdropFilter: 'blur(2px)'
-                  }}
-                >
-                  <div className="text-center">
-                    <Loading />
-                    <p className="text-muted mt-2 mb-0">Changing page...</p>
-                  </div>
-                </div>
-              )}
-              <Pagination className="mb-0 modern-pagination">
-                {renderPagination()}
-              </Pagination>
-            </div>
-          )}
+          <ProductPagination
+            pagination={pagination}
+            tableLoading={tableLoading}
+            handlePageChange={handlePageChange}
+          />
         </Card.Body>
       </Card>
     </div>
   );
 };
 
-export default Products; 
+export default Products;
