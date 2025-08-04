@@ -264,18 +264,19 @@ const ViewProduct = () => {
   }, [fetchProduct]);
 
   const loadProductOptions = useCallback(async (inputValue) => {
-    if (!inputValue) return [];
-    try {
-      const response = await axiosInstance.get(`/except-bundles?search=${inputValue}`);
-      return response.data.data.map(product => ({
-        value: product.id,
-        label: product.name,
-        stock: product.quantity,
-        image: product.image_paths[0] || null,
-      }));
-    } catch {
-      return [];
-    }
+      if (!inputValue) return [];
+      try {
+        const response = await axiosInstance.get(`/except-bundles?search=${inputValue}`);
+        return response.data.data.map(product => ({
+          value: product.id,
+          label: product.name,
+          stock: product.quantity,
+          price: product.price,
+          image: product.image_paths[0] || null,
+        }));
+      } catch {
+        return [];
+      }
   }, []);
 
   const handleSelectProduct = useCallback((option) => {

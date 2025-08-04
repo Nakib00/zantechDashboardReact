@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, Button, Table, Spinner, Form, InputGroup, Image } from 'react-bootstrap';
-import { FaBoxes, FaPlus, FaTrash, FaEye, FaPencilAlt, FaSearch } from 'react-icons/fa';
+import { FaBoxes, FaPlus, FaTrash, FaPencilAlt, FaSearch } from 'react-icons/fa';
 import AsyncSelect from 'react-select/async';
 
 const ProductBundle = ({ product, handleBundleToggle, bundleToggleLoading, handleAddToBundle, bundleLoading, selectedItems, handleRemoveSelectedItem, bundleQuantity, setBundleQuantity, loadProductOptions, handleSelectProduct, handleDeleteBundleItem, deleteBundleLoading, handleUpdateBundleQuantity, updateQuantityLoading, editingQuantity, setEditingQuantity }) => {
@@ -31,7 +31,7 @@ const ProductBundle = ({ product, handleBundleToggle, bundleToggleLoading, handl
                                     <Image src={option.image} rounded width="40" height="40" className="me-3" />
                                     <div>
                                         <div>{option.label}</div>
-                                        <small className="text-muted">Stock: {option.stock}</small>
+                                        <small className="text-muted">Price: ৳{option.price} - Stock: {option.stock}</small>
                                     </div>
                                 </div>
                             )}
@@ -92,27 +92,30 @@ const ProductBundle = ({ product, handleBundleToggle, bundleToggleLoading, handl
 
                     {product.bundle_items && product.bundle_items.length > 0 ? (
                         <div>
-                            <h6 className="mb-3">Existing Bundle Items</h6>
-                            <Table striped bordered hover responsive>
-                                <thead>
-                                    <tr>
-                                        <th>Image</th>
-                                        <th>Product Name</th>
-                                        <th>Price</th>
-                                        <th>Quantity</th>
-                                        <th>Total</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {product.bundle_items.map(item => (
-                                        <tr key={item.bundle_id}>
-                                            <td>
+                            <h5 className="mb-3">Bundle Items</h5>
+                            <div className="border rounded">
+                                {/* Fixed Header */}
+                                <div className="p-2 bg-light border-bottom">
+                                    <div className="d-flex">
+                                        <div style={{ width: '10%' }} className="fw-bold px-2">Image</div>
+                                        <div style={{ width: '35%' }} className="fw-bold px-2">Product Name</div>
+                                        <div style={{ width: '15%' }} className="fw-bold px-2">Price</div>
+                                        <div style={{ width: '15%' }} className="fw-bold px-2">Quantity</div>
+                                        <div style={{ width: '15%' }} className="fw-bold px-2">Total</div>
+                                        <div style={{ width: '10%' }} className="fw-bold px-2">Actions</div>
+                                    </div>
+                                </div>
+
+                                {/* Scrollable Body */}
+                                <div style={{ maxHeight: product.bundle_items.length > 6 ? '400px' : 'none', overflowY: product.bundle_items.length > 6 ? 'auto' : 'visible' }}>
+                                    {product.bundle_items.map((item, index) => (
+                                        <div key={item.bundle_id} className={`d-flex align-items-center p-2 ${index % 2 !== 0 ? 'bg-light' : ''}`}>
+                                            <div style={{ width: '10%' }} className="px-2">
                                                 <Image src={item.image} rounded width="50" height="50" />
-                                            </td>
-                                            <td>{item.name}</td>
-                                            <td>৳{item.price}</td>
-                                            <td>
+                                            </div>
+                                            <div style={{ width: '35%', wordBreak: 'break-word' }} className="px-2">{item.name}</div>
+                                            <div style={{ width: '15%' }} className="px-2">৳{item.price}</div>
+                                            <div style={{ width: '15%' }} className="px-2">
                                                 {editingQuantity[item.bundle_id] ? (
                                                     <InputGroup size="sm">
                                                         <Form.Control
@@ -147,9 +150,9 @@ const ProductBundle = ({ product, handleBundleToggle, bundleToggleLoading, handl
                                                         </Button>
                                                     </div>
                                                 )}
-                                            </td>
-                                            <td>৳{item.price * item.bundle_quantity}</td>
-                                            <td>
+                                            </div>
+                                            <div style={{ width: '15%' }} className="px-2">৳{item.price * item.bundle_quantity}</div>
+                                            <div style={{ width: '10%' }} className="px-2">
                                                 <Button
                                                     variant="outline-danger"
                                                     size="sm"
@@ -158,17 +161,21 @@ const ProductBundle = ({ product, handleBundleToggle, bundleToggleLoading, handl
                                                 >
                                                     {deleteBundleLoading === item.bundle_id ? <Spinner size="sm" /> : <FaTrash />}
                                                 </Button>
-                                            </td>
-                                        </tr>
+                                            </div>
+                                        </div>
                                     ))}
-                                </tbody>
-                                <tfoot>
-                                    <tr>
-                                        <td colSpan="4" className="text-end fw-bold">Bundle Total:</td>
-                                        <td colSpan="2" className="fw-bold">৳{product.bundle_items.reduce((acc, item) => acc + (item.price * item.bundle_quantity), 0)}</td>
-                                    </tr>
-                                </tfoot>
-                            </Table>
+                                </div>
+                                
+                                {/* Fixed Footer */}
+                                <div className="p-2 bg-light border-top">
+                                    <div className="d-flex">
+                                        <div style={{ width: '75%' }} className="text-end fw-bold px-2">Bundle Total:</div>
+                                        <div style={{ width: '25%' }} className="fw-bold px-2">
+                                            ৳{product.bundle_items.reduce((acc, item) => acc + (parseFloat(item.price) * parseInt(item.bundle_quantity)), 0).toLocaleString()}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     ) : (
                         <div className="text-center py-4 text-muted">No items in this bundle yet</div>
