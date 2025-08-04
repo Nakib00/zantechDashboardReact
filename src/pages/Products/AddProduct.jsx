@@ -86,7 +86,7 @@ const AddProduct = () => {
 
   const fetchProducts = async () => {
     try {
-      const response = await axiosInstance.get('/products');
+      const response = await axiosInstance.get('/except-bundles');
       setProducts(response.data.data || []);
     } catch {
       toast.error('Failed to fetch products');
