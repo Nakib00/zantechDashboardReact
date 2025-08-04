@@ -33,6 +33,7 @@ import CustomInvoice from './pages/Orders/CustomInvoice';
 import HeroImages from './pages/HeroImages';
 import Contact from './pages/Contact';
 import { OrderProvider } from './context/OrderContext';
+import Reports from './pages/Reports';
 
 const PrivateRoute = ({ children }) => {
   const token = localStorage.getItem('token');
@@ -86,6 +87,8 @@ const App = () => {
                         <Route path="/orders/custom-invoice" element={<CustomInvoice />} />
                         <Route path="/orders/:id" element={<ViewOrder />} />
                         <Route path="/settings/hero" element={<HeroImages />} />
+                        <Route path="/reports" element={<Reports />} />
+                        
                       </Routes>
                     </div>
                   </div>

@@ -4,13 +4,13 @@ import { FaShoppingCart, FaBox, FaMoneyBillWave, FaCalendarDay } from 'react-ico
 
 const StatCard = ({ icon, title, value, colorClass }) => (
     <Card className="dashboard-card text-center h-100">
-        <Card.Body className="d-flex flex-column justify-content-center">
+        <Card.Body className="d-flex flex-column justify-content-center p-3">
             <div className={`dashboard-icon ${colorClass} mx-auto mb-2`}>
                 {icon}
             </div>
             <div>
-                <h6 className="card-subtitle mb-1 text-muted">{title}</h6>
-                <h3 className="card-title mb-0">{value}</h3>
+                <h6 className="card-subtitle-small mb-1 text-muted">{title}</h6>
+                <h4 className="card-title-small mb-0">{value}</h4>
             </div>
         </Card.Body>
     </Card>
@@ -26,9 +26,9 @@ const DashboardStats = ({ data }) => {
     ];
 
     return (
-        <Row>
+        <Row xs={2} md={3} lg={5} className="g-3">
             {stats.map((stat, index) => (
-                <Col lg={2} md={4} className="mb-3" key={index}>
+                <Col key={index}>
                     <StatCard {...stat} />
                 </Col>
             ))}

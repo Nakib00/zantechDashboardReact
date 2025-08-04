@@ -6,6 +6,8 @@ import './Dashboard.css';
 import Loading from '../../components/Loading';
 import DashboardStats from '../../components/Dashboard/DashboardStats';
 import DueOrdersTable from '../../components/Dashboard/DueOrdersTable';
+import MonthlyComparisonChart from '../../components/Dashboard/MonthlyComparisonChart';
+import SalesOverTimeChart from '../../components/Dashboard/SalesOverTimeChart';
 
 const Dashboard = () => {
     const [dashboardData, setDashboardData] = useState({
@@ -17,13 +19,20 @@ const Dashboard = () => {
     });
     const [dueOrders, setDueOrders] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [monthlyComparison, setMonthlyComparison] = useState([]);
+    const [salesOverTime, setSalesOverTime] = useState([]);
+    const [salesPeriod, setSalesPeriod] = useState('daily');
+    const [salesLoading, setSalesLoading] = useState(false);
+
 
     useEffect(() => {
         const fetchData = async () => {
             try {
                 await Promise.all([
                     fetchDashboardData(),
-                    fetchDueOrders()
+                    fetchDueOrders(),
+                    fetchMonthlyComparisonData(),
+                    fetchSalesOverTime('daily')
                 ]);
             } catch (error) {
                 // Errors are handled in the individual functions
@@ -59,6 +68,63 @@ const Dashboard = () => {
             toast.error(error.response?.data?.message || 'Failed to fetch due orders');
         }
     };
+    
+    const fetchMonthlyComparisonData = async () => {
+        try {
+          const [expensesRes, salesRes] = await Promise.all([
+            axiosInstance.get('/reports/expenses/monthly-total'),
+            axiosInstance.get('/reports/transitions/monthly-total'),
+          ]);
+    
+          const salesData = salesRes.data.data;
+          const expensesData = expensesRes.data.data;
+          const mergedData = mergeMonthlyData(salesData, expensesData);
+          setMonthlyComparison(mergedData);
+    
+        } catch (error) {
+          toast.error("Failed to load monthly comparison data.");
+        }
+      };
+
+    const fetchSalesOverTime = async (period) => {
+        setSalesLoading(true);
+        try {
+          const response = await axiosInstance.get(`/reports/sales-over-time?period=${period}`);
+          setSalesOverTime(response.data.data);
+        } catch (error) {
+          toast.error(`Failed to fetch ${period} sales data.`);
+        } finally {
+          setSalesLoading(false);
+        }
+    };
+    
+    const handleSalesPeriodChange = (period) => {
+        setSalesPeriod(period);
+        fetchSalesOverTime(period);
+    };
+
+    const mergeMonthlyData = (sales, expenses) => {
+        const dataMap = new Map();
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    
+        sales.forEach(item => {
+          const key = `${item.year}-${item.month}`;
+          if (!dataMap.has(key)) {
+            dataMap.set(key, { name: `${monthNames[item.month - 1]} ${item.year}`, sales: 0, expenses: 0 });
+          }
+          dataMap.get(key).sales = item.total_amount;
+        });
+    
+        expenses.forEach(item => {
+          const key = `${item.year}-${item.month}`;
+          if (!dataMap.has(key)) {
+            dataMap.set(key, { name: `${monthNames[item.month - 1]} ${item.year}`, sales: 0, expenses: 0 });
+          }
+          dataMap.get(key).expenses = item.total_amount;
+        });
+    
+        return Array.from(dataMap.values()).reverse();
+    };
 
     if (loading) {
         return <Loading />;
@@ -70,9 +136,23 @@ const Dashboard = () => {
             
             <DashboardStats data={dashboardData} />
 
-            <Row className="mt-5">
-                <Col md={6}>
+            <Row className="mt-4">
+                <Col lg={7} className="mb-4">
+                    <SalesOverTimeChart
+                        data={salesOverTime}
+                        period={salesPeriod}
+                        onPeriodChange={handleSalesPeriodChange}
+                        loading={salesLoading}
+                    />
+                </Col>
+                <Col lg={5} className="mb-4">
                     <DueOrdersTable orders={dueOrders} />
+                </Col>
+            </Row>
+
+            <Row>
+                <Col lg={7} className="mb-4">
+                    <MonthlyComparisonChart data={monthlyComparison} />
                 </Col>
             </Row>
         </div>

@@ -6,43 +6,43 @@ const DueOrdersTable = ({ orders }) => {
     const navigate = useNavigate();
 
     return (
-        <>
-            <h2 className="dashboard-title mb-4">Orders with Due Amount</h2>
-            <Card className="dashboard-card">
-                <Card.Body>
-                    <div className="due-orders-table-container">
-                        <Table striped bordered hover responsive>
-                            <thead>
-                                <tr>
-                                    <th>Order Info</th>
-                                    <th>Customer Info</th>
-                                    <th>Payment Info (Total/Paid/Due)</th>
+        <Card className="modern-card h-100">
+            <Card.Header>
+                <h5 className="mb-0">Orders with Due Amount</h5>
+            </Card.Header>
+            <Card.Body>
+                <div className="due-orders-table-container">
+                    <Table striped bordered hover responsive>
+                        <thead>
+                            <tr>
+                                <th>Order Info</th>
+                                <th>Customer Info</th>
+                                <th>Payment Info (Total/Paid/Due)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {orders.map(order => (
+                                <tr key={order.order_id} onClick={() => navigate(`/orders/${order.order_id}`)} style={{ cursor: 'pointer' }}>
+                                    <td>
+                                        <div><strong>ID:</strong> {order.order_id}</div>
+                                        <div><strong>Invoice:</strong> {order.invoice_code}</div>
+                                    </td>
+                                    <td>
+                                        <div><strong>Name:</strong> {order.user_name}</div>
+                                        <div><strong>Phone:</strong> {order.user_phone}</div>
+                                    </td>
+                                    <td>
+                                        <div><strong>Total:</strong> ৳{parseFloat(order.total_amount).toLocaleString()}</div>
+                                        <div><strong>Paid:</strong> ৳{parseFloat(order.paid_amount).toLocaleString()}</div>
+                                        <div className="text-danger"><strong>Due:</strong> ৳{parseFloat(order.due_amount).toLocaleString()}</div>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                {orders.map(order => (
-                                    <tr key={order.order_id} onClick={() => navigate(`/orders/${order.order_id}`)} style={{ cursor: 'pointer' }}>
-                                        <td>
-                                            <div><strong>ID:</strong> {order.order_id}</div>
-                                            <div><strong>Invoice:</strong> {order.invoice_code}</div>
-                                        </td>
-                                        <td>
-                                            <div><strong>Name:</strong> {order.user_name}</div>
-                                            <div><strong>Phone:</strong> {order.user_phone}</div>
-                                        </td>
-                                        <td>
-                                            <div><strong>Total:</strong> ৳{parseFloat(order.total_amount).toLocaleString()}</div>
-                                            <div><strong>Paid:</strong> ৳{parseFloat(order.paid_amount).toLocaleString()}</div>
-                                            <div className="text-danger"><strong>Due:</strong> ৳{parseFloat(order.due_amount).toLocaleString()}</div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </Table>
-                    </div>
-                </Card.Body>
-            </Card>
-        </>
+                            ))}
+                        </tbody>
+                    </Table>
+                </div>
+            </Card.Body>
+        </Card>
     );
 };
 

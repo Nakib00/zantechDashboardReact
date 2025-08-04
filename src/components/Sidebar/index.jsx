@@ -46,13 +46,11 @@ const Sidebar = () => {
           path: "/dashboard",
           icon: <MdDashboard size={22} />,
           label: "Dashboard",
-          badge: null,
         },
         {
           path: "/analytics",
           icon: <MdAnalytics size={22} />,
           label: "Analytics",
-          badge: null,
         },
       ],
     },
@@ -96,37 +94,31 @@ const Sidebar = () => {
           path: "/categories",
           icon: <MdCategory size={22} />,
           label: "Categories",
-          badge: null,
         },
         {
           path: "/transitions",
           icon: <MdSwapHoriz size={22} />,
           label: "Transitions",
-          badge: null,
         },
         {
           path: "/coupons",
           icon: <MdLocalOffer size={22} />,
           label: "Coupons",
-          badge: null,
         },
         {
           path: "/ratings",
           icon: <MdStar size={22} />,
           label: "Ratings",
-          badge: null,
         },
         {
           path: "/customers",
           icon: <MdPeople size={22} />,
           label: "Customers",
-          badge: null,
         },
         {
           path: "/contact",
           icon: <MdContactMail size={22} />,
           label: "Contacts",
-          badge: null,
         },
       ],
     },
@@ -137,67 +129,44 @@ const Sidebar = () => {
           path: "/suppliers",
           icon: <MdBusiness size={22} />,
           label: "Suppliers",
-          badge: null,
         },
         {
           path: "/challans",
           icon: <MdPerson size={22} />,
           label: "Challans",
-          badge: null,
         },
         {
           path: "/expenses",
           icon: <MdAttachMoney size={22} />,
           label: "Expenses",
-          badge: null,
         },
       ],
     },
-    {
-      title: "Activity",
-      items: [
         {
-          path: "/activity",
-          icon: <MdMenu size={22} />,
-          label: "Activity",
-          badge: null,
-        },
-      ],
-    },
-    {
       title: "Reports",
       items: [
         {
-          path: "/reports/sales",
-          icon: <MdAttachMoney size={22} />,
-          label: "Sales",
-          badge: null,
-        },
-        {
-          path: "/reports/daily",
+          path: "/reports", 
           icon: <MdAnalytics size={22} />,
-          label: "Daily",
-          badge: null,
+          label: "Reports",
         },
       ],
     },
     {
-      title: "Settings",
-      items: [
-        {
-          path: "/settings/hero",
-          icon: <MdSettings size={22} />,
-          label: "Hero Section",
-          badge: null,
-        },
-        {
-          path: "/settings/documents",
-          icon: <MdSettings size={22} />,
-          label: "Documents",
-          badge: null,
-        },
-      ],
-    },
+        title: "Settings",
+        items: [
+          {
+            path: "/settings/hero",
+            icon: <MdSettings size={22} />,
+            label: "Hero Section",
+          },
+          {
+            path: "/settings/documents",
+            icon: <MdSettings size={22} />,
+            label: "Documents",
+          },
+        ],
+      },
   ];
 
   const toggleSidebar = () => {
@@ -297,7 +266,7 @@ const Sidebar = () => {
                 }
                 const isActive = location.pathname === item.path;
                 return (
-                  <Nav.Item key={item.path} className="mb-1">
+                  <Nav.Item key={item.path} className="mb-1" title={item.label}>
                     <Nav.Link
                       as={Link}
                       to={item.path}
