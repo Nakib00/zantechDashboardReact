@@ -551,7 +551,7 @@ const AddProduct = () => {
                           categories: [...prev.categories, value]
                         }));
                       }
-                      e.target.value = ''; // Reset select after choosing
+                      e.target.value = ''; 
                     }}
                     className="form-control"
                   >
