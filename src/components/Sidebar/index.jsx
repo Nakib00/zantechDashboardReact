@@ -32,7 +32,11 @@ const Sidebar = () => {
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const { statusSummary } = useOrderContext();
-  const [productsOpen, setProductsOpen] = useState(false);
+  const [openSections, setOpenSections] = useState({});
+
+  const toggleSection = (title) => {
+    setOpenSections(prev => ({ ...prev, [title]: !prev[title] }));
+  };
 
   const menuItems = [
     {
@@ -206,7 +210,6 @@ const Sidebar = () => {
         collapsed ? "collapsed" : ""
       }`}
     >
-      {/* Brand Section */}
       <div className="sidebar-brand p-3 border-bottom">
         <div className="d-flex align-items-center justify-content-between">
           {!collapsed && (
@@ -229,7 +232,6 @@ const Sidebar = () => {
         </div>
       </div>
 
-      {/* Navigation */}
       <div className="sidebar-nav p-3">
         {menuItems.map((section, index) => (
           <div key={index} className="mb-4">
@@ -244,12 +246,14 @@ const Sidebar = () => {
                   const isProductActive = item.subItems.some((subItem) =>
                     location.pathname.startsWith(subItem.path)
                   );
+                  const isSectionOpen = openSections[item.label] || false;
+
                   return (
                     <div key={item.label}>
                       <Nav.Link
-                        onClick={() => setProductsOpen(!productsOpen)}
+                        onClick={() => toggleSection(item.label)}
                         aria-controls="products-collapse"
-                        aria-expanded={productsOpen}
+                        aria-expanded={isSectionOpen}
                         className={`sidebar-link d-flex align-items-center gap-3 rounded-3 px-3 py-2 ${
                           isProductActive ? "active" : ""
                         }`}
@@ -264,11 +268,11 @@ const Sidebar = () => {
                         {!collapsed && (
                           <>
                             <span className="flex-grow-1">{item.label}</span>
-                            {productsOpen ? <MdExpandLess /> : <MdExpandMore />}
+                            {isSectionOpen ? <MdExpandLess /> : <MdExpandMore />}
                           </>
                         )}
                       </Nav.Link>
-                      <Collapse in={!collapsed && productsOpen}>
+                      <Collapse in={!collapsed && isSectionOpen}>
                         <div id="products-collapse">
                           <Nav className="flex-column ms-4">
                             {item.subItems.map((subItem) => (
