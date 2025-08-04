@@ -141,9 +141,13 @@ const ViewProduct = () => {
     }
     setImageUploadLoading(true);
     const formData = new FormData();
-    selectedFiles.forEach(file => formData.append("images[]", file));
+    selectedFiles.forEach((file, index) => formData.append(`images[${index}]`, file));
     try {
-      await axiosInstance.post(`/products/add-images/${id}`, formData);
+      await axiosInstance.post(`/products/add-images/${id}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       await fetchProduct();
       setShowImageModal(false);
       setSelectedFiles([]);
