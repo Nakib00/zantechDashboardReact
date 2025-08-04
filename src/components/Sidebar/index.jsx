@@ -82,6 +82,10 @@ const Sidebar = () => {
               path: "/products/buying-price",
               label: "Product Buying Price",
             },
+            {
+              path: "/products/in-stock",
+              label: "In Stock",
+            },
           ],
         },
         {
