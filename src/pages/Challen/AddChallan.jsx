@@ -6,8 +6,10 @@ import axiosInstance from "../../config/axios";
 import { Card, Form, Button, Row, Col, ListGroup } from "react-bootstrap";
 import Select from 'react-select/async';
 import "./Challen.css";
+import usePageTitle from '../../hooks/usePageTitle';
 
 const AddChallan = () => {
+  usePageTitle('Add New Challan');
   const navigate = useNavigate();
   const [selectedItems, setSelectedItems] = useState([]);
   const [suppliers, setSuppliers] = useState([]);

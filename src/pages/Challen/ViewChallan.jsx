@@ -28,8 +28,10 @@ import {
 import Select from "react-select/async";
 import Loading from "../../components/Loading";
 import "./Challan.css";
+import usePageTitle from '../../hooks/usePageTitle';
 
 const ViewChallan = () => {
+  usePageTitle('View Challan Details');
   const { id } = useParams();
   const navigate = useNavigate();
   const [challan, setChallan] = useState(null);

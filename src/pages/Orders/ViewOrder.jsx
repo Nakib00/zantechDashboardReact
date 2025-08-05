@@ -25,8 +25,10 @@ import StatusUpdateModal from "../../components/Orders/ViewOrder/StatusUpdateMod
 import EmailModal from "../../components/Orders/ViewOrder/EmailModal";
 import InvoiceDocument from '../../components/InvoiceDocument';
 import EditShippingAddressModal from "../../components/Orders/EditShippingAddressModal";
+import usePageTitle from '../../hooks/usePageTitle';
 
 const ViewOrder = () => {
+  usePageTitle('View Order Details');
   const { id } = useParams();
   const navigate = useNavigate();
   const [orderData, setOrderData] = useState(null);

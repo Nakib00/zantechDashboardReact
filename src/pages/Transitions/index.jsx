@@ -21,8 +21,10 @@ import {
 import Loading from "../../components/Loading";
 import "./Transitions.css";
 import "../Categories/Categories.css";
+import usePageTitle from '../../hooks/usePageTitle';
 
 const Transitions = () => {
+  usePageTitle('Manage Transitions');
   const [transitions, setTransitions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchParams, setSearchParams] = useState({

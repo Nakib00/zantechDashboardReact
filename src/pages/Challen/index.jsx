@@ -9,8 +9,10 @@ import ChallanFilters from '../../components/Challan/ChallanList/ChallanFilters'
 import ChallanTable from '../../components/Challan/ChallanList/ChallanTable';
 import ChallanPagination from '../../components/Challan/ChallanList/ChallanPagination';
 import './Challan.css';
+import usePageTitle from '../../hooks/usePageTitle';
 
 const Challan = () => {
+  usePageTitle('Manage Challans');
   const [challans, setChallans] = useState([]);
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);

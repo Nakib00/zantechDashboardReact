@@ -23,8 +23,10 @@ import {
 } from "react-bootstrap";
 import Loading from "../../components/Loading";
 import "./Categories.css";
+import usePageTitle from '../../hooks/usePageTitle';
 
 const Categories = () => {
+  usePageTitle('Manage Categories');
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pageLoading, setPageLoading] = useState(true);

@@ -12,8 +12,10 @@ import OrderSummary from '../../components/Orders/CreateOrder/OrderSummary';
 import AddShippingAddressModal from '../../components/Customers/AddShippingAddressModal';
 import '../Categories/Categories.css';
 import '../Products/AddProduct.css';
+import usePageTitle from '../../hooks/usePageTitle';
 
 const CreateOrder = () => {
+  usePageTitle('Create New Order');
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);

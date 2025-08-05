@@ -5,8 +5,10 @@ import axiosInstance from "../../config/axios";
 import { Card, Form, InputGroup, Button, Table, Row, Col, Modal } from "react-bootstrap";
 import Loading from "../../components/Loading";
 import "./Contact.css";
+import usePageTitle from '../../hooks/usePageTitle';
 
 const Contact = () => {
+  usePageTitle('Manage Contacts');
   const [contacts, setContacts] = useState([]);
   const [filteredContacts, setFilteredContacts] = useState([]);
   const [loading, setLoading] = useState(true);

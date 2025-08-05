@@ -19,9 +19,11 @@ import {
 } from "react-bootstrap";
 import axiosInstance from "../../config/axios";
 import Loading from "../../components/Loading";
+import usePageTitle from '../../hooks/usePageTitle';
 import "./Products.css";
 
 const InStockProducts = () => {
+  usePageTitle('In Stock Products');
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);

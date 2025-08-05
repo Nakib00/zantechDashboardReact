@@ -8,10 +8,12 @@ import ProductHeader from "../../components/Products/ProductHeader";
 import ProductInformation from "../../components/Products/ProductInformation";
 import ProductImages from "../../components/Products/ProductImages";
 import ProductAttributes from "../../components/Products/ProductAttributes";
+import usePageTitle from '../../hooks/usePageTitle';
 import ProductBundle from "../../components/Products/ProductBundle";
 import "./Products.css";
 
 const ViewProduct = () => {
+  usePageTitle('Product Details');
   const { id } = useParams();
   const navigate = useNavigate();
   const [product, setProduct] = useState(null);

@@ -6,8 +6,10 @@ import { toast } from "react-hot-toast";
 import axiosInstance from "../../config/axios";
 import Loading from "../../components/Loading";
 import "./Expenses.css";
+import usePageTitle from '../../hooks/usePageTitle';
 
 const ViewExpense = () => {
+  usePageTitle('View Expense Details');
   const { id } = useParams();
   const navigate = useNavigate();
   const [expense, setExpense] = useState(null);

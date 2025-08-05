@@ -5,8 +5,10 @@ import axiosInstance from '../../config/axios';
 import { Card, Form, Button, Modal, InputGroup, Pagination, Row, Col } from 'react-bootstrap';
 import Loading from '../../components/Loading';
 import './HeroImages.css';
+import usePageTitle from '../../hooks/usePageTitle';
 
 const HeroImages = () => {
+  usePageTitle('Manage Hero Images');
   const [heroImages, setHeroImages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);

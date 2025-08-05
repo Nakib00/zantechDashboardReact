@@ -10,8 +10,10 @@ import ProductTable from '../../components/Products/ProductsList/ProductTable';
 import ProductPagination from '../../components/Products/ProductsList/ProductPagination';
 import QuickEditModal from '../../components/Products/ProductsList/QuickEditModal';
 import './Products.css';
+import usePageTitle from '../../hooks/usePageTitle';
 
 const Products = () => {
+  usePageTitle('Manage Products');
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);

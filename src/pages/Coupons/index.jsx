@@ -23,8 +23,10 @@ import {
 } from "react-bootstrap";
 import "./Coupons.css";
 import Loading from "../../components/Loading";
+import usePageTitle from '../../hooks/usePageTitle';
 
 const Coupons = () => {
+  usePageTitle('Manage Coupons');
   const [coupons, setCoupons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pageLoading, setPageLoading] = useState(true);

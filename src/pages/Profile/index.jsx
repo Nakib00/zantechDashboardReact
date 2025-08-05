@@ -10,8 +10,10 @@ import {
 } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import "./Profile.css";
+import usePageTitle from '../../hooks/usePageTitle';
 
 const Profile = () => {
+  usePageTitle('User Profile');
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 

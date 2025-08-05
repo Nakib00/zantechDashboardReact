@@ -4,8 +4,10 @@ import { toast } from 'react-hot-toast';
 import axiosInstance from '../../config/axios';
 import { Card, Form, InputGroup, Button, Pagination, Row, Col, Table, Modal } from 'react-bootstrap';
 import Loading from '../../components/Loading';
+import usePageTitle from '../../hooks/usePageTitle';
 
 const ProductBuyingPrice = () => {
+    usePageTitle('Product Buying Prices');
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchParams, setSearchParams] = useState({

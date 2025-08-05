@@ -7,8 +7,10 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import Loading from '../../components/Loading';
 import './Activity.css';
+import usePageTitle from '../../hooks/usePageTitle';
 
 const Activity = () => {
+  usePageTitle('Activity Logs'); 
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showUserModal, setShowUserModal] = useState(false);

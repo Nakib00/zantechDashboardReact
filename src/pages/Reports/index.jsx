@@ -4,8 +4,10 @@ import { toast } from 'react-hot-toast';
 import axiosInstance from '../../config/axios';
 import Loading from '../../components/Loading';
 import './Reports.css';
+import usePageTitle from '../../hooks/usePageTitle';
 
 const Reports = () => {
+  usePageTitle('Reports Overview');
   const [loading, setLoading] = useState(true);
   const [monthlyComparison, setMonthlyComparison] = useState([]);
   const [topSellingItems, setTopSellingItems] = useState([]);

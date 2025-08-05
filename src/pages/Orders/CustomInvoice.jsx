@@ -5,8 +5,10 @@ import { FaArrowLeft, FaPlus, FaTrash } from 'react-icons/fa';
 import InvoiceDocument from '../../components/InvoiceDocument';
 import { toast } from 'react-hot-toast';
 import './CustomInvoice.css';
+import usePageTitle from '../../hooks/usePageTitle';
 
 const CustomInvoice = () => {
+    usePageTitle('Create Custom Invoice');
     const navigate = useNavigate();
     const [customerInfo, setCustomerInfo] = useState({
         name: '',

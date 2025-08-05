@@ -9,10 +9,11 @@ import Categorization from '../../components/Products/AddProduct/Categorization'
 import ImageUpload from '../../components/Products/AddProduct/ImageUpload';
 import BundleOptions from '../../components/Products/AddProduct/BundleOptions';
 import { Row, Col } from 'react-bootstrap';
-
+import usePageTitle from '../../hooks/usePageTitle';
 import './AddProduct.css';
 
 const AddProduct = () => {
+  usePageTitle('Add New Product');
   const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);

@@ -5,8 +5,10 @@ import { FaLock, FaEnvelope, FaEye, FaEyeSlash } from 'react-icons/fa';
 import logo from '../../assets/zantechLogo.png';
 import { authService } from '../../services/api';
 import './Login.css';
+import usePageTitle from '../../hooks/usePageTitle';
 
 const Login = () => {
+  usePageTitle('Login to Your Account');
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',

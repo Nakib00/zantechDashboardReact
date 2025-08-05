@@ -8,8 +8,10 @@ import Loading from "../../components/Loading";
 import AddShippingAddressModal from "../../components/Customers/AddShippingAddressModal";
 import EditShippingAddressModal from "../../components/Customers/EditShippingAddressModal";
 import "./Customers.css";
+import usePageTitle from '../../hooks/usePageTitle';
 
 const ViewCustomer = () => {
+  usePageTitle('View Customer Details');
   const { id } = useParams();
   const navigate = useNavigate();
   const [customer, setCustomer] = useState(null);

@@ -2,8 +2,10 @@ import React from "react";
 import { Link } from "react-router-dom";
 import logo from "../../assets/zantechInvoiceLogo.png";
 import "./NotFound.css";
+import usePageTitle from '../../hooks/usePageTitle';
 
 const NotFound = () => {
+    usePageTitle('Page Not Found');
   return (
     <div className="not-found-container">
       <div className="not-found-box">

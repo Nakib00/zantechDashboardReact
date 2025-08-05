@@ -23,8 +23,10 @@ import {
 } from "react-bootstrap";
 import Loading from "../../components/Loading";
 import "./Orders.css";
+import usePageTitle from '../../hooks/usePageTitle';
 
 const Orders = () => {
+  usePageTitle('Manage Orders');
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);

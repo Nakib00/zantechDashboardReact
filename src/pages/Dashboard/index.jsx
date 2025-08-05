@@ -8,8 +8,10 @@ import DashboardStats from '../../components/Dashboard/DashboardStats';
 import DueOrdersTable from '../../components/Dashboard/DueOrdersTable';
 import MonthlyComparisonChart from '../../components/Dashboard/MonthlyComparisonChart';
 import SalesOverTimeChart from '../../components/Dashboard/SalesOverTimeChart';
+import usePageTitle from '../../hooks/usePageTitle';
 
 const Dashboard = () => {
+    usePageTitle('Dashboard Overview'); 
     const [dashboardData, setDashboardData] = useState({
         total_order_count: 0,
         new_order_count: 0,

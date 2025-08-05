@@ -6,8 +6,10 @@ import { Card, Form, Button, Modal, Pagination, Table, Row, Col } from "react-bo
 import Select from "react-select/async";
 import Loading from "../../components/Loading";
 import "./Ratings.css";
+import usePageTitle from '../../hooks/usePageTitle';
 
 const Ratings = () => {
+  usePageTitle('Manage Ratings');
   const [ratings, setRatings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);

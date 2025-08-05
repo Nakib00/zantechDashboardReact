@@ -6,8 +6,10 @@ import axiosInstance from '../../config/axios';
 import { Card, Form, InputGroup, Button, Pagination, Row, Col } from 'react-bootstrap';
 import Loading from '../../components/Loading';
 import './Customers.css';
+import usePageTitle from '../../hooks/usePageTitle';
 
 const Customers = () => {
+  usePageTitle('Manage Customers');
   const navigate = useNavigate();
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);

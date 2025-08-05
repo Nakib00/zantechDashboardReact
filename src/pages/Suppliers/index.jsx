@@ -5,8 +5,10 @@ import axiosInstance from "../../config/axios";
 import { Card, Form, InputGroup, Button, Table, Row, Col, Modal } from "react-bootstrap";
 import Loading from "../../components/Loading";
 import "./Suppliers.css";
+import usePageTitle from '../../hooks/usePageTitle';
 
 const Suppliers = () => {
+    usePageTitle('Manage Suppliers');
     const [suppliers, setSuppliers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);

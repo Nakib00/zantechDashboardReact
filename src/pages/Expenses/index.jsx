@@ -7,8 +7,10 @@ import "react-datepicker/dist/react-datepicker.css";
 import "./Expenses.css";
 import { Link } from "react-router-dom";
 import Loading from "../../components/Loading";
+import usePageTitle from '../../hooks/usePageTitle';
 
 const Expenses = () => {
+  usePageTitle('Manage Expenses');
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({
