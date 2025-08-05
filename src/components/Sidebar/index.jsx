@@ -23,6 +23,7 @@ import {
   MdContactMail,
   MdExpandMore,
   MdExpandLess,
+  MdHistory,
 } from "react-icons/md";
 import { Nav, Badge, Collapse } from "react-bootstrap";
 import { useOrderContext } from "../../context/OrderContext";
@@ -120,6 +121,11 @@ const Sidebar = () => {
           icon: <MdContactMail size={22} />,
           label: "Contacts",
         },
+        {
+          path: "/activity",
+          icon: <MdHistory size={22} />,
+          label: "Activity",
+        },
       ],
     },
     {
@@ -146,7 +152,7 @@ const Sidebar = () => {
       title: "Reports",
       items: [
         {
-          path: "/reports", 
+          path: "/reports",
           icon: <MdAnalytics size={22} />,
           label: "Reports",
         },
