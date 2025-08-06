@@ -153,7 +153,7 @@ const OurAmbassadors = () => {
                     </Button>
                 </Card.Header>
                 <Card.Body>
-                    <Row xs={1} md={2} lg={3} className="g-4">
+                    <Row xs={1} md={2} lg={4} className="g-4">
                         {ambassadors.map((ambassador) => (
                             <Col key={ambassador.id}>
                                 <Card className="h-100 shadow-sm ambassador-card">

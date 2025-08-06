@@ -4,6 +4,7 @@ import { toast } from 'react-hot-toast';
 import axiosInstance from '../../config/axios';
 import { FaPlus, FaTrash, FaEdit, FaTag, FaTimes } from 'react-icons/fa';
 import usePageTitle from '../../hooks/usePageTitle';
+import './Projects.css';
 
 const Projects = () => {
     usePageTitle('Our Projects');
@@ -212,7 +213,7 @@ const Projects = () => {
                     </Button>
                 </Card.Header>
                 <Card.Body>
-                    <Row xs={1} md={2} lg={3} className="g-4">
+                    <Row xs={1} md={2} lg={4} className="g-4">
                         {projects.map((project) => (
                             <Col key={project.id}>
                                 <Card className="h-100 shadow-sm project-card">

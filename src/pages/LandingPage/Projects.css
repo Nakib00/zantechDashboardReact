@@ -1,29 +1,29 @@
-.ambassador-card {
+.project-card {
     transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
     border: 1px solid #e2e8f0;
     border-radius: 12px;
     overflow: hidden;
 }
 
-.ambassador-card:hover {
+.project-card:hover {
     transform: translateY(-8px);
     box-shadow: 0 12px 24px rgba(0,0,0,0.12) !important;
 }
 
-.ambassador-card-img {
+.project-card-img {
     height: 160px;
     object-fit: cover;
     border-bottom: 1px solid #e2e8f0;
 }
 
-.ambassador-name {
+.project-name {
     font-weight: 700;
     font-size: 1rem;
     color: #1e293b;
     margin-bottom: 0.25rem;
 }
 
-.ambassador-bio {
+.project-bio {
     font-size: 0.85rem;
     color: #64748b;
     margin-top: 0.5rem;
