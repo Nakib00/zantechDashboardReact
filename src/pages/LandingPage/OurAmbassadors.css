@@ -1,0 +1,28 @@
+.ambassador-card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    border: none;
+}
+
+.ambassador-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.1) !important;
+}
+
+.ambassador-card-img {
+    height: 180px;
+    object-fit: cover;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.ambassador-name {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #2c3e50;
+    margin-bottom: 0.25rem;
+}
+
+.ambassador-bio {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin-top: 0.75rem;
+}
