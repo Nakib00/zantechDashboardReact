@@ -34,7 +34,8 @@ import HeroImages from './pages/HeroImages';
 import Contact from './pages/Contact';
 import { OrderProvider } from './context/OrderContext';
 import Reports from './pages/Reports';
-import NotFound from './pages/NotFound'; 
+import NotFound from './pages/NotFound';
+import LandingPage from "./pages/LandingPage";
 
 const PrivateRoute = ({ children }) => {
   const token = localStorage.getItem('token');
@@ -89,7 +90,8 @@ const App = () => {
                         <Route path="/orders/:id" element={<ViewOrder />} />
                         <Route path="/settings/hero" element={<HeroImages />} />
                         <Route path="/reports" element={<Reports />} />
-                        <Route path="*" element={<NotFound />} /> 
+                        <Route path="/landing" element={<LandingPage />} />
+                        <Route path="*" element={<NotFound />} />
                       </Routes>
                     </div>
                   </div>

@@ -24,6 +24,7 @@ import {
   MdExpandMore,
   MdExpandLess,
   MdHistory,
+  MdWeb,
 } from "react-icons/md";
 import { Nav, Badge, Collapse } from "react-bootstrap";
 import { useOrderContext } from "../../context/OrderContext";
@@ -36,7 +37,7 @@ const Sidebar = () => {
   const [openSections, setOpenSections] = useState({});
 
   const toggleSection = (title) => {
-    setOpenSections(prev => ({ ...prev, [title]: !prev[title] }));
+    setOpenSections((prev) => ({ ...prev, [title]: !prev[title] }));
   };
 
   const menuItems = [
@@ -148,7 +149,7 @@ const Sidebar = () => {
         },
       ],
     },
-        {
+    {
       title: "Reports",
       items: [
         {
@@ -159,20 +160,25 @@ const Sidebar = () => {
       ],
     },
     {
-        title: "Settings",
-        items: [
-          {
-            path: "/settings/hero",
-            icon: <MdSettings size={22} />,
-            label: "Hero Section",
-          },
-          {
-            path: "/settings/documents",
-            icon: <MdSettings size={22} />,
-            label: "Documents",
-          },
-        ],
-      },
+      title: "Settings",
+      items: [
+        {
+          path: "/settings/hero",
+          icon: <MdSettings size={22} />,
+          label: "Hero Section",
+        },
+        {
+          path: "/landing",
+          icon: <MdWeb size={22} />,
+          label: "Landing Page",
+        },
+        {
+          path: "/settings/documents",
+          icon: <MdSettings size={22} />,
+          label: "Documents",
+        },
+      ],
+    },
   ];
 
   const toggleSidebar = () => {
@@ -243,7 +249,11 @@ const Sidebar = () => {
                         {!collapsed && (
                           <>
                             <span className="flex-grow-1">{item.label}</span>
-                            {isSectionOpen ? <MdExpandLess /> : <MdExpandMore />}
+                            {isSectionOpen ? (
+                              <MdExpandLess />
+                            ) : (
+                              <MdExpandMore />
+                            )}
                           </>
                         )}
                       </Nav.Link>
