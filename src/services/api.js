@@ -10,7 +10,11 @@ const handleResponse = (response) => {
 
 // API Error Handler
 const handleError = (error) => {
-  const message = error.response?.data?.message || error.message || 'Something went wrong';
+    const message = error.response?.data?.message ||
+    (error.response?.data?.errors ?
+      Object.values(error.response.data.errors).flat().join(', ') :
+      error.message ||
+      'Something went wrong');
   throw new Error(message);
 };
 
@@ -69,4 +73,4 @@ export const userService = {
 export default {
   auth: authService,
   user: userService,
-}; 
+};
