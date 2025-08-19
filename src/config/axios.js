@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = 'http://127.0.0.1:8000/api';
+const BASE_URL = 'https://hubbackend.desklago.com/api';
 
 const axiosInstance = axios.create({
   baseURL: BASE_URL,
