@@ -144,10 +144,10 @@ const Staff = () => {
         throw new Error(response.data.message || "Failed to add staff");
       }
     } catch (error) {
-      const errorMessage = error.response?.data?.message ||
-        (error.response?.data?.errors ?
+      const errorMessage = error.response?.data?.message || 
+        (error.response?.data?.errors ? 
           Object.values(error.response.data.errors).flat().join(', ') :
-          error.message ||
+          error.message || 
           "Failed to add staff");
       
       toast.error(errorMessage);
@@ -175,11 +175,11 @@ const Staff = () => {
   const handleToggleStatus = async (id) => {
     setStatusToggleLoading(prev => ({...prev, [id]: true}));
     try {
-        const response = await axiosInstance.post(`/users/toggle-status/${id}`);
+        const response = await axiosInstance.patch(`/users/toggle-status/${id}`);
         if (response.data.success) {
             toast.success(response.data.message || "Status updated successfully");
             setStaff(prevStaff => prevStaff.map(member => 
-                member.id === id ? {...member, status: response.data.data} : member
+                member.id === id ? {...member, status: Number(response.data.data)} : member
             ));
         } else {
             throw new Error(response.data.message || "Failed to update status");
@@ -293,12 +293,12 @@ const Staff = () => {
                       <td>{staffMember.type}</td>
                       <td>
                         <Button
-                            variant={staffMember.status === 1 ? 'success' : 'secondary'}
+                            variant={Number(staffMember.status) === 1 ? 'success' : 'secondary'}
                             size="sm"
                             onClick={() => handleToggleStatus(staffMember.id)}
                             disabled={statusToggleLoading[staffMember.id]}
                         >
-                            {statusToggleLoading[staffMember.id] ? <FaSpinner className="spinner" /> : (staffMember.status === 1 ? 'Active' : 'Inactive')}
+                            {statusToggleLoading[staffMember.id] ? <FaSpinner className="spinner" /> : (Number(staffMember.status) === 1 ? 'Active' : 'Inactive')}
                         </Button>
                       </td>
                       <td>
