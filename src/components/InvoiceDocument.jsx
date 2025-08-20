@@ -1,4 +1,5 @@
 import React from "react";
+import logo from "../assets/zantechInvoiceLogo.png"
 
 const InvoiceDocument = ({ orderData }) => {
   if (!orderData) {
@@ -127,7 +128,7 @@ const InvoiceDocument = ({ orderData }) => {
       <div class="container">
         <div class="header">
           <div class="header-left">
-            <img src="/src/assets/zantechInvoiceLogo.png" alt="ZAN Tech Logo">
+            <img src=${logo} alt="ZAN Tech Logo">
             <div>
               <span>ZAN TECH</span>
               <small>Awaken your hidden talent.</small>
