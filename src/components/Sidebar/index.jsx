@@ -57,16 +57,6 @@ const Sidebar = () => {
       ],
     },
     {
-      title: "Staff Management",
-      items: [
-        {
-          path: "/staff",
-          icon: <MdPeople size={22} />,
-          label: "Staff",
-        },
-      ],
-    },
-    {
       title: "Management",
       items: [
         {

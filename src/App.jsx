@@ -36,7 +36,6 @@ import { OrderProvider } from './context/OrderContext';
 import Reports from './pages/Reports';
 import NotFound from './pages/NotFound';
 import LandingPage from "./pages/LandingPage";
-import Staff from "./pages/Staff";
 
 const PrivateRoute = ({ children }) => {
   const token = localStorage.getItem('token');
@@ -92,7 +91,6 @@ const App = () => {
                         <Route path="/settings/hero" element={<HeroImages />} />
                         <Route path="/reports" element={<Reports />} />
                         <Route path="/landing" element={<LandingPage />} />
-                        <Route path="/staff" element={<Staff />} />
                         <Route path="*" element={<NotFound />} />
                       </Routes>
                     </div>
