@@ -60,6 +60,11 @@ const Sidebar = () => {
       title: "Management",
       items: [
         {
+          path: "/staff",
+          icon: <MdPeople size={22} />,
+          label: "Staff",
+        },
+        {
           path: "/orders",
           icon: <MdShoppingCart size={22} />,
           label: "Orders",
