@@ -185,7 +185,16 @@ const Suppliers = () => {
     const headers = [
         { key: 'id', label: 'ID', render: (row) => `#${row.id}` },
         { key: 'name', label: 'Name' },
-        { key: 'phone', label: 'Phone' },
+        {
+            key: 'phone',
+            label: 'Phone',
+            render: (row) => (
+                <div>
+                    <div>{row.phone}</div>
+                    {row.phone2 && <div className="text-muted">{row.phone2}</div>}
+                </div>
+            )
+        },
         { key: 'address', label: 'Address' },
         { key: 'total_amount', label: 'Total Amount', render: (row) => `৳${parseFloat(row.total_amount).toLocaleString()}` },
         {
