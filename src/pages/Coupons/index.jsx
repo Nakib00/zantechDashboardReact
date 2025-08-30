@@ -217,6 +217,20 @@ const Coupons = () => {
     }
   };
 
+  const handleToggleStatus = async (id) => {
+    try {
+      const response = await axiosInstance.patch(`/coupons/toggle-status/${id}`);
+      if (response.data.success) {
+        toast.success("Status updated successfully");
+        fetchCoupons(pagination.current_page);
+      } else {
+        throw new Error(response.data.message || "Failed to toggle status");
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to toggle status");
+    }
+  };
+
   const handleSearch = (e) => {
     const { value } = e.target;
     setSearchParams((prev) => ({
@@ -358,7 +372,19 @@ const Coupons = () => {
     { key: 'is_global', label: 'Global', render: (row) => (row.is_global ? 'True' : 'False') },
     { key: 'start_date', label: 'Start Date' },
     { key: 'end_date', label: 'End Date' },
-    { key: 'status', label: 'Status', render: (row) => (row.status ? <Badge bg="success">Active</Badge> : <Badge bg="danger">Inactive</Badge>) },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (row) => (
+        <Badge
+          bg={row.status ? "success" : "danger"}
+          onClick={() => handleToggleStatus(row.id)}
+          style={{ cursor: "pointer" }}
+        >
+          {row.status ? "Active" : "Inactive"}
+        </Badge>
+      ),
+    },
   ];
 
   const renderActions = (coupon) => (
