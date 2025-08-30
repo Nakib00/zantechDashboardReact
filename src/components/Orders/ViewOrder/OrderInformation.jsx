@@ -1,8 +1,8 @@
 import React from 'react';
-import { Card, Row, Col, Badge } from 'react-bootstrap';
+import { Card, Row, Col } from 'react-bootstrap';
 import { FaBox } from 'react-icons/fa';
 
-const OrderInformation = ({ order }) => {
+const OrderInformation = ({ order, coupon }) => {
   const getStatusLabel = (status) => {
     const statusMap = {
       "0": "Processing",
@@ -82,6 +82,7 @@ const OrderInformation = ({ order }) => {
                 <strong className="text-muted">Discount:</strong>
                 <div className="fw-medium text-danger">
                   -৳{parseFloat(order.discount).toLocaleString()}
+                  {coupon && ` (${coupon.code})`}
                 </div>
               </div>
             )}
@@ -89,12 +90,6 @@ const OrderInformation = ({ order }) => {
               <strong className="text-muted">Total Amount:</strong>
               <div className="fw-bold fs-5">
                 ৳{parseFloat(order.total_amount).toLocaleString()}
-              </div>
-            </div>
-            <div className="mb-3">
-              <strong className="text-muted">Discount Amount:</strong>
-              <div className="fw-bold fs-5">
-                ৳{parseFloat(order.discount).toLocaleString()}
               </div>
             </div>
           </Col>

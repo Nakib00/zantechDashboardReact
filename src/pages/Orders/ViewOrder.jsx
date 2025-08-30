@@ -14,6 +14,7 @@ import {
   Form,
   Row,
   Col,
+  Badge,
 } from "react-bootstrap";
 import Loading from "../../components/Loading";
 import "../Categories/Categories.css";
@@ -267,7 +268,7 @@ const ViewOrder = () => {
           />
           <Row>
             <Col md={6}>
-              <OrderInformation order={order} />
+              <OrderInformation order={order} coupon={coupon} />
             </Col>
             <Col md={6}>
               <CustomerInformation
