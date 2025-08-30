@@ -74,7 +74,7 @@ const Ratings = () => {
       return response.data.data.map((product) => ({
         value: product.id,
         label: `${product.name} (৳${product.price})`,
-        image: product.image && product.image.length > 0 ? product.image[0] : null,
+        image: product.image_paths && product.image_paths.length > 0 ? product.image_paths[0] : null,
       }));
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to fetch products");
@@ -230,9 +230,9 @@ const Ratings = () => {
       render: (row) => (
         row.product ? (
           <div className="d-flex align-items-center">
-            {row.product.image && row.product.image.length > 0 ? (
+            {row.product.image ? (
               <img
-                src={row.product.image[0]}
+                src={row.product.image}
                 alt={row.product.name}
                 className="product-image"
               />
@@ -247,6 +247,17 @@ const Ratings = () => {
           "N/A"
         )
       ),
+    },
+    {
+      key: 'user',
+      label: 'User',
+      render: (row) => (
+        row.user ? (
+          <div>{row.user.name}</div>
+        ) : (
+          "N/A"
+        )
+      )
     },
     {
       key: 'status',
