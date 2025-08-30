@@ -1,6 +1,8 @@
 import axios from 'axios';
 
 const BASE_URL = 'https://zantechbackend.desklago.com/api';
+export const IMAGE_BASE_URL = 'https://zantechbackend.desklago.com/public/product_image';
+
 
 const axiosInstance = axios.create({
   baseURL: BASE_URL,

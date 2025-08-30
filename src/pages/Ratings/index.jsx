@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { FaPlus, FaEdit, FaTrash, FaTimes } from "react-icons/fa";
 import { toast } from "react-hot-toast";
-import axiosInstance from "../../config/axios";
+import axiosInstance, { IMAGE_BASE_URL } from "../../config/axios"; // Import IMAGE_BASE_URL
 import { Card, Form, Button, Modal, Pagination, Table, Row, Col } from "react-bootstrap";
 import Select from "react-select/async";
 import Loading from "../../components/Loading";
@@ -110,7 +110,7 @@ const Ratings = () => {
   const handleToggleStatus = async (id) => {
     setStatusToggleLoading((prev) => ({ ...prev, [id]: true }));
     try {
-      const response = await axiosInstance.post(`/ratings/toggle-status/${id}`);
+      const response = await axiosInstance.patch(`/ratings/toggle-status/${id}`);
       if (response.data.success) {
         setRatings((prevRatings) =>
           prevRatings.map((rating) =>
