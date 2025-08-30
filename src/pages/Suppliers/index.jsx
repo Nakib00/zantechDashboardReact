@@ -123,16 +123,28 @@ const Suppliers = () => {
         }
     };
 
-    const handleUpdatePaidAmount = async (supplierId) => {
+    const handleUpdatePaidAmount = async (supplierId, newAmount) => {
+        if (updateLoading || !newAmount || newAmount < 0) return;
+
+        const supplier = suppliers.find((s) => s.id === supplierId);
+        if (!supplier) return;
+
+        const totalAmount = parseFloat(supplier.total_amount);
+        const paidAmount = parseFloat(newAmount);
+
+        if (paidAmount > totalAmount) {
+          toast.error("Paid amount cannot exceed total amount");
+          return;
+        }
+
         setUpdateLoading(true);
         try {
             const response = await axiosInstance.put(`/suppliers/update-paid-amount/${supplierId}`, {
-                paid_amount: paidAmountInput,
+                paid_amount: paidAmount,
             });
 
             if (response.data.success) {
                 toast.success("Paid amount updated successfully");
-                setEditingPaidAmount(null);
                 fetchSuppliers();
             } else {
                 toast.error("Failed to update paid amount");
@@ -141,6 +153,7 @@ const Suppliers = () => {
             toast.error(error.response?.data?.message || "An error occurred");
         } finally {
             setUpdateLoading(false);
+            setEditingPaidAmount(null);
         }
     };
 
@@ -179,44 +192,51 @@ const Suppliers = () => {
             key: 'paid_amount',
             label: 'Paid Amount',
             render: (row) => (
-                editingPaidAmount === row.id ? (
-                    <InputGroup size="sm">
-                        <Form.Control
-                            type="number"
-                            value={paidAmountInput}
-                            onChange={(e) => setPaidAmountInput(e.target.value)}
-                            autoFocus
-                        />
-                        <Button variant="outline-success" onClick={() => handleUpdatePaidAmount(row.id)} disabled={updateLoading}>
-                            {updateLoading ? <FaSpinner className="spinner" /> : <FaSave />}
-                        </Button>
-                        <Button variant="outline-secondary" onClick={() => setEditingPaidAmount(null)}>
-                            <FaTimes />
-                        </Button>
-                    </InputGroup>
-                ) : (
-                    <div className="d-flex align-items-center text-success">
-                        <span>৳{parseFloat(row.paid_amount).toLocaleString()}</span>
-                        <Button
-                            variant="link"
-                            size="sm"
-                            className="ms-2"
+                <div className="d-flex align-items-center gap-2">
+                    {editingPaidAmount === row.id ? (
+                        <>
+                            <Form.Control
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                defaultValue={row.paid_amount}
+                                onKeyPress={(e) => {
+                                    if (e.key === "Enter") {
+                                        handleUpdatePaidAmount(row.id, e.target.value);
+                                    }
+                                }}
+                                onBlur={(e) => handleUpdatePaidAmount(row.id, e.target.value)}
+                                autoFocus
+                                size="sm"
+                                style={{ width: "120px" }}
+                                disabled={updateLoading}
+                                className="modern-input"
+                            />
+                            {updateLoading && <FaSpinner className="spinner-border spinner-border-sm" />}
+                        </>
+                    ) : (
+                        <div
+                            className="d-flex align-items-center gap-2"
                             onClick={() => {
                                 setEditingPaidAmount(row.id);
                                 setPaidAmountInput(row.paid_amount);
                             }}
+                            style={{ cursor: "pointer" }}
                         >
-                            <FaEdit />
-                        </Button>
-                    </div>
-                )
+                            <span className="fw-medium text-success">
+                                ৳{parseFloat(row.paid_amount).toLocaleString()}
+                            </span>
+                            <FaEdit size={12} className="text-muted" />
+                        </div>
+                    )}
+                </div>
             )
         },
         {
             key: 'due_amount',
             label: 'Due Amount',
             render: (row) => (
-                <span className={row.due_amount > 0 ? 'text-danger' : ''}>
+                <span className={row.due_amount > 0 ? 'text-danger fw-bold' : 'text-success'}>
                     ৳{parseFloat(row.due_amount).toLocaleString()}
                 </span>
             )
