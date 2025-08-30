@@ -22,6 +22,7 @@ import Loading from "../../components/Loading";
 import "./Transitions.css";
 import "../Categories/Categories.css";
 import usePageTitle from '../../hooks/usePageTitle';
+import CommonTable from "../../components/Common/CommonTable";
 
 const Transitions = () => {
   usePageTitle('Manage Transitions');
@@ -57,7 +58,7 @@ const Transitions = () => {
 
   const formatDateForAPI = (date) => {
     if (!date) return null;
-    return date.toISOString().split('T')[0]; // Returns YYYY-MM-DD format
+    return date.toISOString().split('T')[0];
   };
 
   const fetchTransitions = async (page = searchParams.page) => {
@@ -116,7 +117,6 @@ const Transitions = () => {
       return;
     }
 
-    // For end date, set time to end of day (23:59:59)
     if (type === 'end' && value) {
       value.setHours(23, 59, 59, 999);
     }
@@ -197,7 +197,6 @@ const Transitions = () => {
       startPage = Math.max(1, endPage - maxPages + 1);
     }
 
-    // First page
     items.push(
       <Pagination.First
         key="first"
@@ -206,7 +205,6 @@ const Transitions = () => {
       />
     );
 
-    // Previous page
     items.push(
       <Pagination.Prev
         key="prev"
@@ -215,7 +213,6 @@ const Transitions = () => {
       />
     );
 
-    // Page numbers
     for (let number = startPage; number <= endPage; number++) {
       items.push(
         <Pagination.Item
@@ -228,7 +225,6 @@ const Transitions = () => {
       );
     }
 
-    // Next page
     items.push(
       <Pagination.Next
         key="next"
@@ -237,7 +233,6 @@ const Transitions = () => {
       />
     );
 
-    // Last page
     items.push(
       <Pagination.Last
         key="last"
@@ -248,6 +243,35 @@ const Transitions = () => {
 
     return items;
   };
+
+  const headers = [
+    { key: 'transition_id', label: 'ID', render: (row) => `#${row.transition_id}` },
+    { key: 'payment_id', label: 'Payment ID' },
+    { key: 'amount', label: 'Amount', render: (row) => `৳${parseFloat(row.amount).toLocaleString()}` },
+    { key: 'payment_details.order_id', label: 'Order ID' },
+    {
+      key: 'payment_details.status',
+      label: 'Status',
+      render: (row) => (
+        <span className={`status-badge ${row.payment_details.status === "1" ? "active" : "inactive"}`}>
+          {getStatusText(row.payment_details.status)}
+        </span>
+      ),
+    },
+    { key: 'payment_details.payment_type', label: 'Payment Type', render: (row) => getPaymentTypeText(row.payment_details.payment_type) },
+    { key: 'created_at', label: 'Date', render: (row) => new Date(row.created_at).toLocaleString() },
+  ];
+
+  const renderActions = (transition) => (
+    <Button
+      variant="outline-primary"
+      size="sm"
+      className="view-btn"
+      onClick={() => handleRowClick(transition)}
+    >
+      <FaEye className="me-1" /> View
+    </Button>
+  );
 
   if (loading && !transitions.length) {
     return <Loading />;
@@ -331,66 +355,14 @@ const Transitions = () => {
               </Col>
             </Row>
           </div>
-
-          <div className="table-container">
-            <div className="table-responsive">
-              <table className="table table-hover modern-table">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Payment ID</th>
-                    <th>Amount</th>
-                    <th>Order ID</th>
-                    <th>Status</th>
-                    <th>Payment Type</th>
-                    <th>Date</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {transitions.map((transition) => (
-                    <tr key={transition.transition_id}>
-                      <td className="fw-medium">#{transition.transition_id}</td>
-                      <td>{transition.payment_id}</td>
-                      <td className="fw-medium">
-                        ৳{parseFloat(transition.amount).toLocaleString()}
-                      </td>
-                      <td>{transition.payment_details.order_id}</td>
-                      <td>
-                        <span
-                          className={`status-badge ${
-                            transition.payment_details.status === "1"
-                              ? "active"
-                              : "inactive"
-                          }`}
-                        >
-                          {getStatusText(transition.payment_details.status)}
-                        </span>
-                      </td>
-                      <td>
-                        {getPaymentTypeText(
-                          transition.payment_details.payment_type
-                        )}
-                      </td>
-                      <td>
-                        {new Date(transition.created_at).toLocaleString()}
-                      </td>
-                      <td>
-                        <Button
-                          variant="outline-primary"
-                          size="sm"
-                          className="view-btn"
-                          onClick={() => handleRowClick(transition)}
-                        >
-                          <FaEye className="me-1" /> View
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          
+          <CommonTable
+            headers={headers}
+            data={transitions}
+            tableLoading={loading}
+            loading={loading}
+            renderActions={renderActions}
+          />
 
           {pagination.last_page > 1 && (
             <div className="pagination-container mt-4">
@@ -402,7 +374,6 @@ const Transitions = () => {
         </Card.Body>
       </Card>
 
-      {/* Payment Details Modal */}
       <Modal
         show={showPaymentModal}
         onHide={handleCloseModal}

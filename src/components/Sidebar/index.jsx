@@ -25,6 +25,7 @@ import {
   MdExpandLess,
   MdHistory,
   MdWeb,
+  MdPeopleOutline,
 } from "react-icons/md";
 import { Nav, Badge, Collapse } from "react-bootstrap";
 import { useOrderContext } from "../../context/OrderContext";
@@ -146,6 +147,16 @@ const Sidebar = () => {
           path: "/expenses",
           icon: <MdAttachMoney size={22} />,
           label: "Expenses",
+        },
+      ],
+    },
+    {
+      title: "Staff Management",
+      items: [
+        {
+          path: "/staff",
+          icon: <MdPeopleOutline size={22} />,
+          label: "Staff",
         },
       ],
     },

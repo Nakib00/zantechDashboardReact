@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaPlus, FaSpinner } from 'react-icons/fa';
+import { FaPlus, FaSpinner, FaEye, FaTrash } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
 import axiosInstance from '../../config/axios';
 import { Card, Button } from 'react-bootstrap';
 import Loading from '../../components/Loading';
 import ChallanFilters from '../../components/Challan/ChallanList/ChallanFilters';
-import ChallanTable from '../../components/Challan/ChallanList/ChallanTable';
 import ChallanPagination from '../../components/Challan/ChallanList/ChallanPagination';
+import CommonTable from '../../components/Common/CommonTable';
 import './Challan.css';
 import usePageTitle from '../../hooks/usePageTitle';
 
@@ -140,6 +140,39 @@ const Challan = () => {
     fetchChallans(page);
   };
 
+  const headers = [
+    { key: 'id', label: 'ID' },
+    { key: 'Date', label: 'Date' },
+    { key: 'supplier.name', label: 'Supplier' },
+    { key: 'items_count', label: 'Total Items' },
+    { key: 'total', label: 'Total Amount', render: (row) => `৳${parseFloat(row.total).toLocaleString()}` },
+  ];
+
+  const renderActions = (challan) => (
+    <div className="d-flex gap-2">
+      <Button 
+        variant="outline-primary" 
+        size="sm"
+        onClick={() => navigate(`/challans/${challan.id}`)}
+        title="View"
+        disabled={loading}
+        className="view-btn"
+      >
+        <FaEye />
+      </Button>
+      <Button 
+        variant="outline-danger" 
+        size="sm"
+        onClick={() => handleDeleteChallan(challan.id)}
+        title="Delete"
+        disabled={loading}
+        className="delete-btn"
+      >
+        {loading ? <FaSpinner className="spinner-border spinner-border-sm" /> : <FaTrash />}
+      </Button>
+    </div>
+  );
+
   if (pageLoading) {
     return <Loading />;
   }
@@ -180,12 +213,12 @@ const Challan = () => {
             setSearchParams={setSearchParams}
           />
 
-          <ChallanTable
-            challans={challans}
+          <CommonTable
+            headers={headers}
+            data={challans}
             tableLoading={tableLoading}
             loading={loading}
-            handleDeleteChallan={handleDeleteChallan}
-            navigate={navigate}
+            renderActions={renderActions}
           />
 
           <ChallanPagination

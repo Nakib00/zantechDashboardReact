@@ -2,10 +2,11 @@ import React, { useState, useEffect } from "react";
 import { FaTrash, FaSearch, FaSpinner, FaTimes, FaEye } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import axiosInstance from "../../config/axios";
-import { Card, Form, InputGroup, Button, Table, Row, Col, Modal } from "react-bootstrap";
+import { Card, Form, InputGroup, Button, Row, Col, Modal } from "react-bootstrap";
 import Loading from "../../components/Loading";
 import "./Contact.css";
 import usePageTitle from '../../hooks/usePageTitle';
+import CommonTable from "../../components/Common/CommonTable";
 
 const Contact = () => {
   usePageTitle('Manage Contacts');
@@ -106,6 +107,48 @@ const Contact = () => {
     return message.substring(0, maxLength) + "...";
   };
 
+  const headers = [
+    { key: 'id', label: 'ID', render: (row) => `#${row.id}` },
+    { key: 'name', label: 'Name' },
+    { key: 'email', label: 'Email' },
+    { key: 'phone', label: 'Phone' },
+    {
+      key: 'message',
+      label: 'Message',
+      render: (row) => (
+        <div className="d-flex align-items-center gap-2">
+          <span className="message-preview">
+            {truncateMessage(row.message)}
+          </span>
+          <Button
+            variant="outline-primary"
+            size="sm"
+            onClick={() => handleViewMessage(row.message, row)}
+            title="View Message"
+            className="view-message-btn"
+          >
+            <FaEye />
+          </Button>
+        </div>
+      ),
+    },
+    { key: 'created_at', label: 'Created At', render: (row) => new Date(row.created_at).toLocaleDateString() },
+  ];
+
+  const renderActions = (contact) => (
+    <div className="d-flex gap-2">
+      <Button
+        variant="outline-danger"
+        size="sm"
+        onClick={() => handleDeleteContact(contact.id)}
+        title="Delete"
+        className="delete-btn"
+      >
+        <FaTrash />
+      </Button>
+    </div>
+  );
+
   if (loading && !contacts.length) {
     return <Loading />;
   }
@@ -153,82 +196,18 @@ const Contact = () => {
               </Col>
             </Row>
           </div>
+          
+          <CommonTable
+            headers={headers}
+            data={filteredContacts}
+            tableLoading={loading}
+            loading={loading}
+            renderActions={renderActions}
+          />
 
-          <div className="table-container">
-            <div className="table-responsive">
-              <table className="table table-hover modern-table">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Phone</th>
-                    <th>Message</th>
-                    <th>Created At</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredContacts.length > 0 ? (
-                    filteredContacts.map((contact) => (
-                      <tr key={contact.id}>
-                        <td className="fw-medium">#{contact.id}</td>
-                        <td>{contact.name}</td>
-                        <td>{contact.email}</td>
-                        <td>{contact.phone}</td>
-                        <td>
-                          <div className="d-flex align-items-center gap-2">
-                            <span className="message-preview">
-                              {truncateMessage(contact.message)}
-                            </span>
-                            <Button
-                              variant="outline-primary"
-                              size="sm"
-                              onClick={() => handleViewMessage(contact.message, contact)}
-                              title="View Message"
-                              className="view-message-btn"
-                            >
-                              <FaEye />
-                            </Button>
-                          </div>
-                        </td>
-                        <td>{new Date(contact.created_at).toLocaleDateString()}</td>
-                        <td>
-                          <div className="d-flex gap-2">
-                            <Button
-                              variant="outline-danger"
-                              size="sm"
-                              onClick={() => handleDeleteContact(contact.id)}
-                              title="Delete"
-                              className="delete-btn"
-                            >
-                              <FaTrash />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="7" className="text-center py-4">
-                        {searchParams.search ? (
-                          <div className="text-muted">
-                            No contacts found matching "{searchParams.search}"
-                          </div>
-                        ) : (
-                          <div className="text-muted">No contacts available</div>
-                        )}
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
         </Card.Body>
       </Card>
 
-      {/* Message View Modal */}
       <Modal
         show={showMessageModal}
         onHide={handleCloseMessageModal}

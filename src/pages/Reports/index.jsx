@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Table, ButtonGroup, Button, Spinner } from 'react-bootstrap';
+import { Card, Row, Col, ButtonGroup, Button, Spinner } from 'react-bootstrap';
 import { toast } from 'react-hot-toast';
 import axiosInstance from '../../config/axios';
 import Loading from '../../components/Loading';
 import './Reports.css';
 import usePageTitle from '../../hooks/usePageTitle';
+import CommonTable from '../../components/Common/CommonTable';
 
 const Reports = () => {
   usePageTitle('Reports Overview');
@@ -81,6 +82,25 @@ const Reports = () => {
   
       return Array.from(dataMap.values()).reverse();
     };
+
+    const monthlyComparisonHeaders = [
+        { key: 'name', label: 'Month' },
+        { key: 'sales', label: 'Total Sales', render: (row) => <span className="text-end text-success">৳{row.sales.toLocaleString()}</span> },
+        { key: 'expenses', label: 'Total Expenses', render: (row) => <span className="text-end text-danger">৳{row.expenses.toLocaleString()}</span> },
+    ];
+
+    const topSellingItemsHeaders = [
+        { key: 'item_id', label: '#', render: (row, index) => index + 1 },
+        { key: 'name', label: 'Product Name' },
+        { key: 'price', label: 'Price', render: (row) => <span className="text-end">৳{parseFloat(row.price).toLocaleString()}</span> },
+        { key: 'total_sold', label: 'Total Sold', render: (row) => <span className="text-end fw-bold">{row.total_sold}</span> },
+    ];
+
+    const salesOverTimeHeaders = [
+        { key: 'date', label: 'Date' },
+        { key: 'total_sales', label: 'Total Sales', render: (row) => <span className="text-end text-success">৳{parseFloat(row.total_sales).toLocaleString()}</span> },
+        { key: 'order_count', label: 'Order Count', render: (row) => <span className="text-end">{row.order_count}</span> },
+    ];
   
     if (loading) {
       return <Loading />;
@@ -102,26 +122,12 @@ const Reports = () => {
                 <h5 className="mb-0">Monthly Sales vs. Expenses</h5>
               </Card.Header>
               <Card.Body>
-                <div className="table-responsive">
-                    <Table hover className="modern-table">
-                        <thead>
-                            <tr>
-                                <th>Month</th>
-                                <th className="text-end">Total Sales</th>
-                                <th className="text-end">Total Expenses</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {monthlyComparison.map((item, index) => (
-                            <tr key={index}>
-                                <td>{item.name}</td>
-                                <td className="text-end text-success">৳{item.sales.toLocaleString()}</td>
-                                <td className="text-end text-danger">৳{item.expenses.toLocaleString()}</td>
-                            </tr>
-                            ))}
-                        </tbody>
-                    </Table>
-                </div>
+                <CommonTable
+                    headers={monthlyComparisonHeaders}
+                    data={monthlyComparison}
+                    tableLoading={loading}
+                    loading={loading}
+                />
               </Card.Body>
             </Card>
           </Col>
@@ -132,28 +138,12 @@ const Reports = () => {
                 <h5 className="mb-0">Top Selling Items</h5>
               </Card.Header>
               <Card.Body>
-                <div className="table-responsive">
-                  <Table hover className="modern-table">
-                    <thead>
-                      <tr>
-                        <th>#</th>
-                        <th>Product Name</th>
-                        <th className="text-end">Price</th>
-                        <th className="text-end">Total Sold</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {topSellingItems.map((item, index) => (
-                        <tr key={item.item_id}>
-                          <td>{index + 1}</td>
-                          <td>{item.name}</td>
-                          <td className="text-end">৳{parseFloat(item.price).toLocaleString()}</td>
-                          <td className="text-end fw-bold">{item.total_sold}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </Table>
-                </div>
+                <CommonTable
+                    headers={topSellingItemsHeaders}
+                    data={topSellingItems}
+                    tableLoading={loading}
+                    loading={loading}
+                />
               </Card.Body>
             </Card>
           </Col>
@@ -174,26 +164,12 @@ const Reports = () => {
                   <Spinner animation="border" variant="primary" />
                 </div>
                  ) : (
-                <div className="table-responsive">
-                  <Table hover className="modern-table">
-                    <thead>
-                      <tr>
-                        <th>Date</th>
-                        <th className="text-end">Total Sales</th>
-                        <th className="text-end">Order Count</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {salesOverTime.map((item, index) => (
-                        <tr key={index}>
-                          <td>{item.date}</td>
-                          <td className="text-end text-success">৳{parseFloat(item.total_sales).toLocaleString()}</td>
-                          <td className="text-end">{item.order_count}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </Table>
-                </div>
+                    <CommonTable
+                        headers={salesOverTimeHeaders}
+                        data={salesOverTime}
+                        tableLoading={salesLoading}
+                        loading={salesLoading}
+                    />
                  )}
               </Card.Body>
             </Card>

@@ -6,6 +6,7 @@ import { Card, Form, Button, Modal, InputGroup, Pagination, Row, Col } from 'rea
 import Loading from '../../components/Loading';
 import './HeroImages.css';
 import usePageTitle from '../../hooks/usePageTitle';
+import CommonTable from '../../components/Common/CommonTable';
 
 const HeroImages = () => {
   usePageTitle('Manage Hero Images');
@@ -116,67 +117,31 @@ const HeroImages = () => {
   const renderPagination = () => {
     const items = [];
     const { current_page, last_page } = pagination;
+    const maxPages = 5;
+    let startPage = Math.max(1, current_page - Math.floor(maxPages / 2));
+    let endPage = Math.min(last_page, startPage + maxPages - 1);
 
-    // Previous button
-    items.push(
-      <Pagination.Prev
-        key="prev"
-        onClick={() => handlePageChange(current_page - 1)}
-        disabled={current_page === 1}
-      />
-    );
-
-    // First page
-    if (current_page > 2) {
-      items.push(
-        <Pagination.Item key={1} onClick={() => handlePageChange(1)}>
-          1
-        </Pagination.Item>
-      );
-      if (current_page > 3) {
-        items.push(<Pagination.Ellipsis key="ellipsis1" disabled />);
-      }
+    if (endPage - startPage + 1 < maxPages) {
+        startPage = Math.max(1, endPage - maxPages + 1);
     }
 
-    // Page numbers
-    const startPage = Math.max(1, current_page - 1);
-    const endPage = Math.min(last_page, current_page + 1);
-
+    items.push(<Pagination.Prev key="prev" onClick={() => handlePageChange(current_page - 1)} disabled={current_page === 1}/>);
+    if (startPage > 1) {
+        items.push(<Pagination.Item key={1} onClick={() => handlePageChange(1)}>1</Pagination.Item>);
+        if (startPage > 2) {
+            items.push(<Pagination.Ellipsis key="ellipsis1" disabled/>);
+        }
+    }
     for (let number = startPage; number <= endPage; number++) {
-      items.push(
-        <Pagination.Item
-          key={number}
-          active={number === current_page}
-          onClick={() => handlePageChange(number)}
-        >
-          {number}
-        </Pagination.Item>
-      );
+        items.push(<Pagination.Item key={number} active={number === current_page} onClick={() => handlePageChange(number)}>{number}</Pagination.Item>);
     }
-
-    // Last page
     if (endPage < last_page) {
-      if (endPage < last_page - 1) {
-        items.push(<Pagination.Ellipsis key="ellipsis2" disabled />);
-      }
-      items.push(
-        <Pagination.Item
-          key={last_page}
-          onClick={() => handlePageChange(last_page)}
-        >
-          {last_page}
-        </Pagination.Item>
-      );
+        if (endPage < last_page - 1) {
+            items.push(<Pagination.Ellipsis key="ellipsis2" disabled/>);
+        }
+        items.push(<Pagination.Item key={last_page} onClick={() => handlePageChange(last_page)}>{last_page}</Pagination.Item>);
     }
-
-    // Next button
-    items.push(
-      <Pagination.Next
-        key="next"
-        onClick={() => handlePageChange(current_page + 1)}
-        disabled={current_page === last_page}
-      />
-    );
+    items.push(<Pagination.Next key="next" onClick={() => handlePageChange(current_page + 1)} disabled={current_page === last_page}/>);
 
     return items;
   };
@@ -250,6 +215,36 @@ const HeroImages = () => {
     setShowPreviewModal(true);
   };
 
+  const headers = [
+    { key: 'id', label: 'ID', render: (row) => `#${row.id}` },
+    {
+      key: 'path',
+      label: 'Image',
+      render: (row) => (
+        <img
+          src={row.path}
+          alt={`Hero Image ${row.id}`}
+          className="rounded img-thumbnail cursor-pointer"
+          style={{ width: '200px', height: '100px', objectFit: 'cover' }}
+          onClick={() => handleImageClick(row)}
+        />
+      ),
+    },
+    { key: 'created_at', label: 'Created At', render: (row) => new Date(row.created_at).toLocaleString() },
+  ];
+
+  const renderActions = (image) => (
+    <Button
+      variant="outline-danger"
+      size="sm"
+      onClick={() => handleDelete(image.id)}
+      disabled={loading}
+      className="delete-btn"
+    >
+      <FaTrash className="me-1" /> Delete
+    </Button>
+  );
+
   if (loading && heroImages.length === 0) {
     return <Loading />;
   }
@@ -263,8 +258,8 @@ const HeroImages = () => {
               <h2 className="page-title mb-1">Hero Section Images</h2>
               <p className="text-muted mb-0">Manage and organize your hero section images</p>
             </div>
-            <Button 
-              variant="primary" 
+            <Button
+              variant="primary"
               onClick={() => setShowAddModal(true)}
               className="create-image-btn"
             >
@@ -289,60 +284,14 @@ const HeroImages = () => {
             </Row>
           </div>
 
-          <div className="table-container">
-            <div className="table-responsive">
-              <table className="table table-hover modern-table">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Image</th>
-                    <th>Name</th>
-                    <th>Phone</th>
-                    <th>Email</th>
-                    <th>Created At</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {heroImages.map((image) => (
-                    <tr key={image.id}>
-                      <td className="fw-medium">#{image.id}</td>
-                      <td>
-                        <img
-                          src={image.path}
-                          alt={`Hero Image ${image.id}`}
-                          className="rounded img-thumbnail cursor-pointer"
-                          style={{ 
-                            width: '200px', 
-                            height: '100px', 
-                            objectFit: 'cover',
-                            cursor: 'pointer'
-                          }}
-                          onClick={() => handleImageClick(image)}
-                        />
-                      </td>
-                      <td>{image.user_name || 'N/A'}</td>
-                      <td>{image.user_phone || 'N/A'}</td>
-                      <td>{image.user_email || 'N/A'}</td>
-                      <td>{new Date(image.created_at).toLocaleString()}</td>
-                      <td>
-                        <Button
-                          variant="outline-danger"
-                          size="sm"
-                          onClick={() => handleDelete(image.id)}
-                          disabled={loading}
-                          className="delete-btn"
-                        >
-                          <FaTrash className="me-1" /> Delete
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
+          <CommonTable
+            headers={headers}
+            data={heroImages}
+            tableLoading={loading}
+            loading={loading}
+            renderActions={renderActions}
+          />
+          
           {pagination.last_page > 1 && (
             <div className="pagination-container mt-4">
               <Pagination className="modern-pagination">
@@ -353,10 +302,9 @@ const HeroImages = () => {
         </Card.Body>
       </Card>
 
-      {/* Add Hero Image Modal */}
-      <Modal 
-        show={showAddModal} 
-        onHide={() => setShowAddModal(false)} 
+      <Modal
+        show={showAddModal}
+        onHide={() => setShowAddModal(false)}
         centered
         className="modern-modal"
       >
@@ -391,8 +339,8 @@ const HeroImages = () => {
             )}
           </Modal.Body>
           <Modal.Footer>
-            <Button 
-              variant="secondary" 
+            <Button
+              variant="secondary"
               onClick={() => setShowAddModal(false)}
               className="cancel-btn"
             >
@@ -417,10 +365,9 @@ const HeroImages = () => {
         </Form>
       </Modal>
 
-      {/* Image Preview Modal */}
-      <Modal 
-        show={showPreviewModal} 
-        onHide={() => setShowPreviewModal(false)} 
+      <Modal
+        show={showPreviewModal}
+        onHide={() => setShowPreviewModal(false)}
         centered
         size="lg"
         className="modern-modal image-preview-modal"
@@ -442,8 +389,8 @@ const HeroImages = () => {
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button 
-            variant="secondary" 
+          <Button
+            variant="secondary"
             onClick={() => setShowPreviewModal(false)}
             className="close-btn"
           >
@@ -455,4 +402,4 @@ const HeroImages = () => {
   );
 };
 
-export default HeroImages; 
+export default HeroImages;

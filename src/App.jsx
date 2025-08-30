@@ -24,6 +24,7 @@ import Coupons from "./pages/Coupons";
 import Ratings from "./pages/Ratings";
 import Customers from "./pages/Customers";
 import ViewCustomer from './pages/Customers/ViewCustomer';
+import Staff from './pages/Staff';
 import Transitions from './pages/Transitions';
 import Activity from './pages/Activity';
 import Orders from './pages/Orders';
@@ -73,6 +74,7 @@ const App = () => {
                         <Route path="/suppliers" element={<Suppliers />} />
                         <Route path="/customers" element={<Customers />} />
                         <Route path="/customers/:id" element={<ViewCustomer />} />
+                        <Route path="/staff" element={<Staff />} />
                         <Route path="/challens" element={<Challen />} />
                         <Route path="/challans" element={<Challen />} />
                         <Route path="/challans/add" element={<AddChallan />} />

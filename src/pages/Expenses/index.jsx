@@ -8,6 +8,7 @@ import "./Expenses.css";
 import { Link } from "react-router-dom";
 import Loading from "../../components/Loading";
 import usePageTitle from '../../hooks/usePageTitle';
+import CommonTable from "../../components/Common/CommonTable";
 
 const Expenses = () => {
   usePageTitle('Manage Expenses');
@@ -46,15 +47,12 @@ const Expenses = () => {
 
   const formatDateForAPI = (date) => {
     if (!date) return null;
-    // Ensure we're working with a Date object
     const dateObj = date instanceof Date ? date : new Date(date);
-    // Format as YYYY-MM-DD for API
     return dateObj.toISOString().split('T')[0];
   };
 
   const formatDateForDisplay = (dateString) => {
     if (!dateString) return '';
-    // Convert API date string to local date string (YYYY-MM-DD)
     return new Date(dateString).toISOString().split('T')[0];
   };
 
@@ -71,7 +69,6 @@ const Expenses = () => {
 
       const response = await axiosInstance.get("/expenses", { params });
       if (response.data.success) {
-        // Format dates in the response data
         const formattedExpenses = response.data.data.map(expense => ({
           ...expense,
           date: formatDateForDisplay(expense.date)
@@ -153,7 +150,6 @@ const Expenses = () => {
       ...prev,
       [name]: value
     }));
-    // Clear error when user starts typing
     if (formErrors[name]) {
       setFormErrors(prev => ({
         ...prev,
@@ -167,7 +163,7 @@ const Expenses = () => {
     const validFiles = files.filter(file => {
       const validTypes = ['image/jpeg', 'image/png', 'application/pdf'];
       const isValidType = validTypes.includes(file.type);
-      const isValidSize = file.size <= 3 * 1024 * 1024; // 3MB
+      const isValidSize = file.size <= 3 * 1024 * 1024;
       return isValidType && isValidSize;
     });
 
@@ -295,7 +291,7 @@ const Expenses = () => {
     setSearchParams(prev => ({
       ...prev,
       [type === 'start' ? 'startDate' : 'endDate']: value,
-      exactDate: null, // Clear exact date when using date range
+      exactDate: null,
       page: 1
     }));
   };
@@ -310,15 +306,35 @@ const Expenses = () => {
     }));
   };
 
-  const renderDate = (dateString) => {
-    if (!dateString) return '';
-    try {
-      return new Date(dateString).toLocaleDateString();
-    } catch (error) {
-      console.error('Error formatting date:', error);
-      return dateString;
-    }
-  };
+  const headers = [
+    { key: 'id', label: 'ID', render: (row) => `#${row.id}` },
+    { key: 'date', label: 'Date', render: (row) => new Date(row.date).toLocaleDateString() },
+    { key: 'title', label: 'Title' },
+    { key: 'amount', label: 'Amount', render: (row) => `৳${parseFloat(row.amount).toLocaleString()}` },
+    { key: 'description', label: 'Description', render: (row) => row.description || 'N/A' },
+  ];
+
+  const renderActions = (expense) => (
+    <div className="d-flex gap-2">
+      <Button
+        variant="outline-primary"
+        size="sm"
+        as={Link}
+        to={`/expenses/${expense.id}`}
+        className="view-btn"
+      >
+        <FaEye className="me-1" /> View
+      </Button>
+      <Button
+        variant="outline-danger"
+        size="sm"
+        onClick={() => handleDelete(expense.id)}
+        className="delete-btn"
+      >
+        <FaTrash />
+      </Button>
+    </div>
+  );
 
   if (loading && expenses.length === 0) {
     return <Loading />;
@@ -442,55 +458,14 @@ const Expenses = () => {
             </Row>
           </div>
 
-          <div className="table-container">
-            <div className="table-responsive">
-              <table className="table table-hover modern-table">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Date</th>
-                    <th>Title</th>
-                    <th>Amount</th>
-                    <th>Description</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {expenses.map((expense) => (
-                    <tr key={expense.id}>
-                      <td className="fw-medium">#{expense.id}</td>
-                      <td>{renderDate(expense.date)}</td>
-                      <td>{expense.title}</td>
-                      <td className="expense-amount fw-medium">৳{parseFloat(expense.amount).toLocaleString()}</td>
-                      <td className="expense-description">{expense.description || "N/A"}</td>
-                      <td>
-                        <div className="d-flex gap-2">
-                          <Button
-                            variant="outline-primary"
-                            size="sm"
-                            as={Link}
-                            to={`/expenses/${expense.id}`}
-                            className="view-btn"
-                          >
-                            <FaEye className="me-1" /> View
-                          </Button>
-                          <Button
-                            variant="outline-danger"
-                            size="sm"
-                            onClick={() => handleDelete(expense.id)}
-                            className="delete-btn"
-                          >
-                            <FaTrash />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
+          <CommonTable
+            headers={headers}
+            data={expenses}
+            tableLoading={loading}
+            loading={loading}
+            renderActions={renderActions}
+          />
+          
           {pagination.last_page > 1 && (
             <div className="pagination-container mt-4">
               <Pagination className="modern-pagination">
@@ -499,7 +474,6 @@ const Expenses = () => {
             </div>
           )}
 
-          {/* Add Expense Modal */}
           <Modal show={showAddModal} onHide={handleCloseModal} size="lg" centered>
             <Modal.Header closeButton>
               <Modal.Title>Add New Expense</Modal.Title>
@@ -591,9 +565,9 @@ const Expenses = () => {
                   <Button variant="secondary" onClick={handleCloseModal} className="px-4">
                     Cancel
                   </Button>
-                  <Button 
-                    variant="primary" 
-                    type="submit" 
+                  <Button
+                    variant="primary"
+                    type="submit"
                     disabled={isSubmitting}
                     className="px-4"
                   >
@@ -616,4 +590,4 @@ const Expenses = () => {
   );
 };
 
-export default Expenses; 
+export default Expenses;

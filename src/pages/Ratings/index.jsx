@@ -7,6 +7,7 @@ import Select from "react-select/async";
 import Loading from "../../components/Loading";
 import "./Ratings.css";
 import usePageTitle from '../../hooks/usePageTitle';
+import CommonTable from "../../components/Common/CommonTable";
 
 const Ratings = () => {
   usePageTitle('Manage Ratings');
@@ -92,11 +93,8 @@ const Ratings = () => {
     try {
       const response = await axiosInstance.post("/ratings", formData);
       if (response.data.success) {
-        // First close the modal and reset form
         setShowModal(false);
         setFormData({ star: "", reating: "", product_id: "" });
-
-        // Then update the ratings list
         await fetchRatings(1);
         toast.success("Rating added successfully");
       } else {
@@ -205,6 +203,82 @@ const Ratings = () => {
     }));
   };
 
+  const headers = [
+    { key: 'id', label: 'ID' },
+    {
+      key: 'star',
+      label: 'Star Rating',
+      render: (row) => (
+        <div className="d-flex align-items-center gap-1">
+          {[...Array(5)].map((_, index) => (
+            <span
+              key={index}
+              style={{
+                color: index < row.star ? "#ffc107" : "#e4e5e9",
+              }}
+            >
+              ★
+            </span>
+          ))}
+        </div>
+      ),
+    },
+    { key: 'reating', label: 'Review Text', render: (row) => row.reating || "No review" },
+    {
+      key: 'product',
+      label: 'Product',
+      render: (row) => (
+        row.product ? (
+          <div className="d-flex align-items-center">
+            {row.product.images?.[0]?.path && (
+              <img
+                src={`http://127.0.0.1:8000/storage/${row.product.images[0].path.replace('public/', '')}`}
+                alt={row.product.name}
+                style={{
+                  width: "50px",
+                  height: "50px",
+                  objectFit: "cover",
+                  marginRight: "10px",
+                  borderRadius: "5px",
+                }}
+              />
+            )}
+            <div>{row.product.name}</div>
+          </div>
+        ) : (
+          "N/A"
+        )
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (row) => (
+        <span className={row.status === "1" ? "text-success" : "text-danger"}>
+          {row.status === "1" ? "Active" : "Inactive"}
+        </span>
+      ),
+    },
+  ];
+
+  const renderActions = (rating) => (
+    <Button
+      variant={rating.status === "1" ? "outline-danger" : "outline-success"}
+      size="sm"
+      onClick={() => handleToggleStatus(rating.id)}
+      disabled={statusToggleLoading[rating.id]}
+      className="view-btn"
+    >
+      {statusToggleLoading[rating.id] ? (
+        <FaSpinner className="spinner" size="sm" />
+      ) : rating.status === "1" ? (
+        "Deactivate"
+      ) : (
+        "Activate"
+      )}
+    </Button>
+  );
+
   if (loading && ratings.length === 0) {
     return <Loading />;
   }
@@ -280,100 +354,13 @@ const Ratings = () => {
             </Row>
           </div>
 
-          <div className="table-container">
-            <div className="table-responsive">
-              <Table className="modern-table">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Star Rating</th>
-                    <th>Review Text</th>
-                    <th>Product</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {loading && ratings.length === 0 ? (
-                    <tr>
-                      <td colSpan="6" className="text-center">
-                        <FaSpinner className="spinner" /> Loading...
-                      </td>
-                    </tr>
-                  ) : ratings.length > 0 ? (
-                    ratings.map((rating) => (
-                      <tr key={rating.id}>
-                        <td>{rating.id}</td>
-                        <td>
-                          <div className="d-flex align-items-center gap-1">
-                            {[...Array(5)].map((_, index) => (
-                              <span
-                                key={index}
-                                style={{
-                                  color: index < rating.star ? "#ffc107" : "#e4e5e9",
-                                }}
-                              >
-                                ★
-                              </span>
-                            ))}
-                          </div>
-                        </td>
-                        <td>{rating.reating || "No review"}</td>
-                        <td>
-                          {rating.product ? (
-                            <div className="d-flex align-items-center">
-                              {rating.product.images?.[0]?.path && (
-                                <img
-                                  src={`http://127.0.0.1:8000/storage/${rating.product.images[0].path.replace('public/', '')}`}
-                                  alt={rating.product.name}
-                                  style={{
-                                    width: "50px",
-                                    height: "50px",
-                                    objectFit: "cover",
-                                    marginRight: "10px",
-                                    borderRadius: "5px",
-                                  }}
-                                />
-                              )}
-                              <div>{rating.product.name}</div>
-                            </div>
-                          ) : (
-                            "N/A"
-                          )}
-                        </td>
-                        <td>
-                          <span className={rating.status === "1" ? "text-success" : "text-danger"}>
-                            {rating.status === "1" ? "Active" : "Inactive"}
-                          </span>
-                        </td>
-                        <td>
-                          <Button
-                            variant={rating.status === "1" ? "outline-danger" : "outline-success"}
-                            size="sm"
-                            onClick={() => handleToggleStatus(rating.id)}
-                            disabled={statusToggleLoading[rating.id]}
-                            className="view-btn"
-                          >
-                            {statusToggleLoading[rating.id] ? (
-                              <FaSpinner className="spinner" size="sm" />
-                            ) : rating.status === "1" ? (
-                              "Deactivate"
-                            ) : (
-                              "Activate"
-                            )}
-                          </Button>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="6" className="text-center">No ratings found.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </Table>
-            </div>
-          </div>
+          <CommonTable
+            headers={headers}
+            data={ratings}
+            tableLoading={loading}
+            loading={loading}
+            renderActions={renderActions}
+          />
 
           {pagination.total_pages > 1 && (
             <div className="pagination-container mt-4">
@@ -460,4 +447,4 @@ const Ratings = () => {
   );
 };
 
-export default Ratings; 
+export default Ratings;

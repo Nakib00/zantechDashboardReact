@@ -1,18 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaPlus, FaSearch, FaSpinner, FaTimes, FaEye } from 'react-icons/fa';
+import { FaPlus, FaSearch, FaSpinner, FaTimes, FaTrash } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
 import axiosInstance from '../../config/axios';
 import { Card, Form, InputGroup, Button, Pagination, Row, Col } from 'react-bootstrap';
 import Loading from '../../components/Loading';
-import './Customers.css';
 import usePageTitle from '../../hooks/usePageTitle';
-import CommonTable from '../../components/Common/CommonTable';
 
-const Customers = () => {
-  usePageTitle('Manage Customers');
+const Staff = () => {
+  usePageTitle('Manage Staff');
   const navigate = useNavigate();
-  const [customers, setCustomers] = useState([]);
+  const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
@@ -21,6 +19,7 @@ const Customers = () => {
     phone: "",
     password: "",
     address: "",
+    type: "member", // Added type field with default value
   });
   const [searchParams, setSearchParams] = useState({
     search: "",
@@ -38,7 +37,7 @@ const Customers = () => {
   const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
-    fetchCustomers();
+    fetchStaff();
   }, [searchParams.page, searchParams.limit]);
 
   useEffect(() => {
@@ -49,7 +48,7 @@ const Customers = () => {
     const timeoutId = setTimeout(() => {
       if (searchParams.search !== "") {
         setIsSearching(true);
-        fetchCustomers(1);
+        fetchStaff(1);
       }
     }, 500);
 
@@ -62,7 +61,7 @@ const Customers = () => {
     };
   }, [searchParams.search]);
 
-  const fetchCustomers = async (page = searchParams.page) => {
+  const fetchStaff = async (page = searchParams.page) => {
     setLoading(true);
     try {
       const params = {
@@ -70,15 +69,14 @@ const Customers = () => {
         limit: searchParams.limit,
         ...(searchParams.search && { search: searchParams.search }),
       };
-
-      const response = await axiosInstance.get("/clints", { params });
+      const response = await axiosInstance.get("/stuff", { params });
       const result = response.data;
 
       if (!result.success) {
-        throw new Error(result.message || "Failed to fetch customers");
+        throw new Error(result.message || "Failed to fetch staff");
       }
 
-      setCustomers(result.data);
+      setStaff(result.data);
       setPagination({
         total_rows: result.data.length,
         current_page: page,
@@ -87,8 +85,8 @@ const Customers = () => {
         has_more_pages: result.data.length > page * searchParams.limit,
       });
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to fetch customers");
-      setCustomers([]);
+      toast.error(error.response?.data?.message || "Failed to fetch staff");
+      setStaff([]);
     } finally {
       setLoading(false);
       setIsSearching(false);
@@ -121,74 +119,80 @@ const Customers = () => {
   };
 
   const openAddModal = () => {
-    setFormData({ name: "", email: "", phone: "", password: "", address: "" });
+    setFormData({ 
+      name: "", 
+      email: "", 
+      phone: "", 
+      password: "", 
+      address: "", 
+      type: "member" // Reset with default type
+    });
     setShowModal(true);
   };
 
   const closeModal = () => {
     setShowModal(false);
-    setFormData({ name: "", email: "", phone: "", password: "", address: "" });
+    setFormData({ 
+      name: "", 
+      email: "", 
+      phone: "", 
+      password: "", 
+      address: "", 
+      type: "member" 
+    });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axiosInstance.post("/users/register", formData);
+      const response = await axiosInstance.post("/register", formData);
       if (response.data.success) {
-        toast.success(response.data.message || "Customer added successfully");
+        toast.success(response.data.message || "Staff added successfully");
         closeModal();
-        fetchCustomers(1);
+        fetchStaff(1);
       } else {
-        throw new Error(response.data.message || "Failed to add customer");
+        throw new Error(response.data.message || "Failed to add staff");
       }
     } catch (error) {
       const errorMessage = error.response?.data?.message ||
         error.response?.data?.errors ?
           Object.values(error.response.data.errors).flat().join(', ') :
           error.message ||
-          "Failed to add customer";
-
+          "Failed to add staff";
+     
       toast.error(errorMessage);
-
+     
       if (error.response?.status === 422 || error.response?.status === 400) {
         return;
       }
-
+     
       closeModal();
     }
   };
 
-  const headers = [
-    { key: 'id', label: 'ID', render: (row) => `#${row.id}` },
-    { key: 'name', label: 'Name' },
-    { key: 'email', label: 'Email' },
-    { key: 'phone', label: 'Phone' },
-    { key: 'address', label: 'Address', render: (row) => row.address || 'N/A' },
-    { key: 'order_summary.total_orders', label: 'Total Orders' },
-    { key: 'order_summary.total_spend', label: 'Total Spend', render: (row) => `৳${row.order_summary.total_spend.toLocaleString()}` },
-    {
-      key: 'payment_summary.due_amount',
-      label: 'Due Amount',
-      render: (row) => (
-        <span className={row.payment_summary.due_amount > 0 ? "text-danger" : "text-success"}>
-          ৳{row.payment_summary.due_amount.toLocaleString()}
-        </span>
-      ),
-    },
-  ];
+  const handleDeleteStaff = async (id) => {
+    if (window.confirm("Are you sure you want to delete this staff member?")) {
+      try {
+        await axiosInstance.delete(`/stuff/delete/${id}`);
+        toast.success("Staff member deleted successfully");
+        fetchStaff();
+      } catch (error) {
+        toast.error(error.response?.data?.message || "Failed to delete staff member");
+      }
+    }
+  };
 
-  const renderActions = (customer) => (
-    <Button
-      variant="outline-primary"
-      size="sm"
-      className="view-btn"
-      onClick={() => navigate(`/customers/${customer.id}`)}
-    >
-      <FaEye className="me-1" /> View
-    </Button>
-  );
+  const handleToggleStatus = async (id) => {
+    try {
+      await axiosInstance.patch(`/users/toggle-status/${id}`);
+      toast.success("Staff status updated successfully");
+      fetchStaff();
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to update staff status");
+    }
+  };
 
-  if (loading && !customers.length) {
+  if (loading && !staff.length) {
     return <Loading />;
   }
 
@@ -198,15 +202,15 @@ const Customers = () => {
         <Card.Body className="p-4">
           <div className="d-flex justify-content-between align-items-center mb-4">
             <div>
-              <h2 className="page-title mb-1">Customers</h2>
-              <p className="text-muted mb-0">Manage and track all your customers</p>
+              <h2 className="page-title mb-1">Staff</h2>
+              <p className="text-muted mb-0">Manage and track all your staff</p>
             </div>
             <Button
               variant="primary"
               onClick={openAddModal}
               className="create-customer-btn"
             >
-              <FaPlus className="me-2" /> Add Customer
+              <FaPlus className="me-2" /> Add Staff
             </Button>
           </div>
 
@@ -220,7 +224,7 @@ const Customers = () => {
                     </InputGroup.Text>
                     <Form.Control
                       type="text"
-                      placeholder="Search customers..."
+                      placeholder="Search staff..."
                       value={searchParams.search}
                       onChange={handleSearch}
                       className="search-input"
@@ -232,7 +236,7 @@ const Customers = () => {
                         className="clear-search"
                         onClick={() => {
                           setSearchParams((prev) => ({ ...prev, search: "" }));
-                          fetchCustomers(1);
+                          fetchStaff(1);
                         }}
                         disabled={loading}
                       >
@@ -258,13 +262,54 @@ const Customers = () => {
             </Row>
           </div>
 
-          <CommonTable
-            headers={headers}
-            data={customers}
-            tableLoading={loading}
-            loading={loading}
-            renderActions={renderActions}
-          />
+          <div className="table-container">
+            <div className="table-responsive">
+              <table className="table table-hover modern-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Address</th>
+                    <th>Staff Type</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {staff.map((staffMember) => (
+                    <tr key={staffMember.id}>
+                      <td className="fw-medium">#{staffMember.id}</td>
+                      <td>{staffMember.name}</td>
+                      <td>{staffMember.email}</td>
+                      <td>{staffMember.phone}</td>
+                      <td>{staffMember.address || "N/A"}</td>
+                      <td>{staffMember.type.toUpperCase()}</td>
+                      <td>
+                        <Button
+                          variant={staffMember.status === 1 ? "success" : "danger"}
+                          size="sm"
+                          onClick={() => handleToggleStatus(staffMember.id)}
+                        >
+                          {staffMember.status === 1 ? "Active" : "Inactive"}
+                        </Button>
+                      </td>
+                      <td>
+                        <Button
+                          variant="outline-danger"
+                          size="sm"
+                          onClick={() => handleDeleteStaff(staffMember.id)}
+                        >
+                          <FaTrash />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
 
           {pagination.total_pages > 1 && (
             <div className="pagination-container mt-4">
@@ -292,11 +337,12 @@ const Customers = () => {
         </Card.Body>
       </Card>
 
+      {/* Add Staff Modal */}
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-header">
-              <h3>Add New Customer</h3>
+              <h3>Add New Staff</h3>
               <button className="btn-close" onClick={closeModal} />
             </div>
             <form onSubmit={handleSubmit}>
@@ -340,6 +386,21 @@ const Customers = () => {
                   />
                 </div>
                 <div className="mb-3">
+                  <label className="form-label">Staff Type</label>
+                  <Form.Select
+                    value={formData.type}
+                    onChange={(e) =>
+                      setFormData({ ...formData, type: e.target.value })
+                    }
+                    required
+                    className="form-control"
+                  >
+                    <option value="admin">Admin</option>
+                    <option value="staff">Staff</option>
+                    <option value="member">Member</option>
+                  </Form.Select>
+                </div>
+                <div className="mb-3">
                   <label className="form-label">Password</label>
                   <input
                     type="password"
@@ -375,7 +436,7 @@ const Customers = () => {
                   Cancel
                 </Button>
                 <Button type="submit" variant="primary">
-                  Add Customer
+                  Add Staff
                 </Button>
               </div>
             </form>
@@ -386,4 +447,4 @@ const Customers = () => {
   );
 };
 
-export default Customers;
+export default Staff;

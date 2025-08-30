@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { FaSpinner, FaUser, FaCalendarAlt, FaInfoCircle, FaSearch, FaTimes, FaFilter } from 'react-icons/fa';
+import { FaUser, FaCalendarAlt, FaSearch, FaSpinner, FaTimes } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
 import axiosInstance from '../../config/axios';
 import { Card, Modal, Button, Pagination, Badge, Form, InputGroup, Row, Col } from 'react-bootstrap';
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
 import Loading from '../../components/Loading';
 import './Activity.css';
 import usePageTitle from '../../hooks/usePageTitle';
+import CommonTable from '../../components/Common/CommonTable';
 
 const Activity = () => {
-  usePageTitle('Activity Logs'); 
+  usePageTitle('Activity Logs');
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showUserModal, setShowUserModal] = useState(false);
@@ -65,11 +64,11 @@ const Activity = () => {
         page,
         limit: searchParams.limit,
         ...(searchParams.search && { search: searchParams.search }),
-        ...(searchParams.startDate && { 
-          start_date: searchParams.startDate.toISOString().split('T')[0] 
+        ...(searchParams.startDate && {
+          start_date: searchParams.startDate.toISOString().split('T')[0]
         }),
-        ...(searchParams.endDate && { 
-          end_date: searchParams.endDate.toISOString().split('T')[0] 
+        ...(searchParams.endDate && {
+          end_date: searchParams.endDate.toISOString().split('T')[0]
         }),
         ...(searchParams.type && { type: searchParams.type }),
       };
@@ -129,7 +128,7 @@ const Activity = () => {
 
   const handleDateChange = (dates) => {
     const [start, end] = dates;
-    
+
     if (start && end && start > end) {
       toast.error("Start date cannot be after end date");
       return;
@@ -137,7 +136,7 @@ const Activity = () => {
 
     const formattedStart = start ? new Date(start.setHours(0, 0, 0, 0)) : null;
     const formattedEnd = end ? new Date(end.setHours(23, 59, 59, 999)) : null;
-    
+
     setSearchParams(prev => ({
       ...prev,
       startDate: formattedStart,
@@ -187,7 +186,6 @@ const Activity = () => {
       startPage = Math.max(1, endPage - maxPages + 1);
     }
 
-    // Previous button
     items.push(
       <Pagination.Prev
         key="prev"
@@ -196,7 +194,6 @@ const Activity = () => {
       />
     );
 
-    // First page
     if (startPage > 1) {
       items.push(
         <Pagination.Item key={1} onClick={() => handlePageChange(1)}>
@@ -208,7 +205,6 @@ const Activity = () => {
       }
     }
 
-    // Page numbers
     for (let number = startPage; number <= endPage; number++) {
       items.push(
         <Pagination.Item
@@ -221,7 +217,6 @@ const Activity = () => {
       );
     }
 
-    // Last page
     if (endPage < pagination.total_pages) {
       if (endPage < pagination.total_pages - 1) {
         items.push(<Pagination.Ellipsis key="ellipsis2" disabled />);
@@ -236,7 +231,6 @@ const Activity = () => {
       );
     }
 
-    // Next button
     items.push(
       <Pagination.Next
         key="next"
@@ -247,6 +241,36 @@ const Activity = () => {
 
     return items;
   };
+
+  const headers = [
+    { key: 'id', label: 'ID', render: (row) => `#${row.id}` },
+    { key: 'type', label: 'Type', render: (row) => getActivityTypeText(row.type) },
+    {
+      key: 'user',
+      label: 'User',
+      render: (row) => (
+        <Button
+          variant="link"
+          className="p-0 text-decoration-none user-link"
+          onClick={() => handleUserClick(row.user)}
+        >
+          <FaUser className="me-1" />
+          {row.user.name}
+        </Button>
+      ),
+    },
+    { key: 'description', label: 'Description' },
+    {
+      key: 'created_at',
+      label: 'Date',
+      render: (row) => (
+        <div className="d-flex align-items-center">
+          <FaCalendarAlt className="me-2 text-muted" />
+          {new Date(row.created_at).toLocaleString()}
+        </div>
+      ),
+    },
+  ];
 
   if (loading && activities.length === 0) {
     return <Loading />;
@@ -290,49 +314,13 @@ const Activity = () => {
               </Col>
             </Row>
           </div>
-
-          <div className="table-container">
-            <div className="table-responsive">
-              <table className="table table-hover modern-table">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Type</th>
-                    <th>User</th>
-                    <th>Description</th>
-                    <th>Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {activities.map((activity) => (
-                    <tr key={activity.id}>
-                      <td className="fw-medium">#{activity.id}</td>
-                      <td>
-                          {getActivityTypeText(activity.type)}
-                      </td>
-                      <td>
-                        <Button
-                          variant="link"
-                          className="p-0 text-decoration-none user-link"
-                          onClick={() => handleUserClick(activity.user)}
-                        >
-                          <FaUser className="me-1" />
-                          {activity.user.name}
-                        </Button>
-                      </td>
-                      <td>{activity.description}</td>
-                      <td>
-                        <div className="d-flex align-items-center">
-                          <FaCalendarAlt className="me-2 text-muted" />
-                          {new Date(activity.created_at).toLocaleString()}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          
+          <CommonTable
+            headers={headers}
+            data={activities}
+            tableLoading={loading}
+            loading={loading}
+          />
 
           {pagination.total_pages > 1 && (
             <div className="pagination-container mt-4">
@@ -344,7 +332,6 @@ const Activity = () => {
         </Card.Body>
       </Card>
 
-      {/* User Details Modal */}
       <Modal show={showUserModal} onHide={handleCloseUserModal} centered>
         <Modal.Header closeButton>
           <Modal.Title>
@@ -415,4 +402,4 @@ const Activity = () => {
   );
 };
 
-export default Activity; 
+export default Activity;

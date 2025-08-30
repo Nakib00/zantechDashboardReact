@@ -6,7 +6,6 @@ import {
   FaTimes,
   FaPlus,
   FaCalendarAlt,
-  FaFilter,
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
@@ -19,11 +18,11 @@ import {
   Pagination,
   Row,
   Col,
-  Badge,
 } from "react-bootstrap";
 import Loading from "../../components/Loading";
 import "./Orders.css";
 import usePageTitle from '../../hooks/usePageTitle';
+import CommonTable from "../../components/Common/CommonTable";
 
 const Orders = () => {
   usePageTitle('Manage Orders');
@@ -194,7 +193,6 @@ const Orders = () => {
         toast.success(
           response.data.message || "Order status updated successfully"
         );
-        // Update the local state with new status
         setOrders((prev) =>
           prev.map((order) =>
             order.order_id === orderId
@@ -216,22 +214,17 @@ const Orders = () => {
         status: error.response?.status,
         headers: error.response?.headers,
       });
-
-      // Show more specific error message based on the error type
+      
       if (error.response) {
-        // The request was made and the server responded with a status code
-        // that falls out of the range of 2xx
         toast.error(
           error.response.data?.message ||
             `Error ${error.response.status}: ${error.response.statusText}`
         );
       } else if (error.request) {
-        // The request was made but no response was received
         toast.error(
           "No response received from server. Please check your internet connection."
         );
       } else {
-        // Something happened in setting up the request that triggered an Error
         toast.error(
           error.message || "Something went wrong while updating the status"
         );
@@ -254,7 +247,6 @@ const Orders = () => {
       startPage = Math.max(1, endPage - maxPages + 1);
     }
 
-    // Previous button
     items.push(
       <Pagination.Prev
         key="prev"
@@ -263,7 +255,6 @@ const Orders = () => {
       />
     );
 
-    // First page
     if (startPage > 1) {
       items.push(
         <Pagination.Item key={1} onClick={() => handlePageChange(1)}>
@@ -275,7 +266,6 @@ const Orders = () => {
       }
     }
 
-    // Page numbers
     for (let number = startPage; number <= endPage; number++) {
       items.push(
         <Pagination.Item
@@ -288,7 +278,6 @@ const Orders = () => {
       );
     }
 
-    // Last page
     if (endPage < pagination.last_page) {
       if (endPage < pagination.last_page - 1) {
         items.push(<Pagination.Ellipsis key="ellipsis2" disabled />);
@@ -303,7 +292,6 @@ const Orders = () => {
       );
     }
 
-    // Next button
     items.push(
       <Pagination.Next
         key="next"
@@ -314,6 +302,68 @@ const Orders = () => {
 
     return items;
   };
+
+  const headers = [
+    { key: 'order_id', label: 'Order ID', render: (row) => `#${row.order_id}` },
+    { key: 'invoice_code', label: 'Invoice Code' },
+    {
+      key: 'customer_info',
+      label: 'Customer Info',
+      render: (row) => (
+        <div className="customer-info">
+          <div className="customer-name">{row.user_name}</div>
+          <div className="customer-phone text-muted">
+            <small>📞 {row.user_phone}</small>
+          </div>
+          <div className="customer-email text-muted">
+            <small>✉️ {row.user_email}</small>
+          </div>
+        </div>
+      ),
+    },
+    { key: 'total_amount', label: 'Total Amount', render: (row) => `৳${parseFloat(row.total_amount).toLocaleString()}` },
+    { key: 'paid_amount', label: 'Paid Amount', render: (row) => <span className="text-success">৳{parseFloat(row.paid_amount || 0).toLocaleString()}</span> },
+    {
+      key: 'due_amount',
+      label: 'Due Amount',
+      render: (row) => (
+        <span className={parseFloat(row.due_amount || 0) > 0 ? "text-danger" : "text-success"}>
+          ৳{parseFloat(row.due_amount || 0).toLocaleString()}
+        </span>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (row) => (
+        <Form.Select
+          value={row.status?.toString() || "0"}
+          onChange={(e) => handleStatusChange(row.order_id, e.target.value)}
+          disabled={updatingStatus[row.order_id]}
+          size="sm"
+          className="status-select"
+        >
+          <option value="0">On Processing</option>
+          <option value="1">Completed</option>
+          <option value="2">On Hold</option>
+          <option value="3">Cancelled</option>
+          <option value="4">Refunded</option>
+        </Form.Select>
+      ),
+    },
+    { key: 'order_placed_date_time', label: 'Order Date', render: (row) => new Date(row.order_placed_date_time).toLocaleString() },
+  ];
+
+  const renderActions = (order) => (
+    <Button
+      variant="outline-primary"
+      size="sm"
+      className="view-btn"
+      onClick={() => navigate(`/orders/${order.order_id}`)}
+    >
+      <FaEye className="me-1" /> View
+    </Button>
+  );
 
   if (loading && !orders.length) {
     return <Loading />;
@@ -446,92 +496,14 @@ const Orders = () => {
             </Row>
           </div>
 
-          <div className="table-container">
-            <div className="table-responsive">
-              <table className="table table-hover modern-table">
-                <thead>
-                  <tr>
-                    <th>Order ID</th>
-                    <th>Invoice Code</th>
-                    <th>Customer Info</th>
-                    <th>Total Amount</th>
-                    <th>Paid Amount</th>
-                    <th>Due Amount</th>
-                    <th>Status</th>
-                    <th>Order Date</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredOrders.map((order) => (
-                    <tr key={order.order_id}>
-                      <td className="fw-medium">#{order.order_id}</td>
-                      <td>{order.invoice_code}</td>
-                      <td>
-                        <div className="customer-info">
-                          <div className="customer-name">{order.user_name}</div>
-                          <div className="customer-phone text-muted">
-                            <small>📞 {order.user_phone}</small>
-                          </div>
-                          <div className="customer-email text-muted">
-                            <small>✉️ {order.user_email}</small>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="fw-medium">
-                        ৳{parseFloat(order.total_amount).toLocaleString()}
-                      </td>
-                      <td className="text-success">
-                        ৳{parseFloat(order.paid_amount || 0).toLocaleString()}
-                      </td>
-                      <td
-                        className={
-                          parseFloat(order.due_amount || 0) > 0
-                            ? "text-danger"
-                            : "text-success"
-                        }
-                      >
-                        ৳{parseFloat(order.due_amount || 0).toLocaleString()}
-                      </td>
-                      <td>
-                        <Form.Select
-                          value={order.status?.toString() || "0"}
-                          onChange={(e) =>
-                            handleStatusChange(order.order_id, e.target.value)
-                          }
-                          disabled={updatingStatus[order.order_id]}
-                          size="sm"
-                          className="status-select"
-                        >
-                          <option value="0">On Processing</option>
-                          <option value="1">Completed</option>
-                          <option value="2">On Hold</option>
-                          <option value="3">Cancelled</option>
-                          <option value="4">Refunded</option>
-                        </Form.Select>
-                      </td>
-                      <td>
-                        {new Date(
-                          order.order_placed_date_time
-                        ).toLocaleString()}
-                      </td>
-                      <td>
-                        <Button
-                          variant="outline-primary"
-                          size="sm"
-                          className="view-btn"
-                          onClick={() => navigate(`/orders/${order.order_id}`)}
-                        >
-                          <FaEye className="me-1" /> View
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
+          <CommonTable
+            headers={headers}
+            data={filteredOrders}
+            tableLoading={loading}
+            loading={loading}
+            renderActions={renderActions}
+          />
+          
           {pagination.last_page > 1 && (
             <div className="pagination-container mt-4">
               <Pagination className="modern-pagination">

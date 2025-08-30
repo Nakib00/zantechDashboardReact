@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { FaPlus, FaSpinner } from 'react-icons/fa';
+import { FaPlus, FaSpinner, FaEye, FaEdit, FaTrash, FaPencilAlt, FaChevronDown } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { Card, Button } from 'react-bootstrap';
+import { Card, Button, Dropdown } from 'react-bootstrap';
 import axiosInstance from '../../config/axios';
 import Loading from '../../components/Loading';
 import ProductFilters from '../../components/Products/ProductsList/ProductFilters';
-import ProductTable from '../../components/Products/ProductsList/ProductTable';
 import ProductPagination from '../../components/Products/ProductsList/ProductPagination';
 import QuickEditModal from '../../components/Products/ProductsList/QuickEditModal';
+import CommonTable from '../../components/Common/CommonTable'; // Import CommonTable
 import './Products.css';
 import usePageTitle from '../../hooks/usePageTitle';
 
@@ -301,6 +301,116 @@ const Products = () => {
     }
   };
 
+  const headers = [
+    { key: 'id', label: 'ID' },
+    {
+      key: 'image_paths',
+      label: 'Image',
+      render: (row) => (
+        row.image_paths && row.image_paths.length > 0 ? (
+          <img 
+            src={row.image_paths[0]} 
+            alt={row.name}
+            className="product-image"
+          />
+        ) : (
+          <div className="no-image-placeholder">
+            <span>No image</span>
+          </div>
+        )
+      ),
+    },
+    { key: 'name', label: 'Name', render: (row) => <h6>{row.name}</h6> },
+    {
+      key: 'price',
+      label: 'Price',
+      render: (row) => (
+        <div>
+          <span className="fw-semibold">৳{parseFloat(row.price).toLocaleString()}</span>
+          {row.discount > 0 && (
+            <span className="ms-2 text-danger">-{parseFloat(row.discount).toFixed(0)}%</span>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'quantity',
+      label: 'Stock',
+      render: (row) => (
+        <span className={`px-2 py-1 ${row.quantity > 0 ? 'text-success' : 'text-danger'}`}>
+          {row.quantity > 0 ? `${row.quantity} In Stock` : 'Out of Stock'}
+        </span>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (row) => (
+        <span 
+          className={`px-2 py-1 status-badge ${row.status === "1" ? 'text-success' : 'text-secondary'}`}
+          role="button"
+          onClick={() => handleStatusToggle(row.id)}
+          title="Click to toggle status"
+        >
+          {statusToggleLoading[row.id] ? (
+            <FaSpinner className="spinner-border spinner-border-sm" />
+          ) : (
+            row.status === "1" ? 'Active' : 'Inactive'
+          )}
+        </span>
+      ),
+    },
+  ];
+
+  const renderActions = (product) => (
+    <div className="d-flex gap-2">
+      <Button 
+        variant="outline-primary" 
+        size="sm"
+        onClick={() => navigate(`/products/${product.id}`)}
+        title="View"
+        disabled={loading}
+        className="view-btn"
+      >
+        <FaEye />
+      </Button>
+      <Dropdown>
+        <Dropdown.Toggle 
+          variant="outline-primary" 
+          size="sm"
+          disabled={loading}
+          className="action-dropdown-toggle"
+        >
+          <FaEdit /> Edit <FaChevronDown size={10} />
+        </Dropdown.Toggle>
+        <Dropdown.Menu className="action-dropdown-menu">
+          <Dropdown.Item 
+            onClick={() => handleQuickEdit(product)}
+            className="action-dropdown-item"
+          >
+            <FaPencilAlt className="me-2" /> Quick Edit
+          </Dropdown.Item>
+          <Dropdown.Item 
+            onClick={() => navigate(`/products/${product.id}`)}
+            className="action-dropdown-item"
+          >
+            <FaEdit className="me-2" /> Full Edit
+          </Dropdown.Item>
+        </Dropdown.Menu>
+      </Dropdown>
+      <Button 
+        variant="outline-danger" 
+        size="sm"
+        onClick={() => handleDeleteProduct(product.id)}
+        title="Delete"
+        disabled={loading}
+        className="delete-btn"
+      >
+        {loading ? <FaSpinner className="spinner-border spinner-border-sm" /> : <FaTrash />}
+      </Button>
+    </div>
+  );
+
   if (pageLoading) {
     return <Loading />;
   }
@@ -350,15 +460,12 @@ const Products = () => {
             editLoading={editLoading}
           />
 
-          <ProductTable
-            products={products}
+          <CommonTable
+            headers={headers}
+            data={products}
             tableLoading={tableLoading}
             loading={loading}
-            statusToggleLoading={statusToggleLoading}
-            handleStatusToggle={handleStatusToggle}
-            handleQuickEdit={handleQuickEdit}
-            handleDeleteProduct={handleDeleteProduct}
-            navigate={navigate}
+            renderActions={renderActions}
           />
 
           <ProductPagination

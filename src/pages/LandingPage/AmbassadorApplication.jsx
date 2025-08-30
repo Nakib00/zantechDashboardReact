@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Table, Button, Spinner, Image, Modal } from 'react-bootstrap';
+import { Card, Button, Spinner, Image, Modal } from 'react-bootstrap';
 import { toast } from 'react-hot-toast';
 import axiosInstance from '../../config/axios';
 import { FaTrash, FaEye } from 'react-icons/fa';
 import usePageTitle from '../../hooks/usePageTitle';
+import CommonTable from '../../components/Common/CommonTable';
 
 const AmbassadorApplication = () => {
     usePageTitle('Ambassador Applications');
@@ -60,6 +61,57 @@ const AmbassadorApplication = () => {
         setShowMessageModal(true);
     }
 
+    const headers = [
+        { key: 'id', label: 'ID' },
+        {
+            key: 'image',
+            label: 'Image',
+            render: (app) => (
+                <Image
+                    src={app.image}
+                    alt={app.name}
+                    thumbnail
+                    style={{ width: '60px', height: '60px', cursor: 'pointer' }}
+                    onClick={() => handleImagePreview(app.image)}
+                />
+            )
+        },
+        { key: 'name', label: 'Name' },
+        { key: 'email', label: 'Email' },
+        { key: 'phone', label: 'Phone' },
+        { key: 'campus', label: 'Campus' },
+        {
+            key: 'status',
+            label: 'Status',
+            render: (app) => (
+                <span className={`badge bg-${app.status === "0" ? 'warning' : 'success'}`}>
+                    {app.status === "0" ? 'Pending' : 'Approved'}
+                </span>
+            )
+        },
+        {
+            key: 'message',
+            label: 'Message',
+            render: (app) => (
+                <Button variant="link" onClick={() => handleMessagePreview(app.message)}>
+                    <FaEye />
+                </Button>
+            )
+        },
+        { key: 'created_at', label: 'Applied At', render: (app) => new Date(app.created_at).toLocaleDateString() },
+    ];
+
+    const renderActions = (app) => (
+        <Button
+            variant="outline-danger"
+            size="sm"
+            onClick={() => handleDelete(app.id)}
+        >
+            <FaTrash />
+        </Button>
+    );
+
+
     if (loading) {
         return (
             <div className="d-flex justify-content-center align-items-center" style={{ height: 'calc(100vh - 200px)' }}>
@@ -75,62 +127,13 @@ const AmbassadorApplication = () => {
                     <h4 className="mb-0">Ambassador Applications</h4>
                 </Card.Header>
                 <Card.Body>
-                    <Table striped bordered hover responsive className="modern-table">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Image</th>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Phone</th>
-                                <th>Campus</th>
-                                <th>Status</th>
-                                <th>Message</th>
-                                <th>Applied At</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {applications.map((app) => (
-                                <tr key={app.id}>
-                                    <td>{app.id}</td>
-                                    <td>
-                                        <Image
-                                            src={app.image}
-                                            alt={app.name}
-                                            thumbnail
-                                            style={{ width: '60px', height: '60px', cursor: 'pointer' }}
-                                            onClick={() => handleImagePreview(app.image)}
-                                        />
-                                    </td>
-                                    <td>{app.name}</td>
-                                    <td>{app.email}</td>
-                                    <td>{app.phone}</td>
-                                    <td>{app.campus}</td>
-                                    <td>
-                                        <span className={`badge bg-${app.status === "0" ? 'warning' : 'success'}`}>
-                                            {app.status === "0" ? 'Pending' : 'Approved'}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <Button variant="link" onClick={() => handleMessagePreview(app.message)}>
-                                            <FaEye />
-                                        </Button>
-                                    </td>
-                                    <td>{new Date(app.created_at).toLocaleDateString()}</td>
-                                    <td>
-                                        <Button
-                                            variant="outline-danger"
-                                            size="sm"
-                                            onClick={() => handleDelete(app.id)}
-                                        >
-                                            <FaTrash />
-                                        </Button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </Table>
+                    <CommonTable
+                        headers={headers}
+                        data={applications}
+                        tableLoading={loading}
+                        loading={loading}
+                        renderActions={renderActions}
+                    />
                 </Card.Body>
             </Card>
 

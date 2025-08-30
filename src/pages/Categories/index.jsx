@@ -24,6 +24,7 @@ import {
 import Loading from "../../components/Loading";
 import "./Categories.css";
 import usePageTitle from '../../hooks/usePageTitle';
+import CommonTable from "../../components/Common/CommonTable";
 
 const Categories = () => {
   usePageTitle('Manage Categories');
@@ -301,6 +302,46 @@ const Categories = () => {
     return items;
   };
 
+  const headers = [
+    { key: 'id', label: 'ID' },
+    { key: 'name', label: 'Name' },
+    { key: 'description', label: 'Description' },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (row) => (
+        <span className={`px-2 py-1 ${row.status === 0 ? "text-success" : "text-secondary"}`}>
+          {row.status === 0 ? "Active" : "Inactive"}
+        </span>
+      ),
+    },
+  ];
+
+  const renderActions = (category) => (
+    <div className="d-flex gap-2">
+      <Button
+        variant="outline-primary"
+        size="sm"
+        onClick={() => openEditModal(category)}
+        disabled={tableLoading}
+        title="Edit"
+        className="view-btn"
+      >
+        <FaEdit />
+      </Button>
+      <Button
+        variant="outline-danger"
+        size="sm"
+        onClick={() => handleDeleteCategory(category.id)}
+        disabled={tableLoading}
+        title="Delete"
+        className="delete-btn"
+      >
+        <FaTrash />
+      </Button>
+    </div>
+  );
+
   if (pageLoading) {
     return <Loading />;
   }
@@ -388,96 +429,13 @@ const Categories = () => {
             </Row>
           </div>
 
-          <div className="table-container position-relative">
-            {tableLoading && (
-              <div
-                className="position-absolute w-100 h-100 d-flex justify-content-center align-items-center"
-                style={{
-                  top: 0,
-                  left: 0,
-                  backgroundColor: "rgba(255, 255, 255, 0.8)",
-                  zIndex: 1000,
-                  backdropFilter: "blur(2px)",
-                }}
-              >
-                <div className="text-center">
-                  <Loading />
-                  <p className="text-muted mt-2 mb-0">
-                    {loading ? "Loading categories..." : "Updating..."}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {loading && !tableLoading && categories.length === 0 ? (
-              <div className="text-center py-5">
-                <Loading />
-                <p className="text-muted mt-3 mb-0">Loading categories...</p>
-              </div>
-            ) : categories.length > 0 ? (
-              <div className="table-responsive">
-                <table className="table table-hover align-middle modern-table">
-                  <thead className="bg-light">
-                    <tr>
-                      <th>ID</th>
-                      <th>Name</th>
-                      <th>Description</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {categories.map((category) => (
-                      <tr key={category.id}>
-                        <td data-label="ID">{category.id}</td>
-                        <td data-label="Name">{category.name}</td>
-                        <td data-label="Description">{category.description}</td>
-                        <td data-label="Status">
-                          <span
-                            className={`px-2 py-1 ${
-                              category.status === 0
-                                ? "text-success"
-                                : "text-secondary"
-                            }`}
-                          >
-                            {category.status === 0 ? "Active" : "Inactive"}
-                          </span>
-                        </td>
-                        <td data-label="Actions" className="action-buttons">
-                          <div className="d-flex gap-2">
-                            <Button
-                              variant="outline-primary"
-                              size="sm"
-                              onClick={() => openEditModal(category)}
-                              disabled={tableLoading}
-                              title="Edit"
-                              className="view-btn"
-                            >
-                              <FaEdit />
-                            </Button>
-                            <Button
-                              variant="outline-danger"
-                              size="sm"
-                              onClick={() => handleDeleteCategory(category.id)}
-                              disabled={tableLoading}
-                              title="Delete"
-                              className="delete-btn"
-                            >
-                              <FaTrash />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="text-center py-5">
-                <p className="text-muted mb-0">No categories found</p>
-              </div>
-            )}
-          </div>
+          <CommonTable
+            headers={headers}
+            data={categories}
+            tableLoading={tableLoading}
+            loading={loading}
+            renderActions={renderActions}
+          />
 
           {pagination.last_page > 1 && (
             <div className="pagination-container mt-4 position-relative">

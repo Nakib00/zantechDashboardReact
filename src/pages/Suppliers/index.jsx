@@ -6,6 +6,7 @@ import { Card, Form, InputGroup, Button, Table, Row, Col, Modal } from "react-bo
 import Loading from "../../components/Loading";
 import "./Suppliers.css";
 import usePageTitle from '../../hooks/usePageTitle';
+import CommonTable from "../../components/Common/CommonTable";
 
 const Suppliers = () => {
     usePageTitle('Manage Suppliers');
@@ -168,6 +169,83 @@ const Suppliers = () => {
         setSelectedSupplier(null);
     };
 
+    const headers = [
+        { key: 'id', label: 'ID', render: (row) => `#${row.id}` },
+        { key: 'name', label: 'Name' },
+        { key: 'phone', label: 'Phone' },
+        { key: 'address', label: 'Address' },
+        { key: 'total_amount', label: 'Total Amount', render: (row) => `৳${parseFloat(row.total_amount).toLocaleString()}` },
+        {
+            key: 'paid_amount',
+            label: 'Paid Amount',
+            render: (row) => (
+                editingPaidAmount === row.id ? (
+                    <InputGroup size="sm">
+                        <Form.Control
+                            type="number"
+                            value={paidAmountInput}
+                            onChange={(e) => setPaidAmountInput(e.target.value)}
+                            autoFocus
+                        />
+                        <Button variant="outline-success" onClick={() => handleUpdatePaidAmount(row.id)} disabled={updateLoading}>
+                            {updateLoading ? <FaSpinner className="spinner" /> : <FaSave />}
+                        </Button>
+                        <Button variant="outline-secondary" onClick={() => setEditingPaidAmount(null)}>
+                            <FaTimes />
+                        </Button>
+                    </InputGroup>
+                ) : (
+                    <div className="d-flex align-items-center text-success">
+                        <span>৳{parseFloat(row.paid_amount).toLocaleString()}</span>
+                        <Button
+                            variant="link"
+                            size="sm"
+                            className="ms-2"
+                            onClick={() => {
+                                setEditingPaidAmount(row.id);
+                                setPaidAmountInput(row.paid_amount);
+                            }}
+                        >
+                            <FaEdit />
+                        </Button>
+                    </div>
+                )
+            )
+        },
+        {
+            key: 'due_amount',
+            label: 'Due Amount',
+            render: (row) => (
+                <span className={row.due_amount > 0 ? 'text-danger' : ''}>
+                    ৳{parseFloat(row.due_amount).toLocaleString()}
+                </span>
+            )
+        }
+    ];
+
+    const renderActions = (supplier) => (
+        <div className="d-flex gap-2">
+            <Button
+                variant="outline-primary"
+                size="sm"
+                onClick={() => openEditModal(supplier)}
+                title="Edit"
+                className="view-btn"
+            >
+                <FaEdit />
+            </Button>
+            <Button
+                variant="outline-danger"
+                size="sm"
+                onClick={() => handleDeleteSupplier(supplier.id)}
+                title="Delete"
+                className="delete-btn"
+            >
+                <FaTrash />
+            </Button>
+        </div>
+    );
+
     if (loading && !suppliers.length) {
         return <Loading />;
     }
@@ -223,97 +301,17 @@ const Suppliers = () => {
                         </Row>
                     </div>
 
-                    <div className="table-container">
-                        <div className="table-responsive">
-                            <table className="table table-hover modern-table">
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Name</th>
-                                        <th>Phone</th>
-                                        <th>Address</th>
-                                        <th>Total Amount</th>
-                                        <th>Paid Amount</th>
-                                        <th>Due Amount</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {suppliers.map((supplier) => (
-                                        <tr key={supplier.id}>
-                                            <td className="fw-medium">#{supplier.id}</td>
-                                            <td>{supplier.name}</td>
-                                            <td>{supplier.phone}</td>
-                                            <td>{supplier.address}</td>
-                                            <td>৳{parseFloat(supplier.total_amount).toLocaleString()}</td>
-                                            <td className="text-success">
-                                                {editingPaidAmount === supplier.id ? (
-                                                    <InputGroup size="sm">
-                                                        <Form.Control
-                                                            type="number"
-                                                            value={paidAmountInput}
-                                                            onChange={(e) => setPaidAmountInput(e.target.value)}
-                                                            autoFocus
-                                                        />
-                                                        <Button variant="outline-success" onClick={() => handleUpdatePaidAmount(supplier.id)} disabled={updateLoading}>
-                                                            {updateLoading ? <FaSpinner className="spinner" /> : <FaSave />}
-                                                        </Button>
-                                                        <Button variant="outline-secondary" onClick={() => setEditingPaidAmount(null)}>
-                                                            <FaTimes />
-                                                        </Button>
-                                                    </InputGroup>
-                                                ) : (
-                                                    <div className="d-flex align-items-center">
-                                                        <span>৳{parseFloat(supplier.paid_amount).toLocaleString()}</span>
-                                                        <Button
-                                                            variant="link"
-                                                            size="sm"
-                                                            className="ms-2"
-                                                            onClick={() => {
-                                                                setEditingPaidAmount(supplier.id);
-                                                                setPaidAmountInput(supplier.paid_amount);
-                                                            }}
-                                                        >
-                                                            <FaEdit />
-                                                        </Button>
-                                                    </div>
-                                                )}
-                                            </td>
-                                            <td className={supplier.due_amount > 0 ? 'text-danger' : ''}>
-                                                ৳{parseFloat(supplier.due_amount).toLocaleString()}
-                                            </td>
-                                            <td>
-                                                <div className="d-flex gap-2">
-                                                    <Button
-                                                        variant="outline-primary"
-                                                        size="sm"
-                                                        onClick={() => openEditModal(supplier)}
-                                                        title="Edit"
-                                                        className="view-btn"
-                                                    >
-                                                        <FaEdit />
-                                                    </Button>
-                                                    <Button
-                                                        variant="outline-danger"
-                                                        size="sm"
-                                                        onClick={() => handleDeleteSupplier(supplier.id)}
-                                                        title="Delete"
-                                                        className="delete-btn"
-                                                    >
-                                                        <FaTrash />
-                                                    </Button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <CommonTable
+                        headers={headers}
+                        data={suppliers}
+                        tableLoading={loading}
+                        loading={loading}
+                        renderActions={renderActions}
+                    />
+
                 </Card.Body>
             </Card>
 
-            {/* Add/Edit Supplier Modal */}
             {showModal && (
                 <div className="modal-overlay">
                     <div className="modal-content">
