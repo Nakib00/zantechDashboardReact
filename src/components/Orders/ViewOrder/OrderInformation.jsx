@@ -91,6 +91,12 @@ const OrderInformation = ({ order }) => {
                 ৳{parseFloat(order.total_amount).toLocaleString()}
               </div>
             </div>
+            <div className="mb-3">
+              <strong className="text-muted">Discount Amount:</strong>
+              <div className="fw-bold fs-5">
+                ৳{parseFloat(order.discount).toLocaleString()}
+              </div>
+            </div>
           </Col>
         </Row>
       </Card.Body>
