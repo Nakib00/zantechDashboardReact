@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FaPlus, FaEdit, FaTrash, FaSpinner, FaTimes } from "react-icons/fa";
+import { FaPlus, FaEdit, FaTrash, FaTimes } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import axiosInstance from "../../config/axios";
 import { Card, Form, Button, Modal, Pagination, Table, Row, Col } from "react-bootstrap";
@@ -74,7 +74,7 @@ const Ratings = () => {
       return response.data.data.map((product) => ({
         value: product.id,
         label: `${product.name} (৳${product.price})`,
-        image: product.images?.[0]?.path ? `http://127.0.0.1:8000/storage/${product.images[0].path.replace('public/', '')}` : null,
+        image: product.image && product.image.length > 0 ? product.image[0] : null,
       }));
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to fetch products");
@@ -230,18 +230,16 @@ const Ratings = () => {
       render: (row) => (
         row.product ? (
           <div className="d-flex align-items-center">
-            {row.product.images?.[0]?.path && (
+            {row.product.image && row.product.image.length > 0 ? (
               <img
-                src={`http://127.0.0.1:8000/storage/${row.product.images[0].path.replace('public/', '')}`}
+                src={row.product.image[0]}
                 alt={row.product.name}
-                style={{
-                  width: "50px",
-                  height: "50px",
-                  objectFit: "cover",
-                  marginRight: "10px",
-                  borderRadius: "5px",
-                }}
+                className="product-image"
               />
+            ) : (
+              <div className="no-image-placeholder">
+                <span>No image</span>
+              </div>
             )}
             <div>{row.product.name}</div>
           </div>
@@ -269,13 +267,13 @@ const Ratings = () => {
       disabled={statusToggleLoading[rating.id]}
       className="view-btn"
     >
-      {statusToggleLoading[rating.id] ? (
-        <FaSpinner className="spinner" size="sm" />
-      ) : rating.status === "1" ? (
-        "Deactivate"
-      ) : (
-        "Activate"
-      )}
+      {statusToggleLoading[rating.id]
+        ? rating.status === "1"
+          ? "Deactivating..."
+          : "Activating..."
+        : rating.status === "1"
+        ? "Deactivate"
+        : "Activate"}
     </Button>
   );
 
@@ -438,7 +436,7 @@ const Ratings = () => {
               Close
             </Button>
             <Button variant="primary" type="submit" disabled={isSubmitting}>
-              {isSubmitting ? <FaSpinner className="spinner" size="sm" /> : "Add Rating"}
+              {isSubmitting ? "Adding..." : "Add Rating"}
             </Button>
           </Modal.Footer>
         </Form>
