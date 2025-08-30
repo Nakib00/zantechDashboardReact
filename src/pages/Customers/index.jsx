@@ -163,8 +163,6 @@ const Customers = () => {
     { key: 'name', label: 'Name' },
     { key: 'email', label: 'Email' },
     { key: 'phone', label: 'Phone' },
-    { key: 'address', label: 'Address', render: (row) => row.address || 'N/A' },
-    { key: 'order_summary.total_orders', label: 'Total Orders' },
     { key: 'order_summary.total_spend', label: 'Total Spend', render: (row) => `৳${row.order_summary.total_spend.toLocaleString()}` },
     {
       key: 'payment_summary.due_amount',
