@@ -22,6 +22,7 @@ import {
   ListGroup,
   Badge,
 } from "react-bootstrap";
+import AsyncSelect from "react-select/async";
 import "./Coupons.css";
 import Loading from "../../components/Loading";
 import usePageTitle from '../../hooks/usePageTitle';
@@ -41,6 +42,7 @@ const Coupons = () => {
     code: "",
     amount: "",
     type: "percent",
+    min_purchase: "",
     is_global: 1,
     max_usage: "",
     max_usage_per_user: "",
@@ -48,6 +50,7 @@ const Coupons = () => {
     end_date: "",
     status: 1,
   });
+  const [selectedProducts, setSelectedProducts] = useState([]);
   const [searchParams, setSearchParams] = useState({
     search: "",
     page: 1,
@@ -160,14 +163,39 @@ const Coupons = () => {
     }
   };
 
+  const loadProducts = async (inputValue) => {
+    try {
+      const response = await axiosInstance.get("/products", {
+        params: { search: inputValue, limit: 10 },
+      });
+      return response.data.data.map((product) => ({
+        value: product.id,
+        label: `${product.name} (৳${product.price})`,
+      }));
+    } catch (error) {
+      toast.error("Failed to fetch products");
+      return [];
+    }
+  };
+
   const handleAddCoupon = async (e) => {
     e.preventDefault();
+    const payload = {
+      ...formData,
+      is_global: formData.is_global ? 1 : 0,
+    };
+
+    if (!payload.is_global) {
+      payload.item_ids = selectedProducts.map(p => p.value);
+    }
+
+
     try {
-      const response = await axiosInstance.post("/coupons", formData);
+      const response = await axiosInstance.post("/coupons", payload);
       if (response.data.success) {
         fetchCoupons(pagination.current_page);
         setShowModal(false);
-        setFormData({ code: "", amount: "", type: "percent", is_global: 1, max_usage: "", max_usage_per_user: "", start_date: "", end_date: "", status: 1 });
+        resetModal();
         toast.success("Coupon added successfully");
       } else {
         throw new Error(response.data.message || "Failed to add coupon");
@@ -179,16 +207,41 @@ const Coupons = () => {
 
   const handleEditCoupon = async (e) => {
     e.preventDefault();
+
+    const payload = {
+        ...formData,
+        is_global: formData.is_global ? 1 : 0,
+    }
+    delete payload.items;
+
+
     try {
       const response = await axiosInstance.put(
         `/coupons/${selectedCoupon.id}`,
-        formData
+        payload
       );
       if (response.data.success) {
+        if (!formData.is_global) {
+            const originalItems = selectedCoupon.items.map(item => item.id);
+            const newItems = selectedProducts.map(item => item.value);
+
+            const itemsToAdd = newItems.filter(id => !originalItems.includes(id));
+            const itemsToRemove = originalItems.filter(id => !newItems.includes(id));
+
+            if (itemsToAdd.length > 0) {
+                await axiosInstance.post(`/coupons/add-items/${selectedCoupon.id}`, { item_ids: itemsToAdd });
+            }
+            if (itemsToRemove.length > 0) {
+                for (const itemId of itemsToRemove) {
+                    await axiosInstance.post(`/coupons/remove-items/${selectedCoupon.id}`, { item_id: itemId });
+                }
+            }
+        }
+
+
         fetchCoupons(pagination.current_page);
         setShowModal(false);
-        setFormData({ code: "", amount: "", type: "percent", is_global: 1, max_usage: "", max_usage_per_user: "", start_date: "", end_date: "", status: 1 });
-        setSelectedCoupon(null);
+        resetModal();
         toast.success("Coupon updated successfully");
       } else {
         throw new Error(response.data.message || "Failed to update coupon");
@@ -262,6 +315,7 @@ const Coupons = () => {
       code: coupon.code,
       amount: coupon.amount,
       type: coupon.type,
+      min_purchase: coupon.min_purchase || "",
       is_global: coupon.is_global,
       max_usage: coupon.max_usage,
       max_usage_per_user: coupon.max_usage_per_user,
@@ -269,21 +323,30 @@ const Coupons = () => {
       end_date: coupon.end_date,
       status: coupon.status,
     });
+    if (coupon.items && coupon.items.length > 0) {
+      setSelectedProducts(coupon.items.map(item => ({ value: item.id, label: item.name })));
+    }
     setShowModal(true);
   };
 
   const openAddModal = () => {
     setModalMode("add");
     setSelectedCoupon(null);
-    setFormData({ code: "", amount: "", type: "percent", is_global: 1, max_usage: "", max_usage_per_user: "", start_date: "", end_date: "", status: 1 });
+    resetModal(true); // Keep modal open
     setShowModal(true);
   };
 
-  const closeModal = () => {
-    setShowModal(false);
-    setFormData({ code: "", amount: "", type: "percent", is_global: 1, max_usage: "", max_usage_per_user: "", start_date: "", end_date: "", status: 1 });
+  const resetModal = (keepOpen = false) => {
+    if (!keepOpen) setShowModal(false);
+    setFormData({ code: "", amount: "", type: "percent", min_purchase: "", is_global: 1, max_usage: "", max_usage_per_user: "", start_date: "", end_date: "", status: 1 });
     setSelectedCoupon(null);
+    setSelectedProducts([]);
   };
+
+  const closeModal = () => {
+    resetModal();
+  };
+
 
   const openViewModal = (coupon) => {
     setSelectedCoupon(coupon);
@@ -369,7 +432,7 @@ const Coupons = () => {
     { key: 'code', label: 'Code' },
     { key: 'amount', label: 'Amount', render: (row) => `৳${parseFloat(row.amount).toLocaleString()}` },
     { key: 'type', label: 'Type' },
-    { key: 'is_global', label: 'Global', render: (row) => (row.is_global ? 'True' : 'False') },
+    { key: 'min_pur', label: 'Minimum Purchase', render: (row) => `৳${parseFloat(row.min_pur).toLocaleString()}` },
     { key: 'start_date', label: 'Start Date' },
     { key: 'end_date', label: 'End Date' },
     {
@@ -539,7 +602,7 @@ const Coupons = () => {
             </div>
           )}
 
-          <Modal show={showModal} onHide={closeModal} centered>
+          <Modal show={showModal} onHide={closeModal} centered size="lg">
             <Modal.Header closeButton>
               <Modal.Title>
                 {modalMode === "add" ? "Add New Coupon" : "Edit Coupon"}
@@ -551,40 +614,81 @@ const Coupons = () => {
               }
             >
               <Modal.Body>
-                <Form.Group className="mb-3">
-                  <Form.Label>Code</Form.Label>
-                  <Form.Control type="text" value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} required />
-                </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Label>Amount</Form.Label>
-                  <Form.Control type="number" value={formData.amount} onChange={(e) => setFormData({ ...formData, amount: e.target.value })} required min="0" step="0.01" />
-                </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Label>Type</Form.Label>
-                  <Form.Select value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value })}>
-                    <option value="percent">Percent</option>
-                    <option value="fixed">Fixed</option>
-                  </Form.Select>
-                </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Check type="checkbox" label="Is Global" checked={formData.is_global} onChange={(e) => setFormData({ ...formData, is_global: e.target.checked })} />
-                </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Label>Max Usage</Form.Label>
-                  <Form.Control type="number" value={formData.max_usage} onChange={(e) => setFormData({ ...formData, max_usage: e.target.value })} min="0" />
-                </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Label>Max Usage Per User</Form.Label>
-                  <Form.Control type="number" value={formData.max_usage_per_user} onChange={(e) => setFormData({ ...formData, max_usage_per_user: e.target.value })} min="0" />
-                </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Label>Start Date</Form.Label>
-                  <Form.Control type="date" value={formData.start_date} onChange={(e) => setFormData({ ...formData, start_date: e.target.value })} />
-                </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Label>End Date</Form.Label>
-                  <Form.Control type="date" value={formData.end_date} onChange={(e) => setFormData({ ...formData, end_date: e.target.value })} />
-                </Form.Group>
+                <Row>
+                  <Col md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Code</Form.Label>
+                      <Form.Control type="text" value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })} required />
+                    </Form.Group>
+                  </Col>
+                  <Col md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Amount</Form.Label>
+                      <Form.Control type="number" value={formData.amount} onChange={(e) => setFormData({ ...formData, amount: e.target.value })} required min="0" step="0.01" />
+                    </Form.Group>
+                  </Col>
+                </Row>
+
+                <Row>
+                  <Col md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Type</Form.Label>
+                      <Form.Select value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value })}>
+                        <option value="percent">Percent</option>
+                        <option value="flat">Fixed</option>
+                      </Form.Select>
+                    </Form.Group>
+                  </Col>
+                  <Col md={6} className="d-flex align-items-center">
+                    <Form.Group className="mb-3 mt-3">
+                      <Form.Check type="checkbox" label="Is Global" checked={formData.is_global} onChange={(e) => setFormData({ ...formData, is_global: e.target.checked ? 1 : 0 })} />
+                    </Form.Group>
+                  </Col>
+                </Row>
+
+                <Row>
+                  <Col md={4}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Minimum Purchase</Form.Label>
+                      <Form.Control type="number" value={formData.min_purchase} onChange={(e) => setFormData({ ...formData, min_purchase: e.target.value })} min="0" placeholder="e.g., 500"/>
+                    </Form.Group>
+                  </Col>
+                  <Col md={4}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Max Usage</Form.Label>
+                      <Form.Control type="number" value={formData.max_usage} onChange={(e) => setFormData({ ...formData, max_usage: e.target.value })} min="0" placeholder="e.g., 100"/>
+                    </Form.Group>
+                  </Col>
+                  <Col md={4}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Max Usage Per User</Form.Label>
+                      <Form.Control type="number" value={formData.max_usage_per_user} onChange={(e) => setFormData({ ...formData, max_usage_per_user: e.target.value })} min="0" placeholder="e.g., 1" />
+                    </Form.Group>
+                  </Col>
+                </Row>
+
+                <Row>
+                  <Col md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Start Date</Form.Label>
+                      <Form.Control type="date" value={formData.start_date} onChange={(e) => setFormData({ ...formData, start_date: e.target.value })} />
+                    </Form.Group>
+                  </Col>
+                  <Col md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>End Date</Form.Label>
+                      <Form.Control type="date" value={formData.end_date} onChange={(e) => setFormData({ ...formData, end_date: e.target.value })} />
+                    </Form.Group>
+                  </Col>
+                </Row>
+
+                {!formData.is_global && (
+                  <Form.Group className="mb-3">
+                    <Form.Label>Select Products</Form.Label>
+                    <AsyncSelect isMulti cacheOptions defaultOptions loadOptions={loadProducts} value={selectedProducts} onChange={setSelectedProducts} />
+                  </Form.Group>
+                )}
+
                 <Form.Group className="mb-3">
                   <Form.Check type="switch" label="Active" checked={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.checked })} />
                 </Form.Group>
