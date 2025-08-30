@@ -161,7 +161,27 @@ const CreateOrder = () => {
         throw new Error(response.data.message || 'Failed to create order');
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to create order');
+      const apiError = error.response?.data;
+      let errorMessage = 'Failed to create order.'; // Default message
+
+      if (apiError) {
+        // Prioritize the 'errors' field if it's a string
+        if (apiError.errors && typeof apiError.errors === 'string') {
+          errorMessage = apiError.errors;
+        } 
+        // Handle Laravel-style validation object
+        else if (apiError.errors && typeof apiError.errors === 'object') {
+          errorMessage = Object.values(apiError.errors).flat().join(' ');
+        } 
+        // Fallback to the 'message' field
+        else if (apiError.message) {
+          errorMessage = apiError.message;
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
