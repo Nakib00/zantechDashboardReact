@@ -5,6 +5,17 @@ import { useNavigate } from 'react-router-dom';
 const DueOrdersTable = ({ orders }) => {
     const navigate = useNavigate();
 
+    const getStatusLabel = (status) => {
+        const statusMap = {
+          "0": "Processing",
+          "1": "Completed",
+          "2": "On Hold",
+          "3": "Cancelled",
+          "4": "Refunded",
+        };
+        return statusMap[status] || "Unknown";
+    };
+
     return (
         <Card className="modern-card h-100">
             <Card.Header>
@@ -32,6 +43,7 @@ const DueOrdersTable = ({ orders }) => {
                                         <div><strong>Phone:</strong> {order.user_phone}</div>
                                     </td>
                                     <td>
+                                        <div><strong>Status:</strong> {getStatusLabel(order.status)}</div>
                                         <div><strong>Total:</strong> ৳{parseFloat(order.total_amount).toLocaleString()}</div>
                                         <div><strong>Paid:</strong> ৳{parseFloat(order.paid_amount).toLocaleString()}</div>
                                         <div className="text-danger"><strong>Due:</strong> ৳{parseFloat(order.due_amount).toLocaleString()}</div>
