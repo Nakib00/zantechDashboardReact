@@ -9,7 +9,7 @@ import {
   FaEye,
 } from "react-icons/fa";
 import { toast } from "react-hot-toast";
-import axiosInstance from "../../config/axios";
+import axiosInstance from "@/config/axios";
 import {
   Card,
   Form,
@@ -24,9 +24,9 @@ import {
 } from "react-bootstrap";
 import AsyncSelect from "react-select/async";
 import "./Coupons.css";
-import Loading from "../../components/Loading";
-import usePageTitle from '../../hooks/usePageTitle';
-import CommonTable from "../../components/Common/CommonTable";
+import Loading from "@/components/Loading";
+import usePageTitle from '@/hooks/usePageTitle';
+import CommonTable from "@/components/Common/CommonTable";
 
 const Coupons = () => {
   usePageTitle('Manage Coupons');
@@ -42,7 +42,7 @@ const Coupons = () => {
     code: "",
     amount: "",
     type: "percent",
-    min_purchase: "",
+    min_pur: "",
     is_global: 1,
     max_usage: "",
     max_usage_per_user: "",
@@ -176,6 +176,11 @@ const Coupons = () => {
       toast.error("Failed to fetch products");
       return [];
     }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleAddCoupon = async (e) => {
@@ -315,7 +320,7 @@ const Coupons = () => {
       code: coupon.code,
       amount: coupon.amount,
       type: coupon.type,
-      min_purchase: coupon.min_purchase || "",
+      min_pur: coupon.min_pur || "",
       is_global: coupon.is_global,
       max_usage: coupon.max_usage,
       max_usage_per_user: coupon.max_usage_per_user,
@@ -338,7 +343,7 @@ const Coupons = () => {
 
   const resetModal = (keepOpen = false) => {
     if (!keepOpen) setShowModal(false);
-    setFormData({ code: "", amount: "", type: "percent", min_purchase: "", is_global: 1, max_usage: "", max_usage_per_user: "", start_date: "", end_date: "", status: 1 });
+    setFormData({ code: "", amount: "", type: "percent", min_pur: "", is_global: 1, max_usage: "", max_usage_per_user: "", start_date: "", end_date: "", status: 1 });
     setSelectedCoupon(null);
     setSelectedProducts([]);
   };
@@ -635,7 +640,7 @@ const Coupons = () => {
                       <Form.Label>Type</Form.Label>
                       <Form.Select value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value })}>
                         <option value="percent">Percent</option>
-                        <option value="flat">Fixed</option>
+                        <option value="flat">Flat</option>
                       </Form.Select>
                     </Form.Group>
                   </Col>
@@ -650,7 +655,7 @@ const Coupons = () => {
                   <Col md={4}>
                     <Form.Group className="mb-3">
                       <Form.Label>Minimum Purchase</Form.Label>
-                      <Form.Control type="number" value={formData.min_purchase} onChange={(e) => setFormData({ ...formData, min_purchase: e.target.value })} min="0" placeholder="e.g., 500"/>
+                      <Form.Control type="number" name="min_pur" value={formData.min_pur} onChange={handleInputChange} min="0" placeholder="e.g., 500"/>
                     </Form.Group>
                   </Col>
                   <Col md={4}>
@@ -716,6 +721,10 @@ const Coupons = () => {
                     <Col><strong>Amount:</strong> ৳{parseFloat(selectedCoupon.amount).toLocaleString()}</Col>
                     <Col><strong>Type:</strong> {selectedCoupon.type}</Col>
                   </Row>
+                   <hr />
+                  <Row>
+                    <Col><strong>Minimum Purchase:</strong> ৳{parseFloat(selectedCoupon.min_pur).toLocaleString()}</Col>
+                  </Row>
                   <hr />
                   <Row>
                     <Col><strong>Global:</strong> {selectedCoupon.is_global ? 'True' : 'False'}</Col>
@@ -754,3 +763,4 @@ const Coupons = () => {
 };
 
 export default Coupons;
+
