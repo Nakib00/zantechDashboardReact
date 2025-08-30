@@ -233,6 +233,7 @@ const CreateOrder = () => {
                   formData={formData}
                   selectedProducts={selectedProducts}
                   loading={loading}
+                  coupons={coupons}
                 />
               </Col>
             </Row>

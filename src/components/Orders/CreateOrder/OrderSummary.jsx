@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, Button } from 'react-bootstrap';
 import { FaSpinner } from 'react-icons/fa';
 
-const OrderSummary = ({ formData, selectedProducts, loading }) => {
+const OrderSummary = ({ formData, selectedProducts, loading, coupons }) => {
   return (
     <Card className="mb-4 sticky-top" style={{ top: '20px' }}>
       <Card.Header className="bg-light">
@@ -18,7 +18,7 @@ const OrderSummary = ({ formData, selectedProducts, loading }) => {
             <span>Shipping</span>
             <span>৳{formData.shipping_charge.toLocaleString()}</span>
           </div>
-          {formData.coupon_id && (
+          {formData.coupon_id && coupons && (
             <div className="d-flex justify-content-between mb-2 text-success">
               <span>Coupon Discount</span>
               <span>-৳{(coupons.find(c => c.id === formData.coupon_id)?.amount || 0).toLocaleString()}</span>
