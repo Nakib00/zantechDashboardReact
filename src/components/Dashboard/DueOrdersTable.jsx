@@ -32,24 +32,30 @@ const DueOrdersTable = ({ orders }) => {
                             </tr>
                         </thead>
                         <tbody>
-                            {orders.map(order => (
-                                <tr key={order.order_id} onClick={() => navigate(`/orders/${order.order_id}`)} style={{ cursor: 'pointer' }}>
-                                    <td>
-                                        <div><strong>ID:</strong> {order.order_id}</div>
-                                        <div><strong>Invoice:</strong> {order.invoice_code}</div>
-                                    </td>
-                                    <td>
-                                        <div><strong>Name:</strong> {order.user_name}</div>
-                                        <div><strong>Phone:</strong> {order.user_phone}</div>
-                                    </td>
-                                    <td>
-                                        <div><strong>Status:</strong> {getStatusLabel(order.status)}</div>
-                                        <div><strong>Total:</strong> ৳{parseFloat(order.total_amount).toLocaleString()}</div>
-                                        <div><strong>Paid:</strong> ৳{parseFloat(order.paid_amount).toLocaleString()}</div>
-                                        <div className="text-danger"><strong>Due:</strong> ৳{parseFloat(order.due_amount).toLocaleString()}</div>
-                                    </td>
+                            {orders && Array.isArray(orders) && orders.length > 0 ? (
+                                orders.map(order => (
+                                    <tr key={order.order_id} onClick={() => navigate(`/orders/${order.order_id}`)} style={{ cursor: 'pointer' }}>
+                                        <td>
+                                            <div><strong>ID:</strong> {order.order_id}</div>
+                                            <div><strong>Invoice:</strong> {order.invoice_code}</div>
+                                        </td>
+                                        <td>
+                                            <div><strong>Name:</strong> {order.user_name}</div>
+                                            <div><strong>Phone:</strong> {order.user_phone}</div>
+                                        </td>
+                                        <td>
+                                            <div><strong>Status:</strong> {getStatusLabel(order.status)}</div>
+                                            <div><strong>Total:</strong> ৳{parseFloat(order.total_amount).toLocaleString()}</div>
+                                            <div><strong>Paid:</strong> ৳{parseFloat(order.paid_amount).toLocaleString()}</div>
+                                            <div className="text-danger"><strong>Due:</strong> ৳{parseFloat(order.due_amount).toLocaleString()}</div>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="3" className="text-center">No orders with a due amount found.</td>
                                 </tr>
-                            ))}
+                            )}
                         </tbody>
                     </Table>
                 </div>

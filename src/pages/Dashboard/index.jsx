@@ -62,7 +62,7 @@ const Dashboard = () => {
         try {
             const response = await axiosInstance.get('/orders/summary/due-amount');
             if (response.data.success) {
-                setDueOrders(response.data.data);
+                setDueOrders(Array.isArray(response.data.data) ? response.data.data : []);
             } else {
                 toast.error('Failed to fetch due orders');
             }
