@@ -97,7 +97,6 @@ const OurAmbassadors = () => {
         if (isEditing) {
             url = `/ourambassadors/${currentAmbassador.id}`;
             data.append('status', formData.status);
-
         }
 
         try {
@@ -157,25 +156,27 @@ const OurAmbassadors = () => {
                         {ambassadors.map((ambassador) => (
                             <Col key={ambassador.id}>
                                 <Card className="h-100 shadow-sm ambassador-card">
-                                    <Card.Img variant="top" src={ambassador.image_url} className="ambassador-card-img" />
+                                    <div className="ambassador-card-image-container">
+                                        <Card.Img variant="top" src={ambassador.image_url} className="ambassador-card-img" />
+                                        <div className="overlay d-flex justify-content-center align-items-center gap-2">
+                                            <Button variant="outline-light" size="sm" onClick={() => handleShowEditModal(ambassador)}>
+                                                <FaEdit />
+                                            </Button>
+                                            <Button variant="outline-light" size="sm" onClick={() => handleDelete(ambassador.id)}>
+                                                <FaTrash />
+                                            </Button>
+                                        </div>
+                                    </div>
                                     <Card.Body className="d-flex flex-column">
                                         <Card.Title className="ambassador-name">{ambassador.name}</Card.Title>
                                         <Card.Subtitle className="mb-2 text-muted d-flex align-items-center">
                                             <FaUniversity className="me-2"/>{ambassador.campus}
                                         </Card.Subtitle>
                                         <Card.Text className="ambassador-bio flex-grow-1">{ambassador.bio}</Card.Text>
-                                        <div className="d-flex justify-content-between align-items-center">
+                                        <div className="d-flex justify-content-start align-items-center">
                                             <span className={`badge bg-${ambassador.status === "1" ? 'success' : 'secondary'}`}>
                                                 {ambassador.status === "1" ? 'Active' : 'Inactive'}
                                             </span>
-                                            <div>
-                                                <Button variant="outline-primary" size="sm" className="me-2" onClick={() => handleShowEditModal(ambassador)}>
-                                                    <FaEdit />
-                                                </Button>
-                                                <Button variant="outline-danger" size="sm" onClick={() => handleDelete(ambassador.id)}>
-                                                    <FaTrash />
-                                                </Button>
-                                            </div>
                                         </div>
                                     </Card.Body>
                                 </Card>

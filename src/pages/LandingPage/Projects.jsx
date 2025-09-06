@@ -55,9 +55,9 @@ const Projects = () => {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
     };
-    
+
     const handleTechnologiesChange = (e) => {
-        setFormData({...formData, technologies: e.target.value});
+        setFormData({ ...formData, technologies: e.target.value });
     }
 
     const resetModal = () => {
@@ -100,18 +100,17 @@ const Projects = () => {
             data.append('image', formData.image);
         }
 
-        if(isEditing){
-             data.append('status', formData.status);
-        }else {
+        if (isEditing) {
+            data.append('status', formData.status);
+        } else {
             const techArray = formData.technologies.split(',').map(t => t.trim()).filter(Boolean);
-             techArray.forEach((tech, index) => {
+            techArray.forEach((tech, index) => {
                 data.append(`technologies[${index}]`, tech);
             });
         }
 
-
         const url = isEditing ? `/projects/${currentProject.id}` : '/projects';
-        
+
         try {
             const response = await axiosInstance.post(url, data, {
                 headers: {
@@ -146,20 +145,20 @@ const Projects = () => {
             }
         }
     };
-    
+
     const handleAddTechnology = async () => {
         if (!techInput.trim() || !currentProject) return;
         try {
             const response = await axiosInstance.post(`/projects/technologie/${currentProject.id}`, {
                 name: techInput,
             });
-            if(response.data.success) {
+            if (response.data.success) {
                 toast.success('Technology added');
                 setTechInput('');
-                
+
                 // Refetch the projects to update the list
                 fetchProjects();
-    
+
                 // Update the current project in the modal
                 const updatedProject = {
                     ...currentProject,
@@ -167,15 +166,14 @@ const Projects = () => {
                 };
                 setCurrentProject(updatedProject);
                 setTechnologies(updatedProject.technologies.map(t => t.name));
-    
             } else {
                 toast.error('Failed to add technology');
             }
         } catch (error) {
-             toast.error('Error adding technology');
+            toast.error('Error adding technology');
         }
     };
-    
+
     const handleDeleteTechnology = async (techId) => {
         try {
             const response = await axiosInstance.delete(`/projects/technologie/${techId}`);
@@ -190,7 +188,7 @@ const Projects = () => {
                 toast.error('Failed to delete technology');
             }
         } catch (error) {
-             toast.error('Error deleting technology');
+            toast.error('Error deleting technology');
         }
     };
 
@@ -205,7 +203,7 @@ const Projects = () => {
 
     return (
         <div className="tab-content-container">
-             <Card className="modern-card">
+            <Card className="modern-card">
                 <Card.Header className="bg-light d-flex justify-content-between align-items-center">
                     <h4 className="mb-0">Our Projects</h4>
                     <Button variant="primary" onClick={handleShowAddModal}>
@@ -217,27 +215,31 @@ const Projects = () => {
                         {projects.map((project) => (
                             <Col key={project.id}>
                                 <Card className="h-100 shadow-sm project-card">
-                                    <Card.Img variant="top" src={project.image_url} className="project-card-img" />
+                                    <div className="project-card-image-container">
+                                        <Card.Img variant="top" src={project.image_url} className="project-card-img" />
+                                        <div className="overlay d-flex justify-content-center align-items-center gap-2">
+                                            <Button variant="outline-light" size="sm" onClick={() => handleShowEditModal(project)}>
+                                                <FaEdit />
+                                            </Button>
+                                            <Button variant="outline-light" size="sm" onClick={() => handleDelete(project.id)}>
+                                                <FaTrash />
+                                            </Button>
+                                        </div>
+                                    </div>
                                     <Card.Body className="d-flex flex-column">
                                         <Card.Title className="project-name">{project.title}</Card.Title>
                                         <Card.Text className="project-bio flex-grow-1">{project.description}</Card.Text>
-                                        <div className="mb-2">
+                                        <div className="d-flex flex-wrap gap-1 mb-2">
                                             {project.technologies.map(tech => (
-                                                <Badge key={tech.id} pill bg="primary" className="me-1">{tech.name}</Badge>
+                                                <Badge key={tech.id} pill bg="primary" className="me-1 project-tech-badge">
+                                                    {tech.name}
+                                                </Badge>
                                             ))}
                                         </div>
-                                        <div className="d-flex justify-content-between align-items-center">
+                                        <div className="d-flex justify-content-start align-items-center">
                                             <span className={`badge bg-${project.status === "active" ? 'success' : 'secondary'}`}>
                                                 {project.status}
                                             </span>
-                                            <div>
-                                                <Button variant="outline-primary" size="sm" className="me-2" onClick={() => handleShowEditModal(project)}>
-                                                    <FaEdit />
-                                                </Button>
-                                                <Button variant="outline-danger" size="sm" onClick={() => handleDelete(project.id)}>
-                                                    <FaTrash />
-                                                </Button>
-                                            </div>
                                         </div>
                                     </Card.Body>
                                 </Card>
@@ -261,7 +263,7 @@ const Projects = () => {
                             <Form.Label>Description</Form.Label>
                             <Form.Control as="textarea" rows={3} name="description" value={formData.description} onChange={handleInputChange} required />
                         </Form.Group>
-                         <Form.Group className="mb-3">
+                        <Form.Group className="mb-3">
                             <Form.Label>Image</Form.Label>
                             <Form.Control type="file" name="image" onChange={handleFileChange} />
                             {imagePreview && <Image src={imagePreview} thumbnail className="mt-2" style={{ maxHeight: '150px' }} />}
@@ -274,35 +276,35 @@ const Projects = () => {
                         )}
                         {isEditing && (
                             <>
-                            <Form.Group className="mb-3">
-                                <Form.Label>Status</Form.Label>
-                                <Form.Select name="status" value={formData.status} onChange={handleInputChange}>
-                                    <option value="active">Active</option>
-                                    <option value="inactive">Inactive</option>
-                                </Form.Select>
-                            </Form.Group>
-                             <Form.Group className="mb-3">
-                                <Form.Label>Technologies</Form.Label>
-                                 <div className="d-flex flex-wrap gap-2 mb-2">
-                                    {currentProject && currentProject.technologies.map(tech => (
-                                        <Badge key={tech.id} pill bg="secondary" className="d-flex align-items-center">
-                                            {tech.name}
-                                            <Button variant="link" size="sm" className="text-white p-0 ms-2" onClick={() => handleDeleteTechnology(tech.id)}><FaTimes /></Button>
-                                        </Badge>
-                                    ))}
-                                </div>
-                                <InputGroup>
-                                    <Form.Control
-                                        type="text"
-                                        placeholder="Add new technology"
-                                        value={techInput}
-                                        onChange={(e) => setTechInput(e.target.value)}
-                                    />
-                                    <Button variant="outline-secondary" onClick={handleAddTechnology}>
-                                        <FaPlus />
-                                    </Button>
-                                </InputGroup>
-                            </Form.Group>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Status</Form.Label>
+                                    <Form.Select name="status" value={formData.status} onChange={handleInputChange}>
+                                        <option value="active">Active</option>
+                                        <option value="inactive">Inactive</option>
+                                    </Form.Select>
+                                </Form.Group>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Technologies</Form.Label>
+                                    <div className="d-flex flex-wrap gap-2 mb-2">
+                                        {currentProject && currentProject.technologies.map(tech => (
+                                            <Badge key={tech.id} pill bg="secondary" className="d-flex align-items-center">
+                                                {tech.name}
+                                                <Button variant="link" size="sm" className="text-white p-0 ms-2" onClick={() => handleDeleteTechnology(tech.id)}><FaTimes /></Button>
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                    <InputGroup>
+                                        <Form.Control
+                                            type="text"
+                                            placeholder="Add new technology"
+                                            value={techInput}
+                                            onChange={(e) => setTechInput(e.target.value)}
+                                        />
+                                        <Button variant="outline-secondary" onClick={handleAddTechnology}>
+                                            <FaPlus />
+                                        </Button>
+                                    </InputGroup>
+                                </Form.Group>
                             </>
                         )}
                     </Modal.Body>
