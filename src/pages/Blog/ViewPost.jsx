@@ -73,12 +73,15 @@ const ViewPost = () => {
         const postData = new FormData();
         postData.append('title', formData.title);
         postData.append('content', formData.content);
-        formData.tags.forEach(tag => postData.append('tags[]', tag));
+        if (Array.isArray(formData.tags)) {
+            formData.tags.forEach(tag => postData.append('tags[]', tag));
+        }
         if (formData.thumbnail) {
             postData.append('thumbnail', formData.thumbnail);
         }
         postData.append('meta_title', formData.meta_title);
         postData.append('meta_description', formData.meta_description);
+        postData.append("_method", "PUT");
 
 
         try {
