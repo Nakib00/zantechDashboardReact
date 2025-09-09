@@ -35,8 +35,16 @@ const ViewPost = () => {
         const fetchPost = async () => {
             try {
                 const response = await axiosInstance.get(`/posts/${id}`);
-                setPost(response.data.data);
-                setFormData(response.data.data);
+                const postData = response.data.data;
+                setPost(postData);
+                setFormData({
+                    title: postData.title || '',
+                    content: postData.content || '',
+                    tags: postData.tags || [],
+                    thumbnail: null,
+                    meta_title: postData.meta_title || '',
+                    meta_description: postData.meta_description || '',
+                });
             } catch (error) {
                 toast.error("Failed to fetch post details");
             }
@@ -73,22 +81,17 @@ const ViewPost = () => {
         const postData = new FormData();
         postData.append('title', formData.title);
         postData.append('content', formData.content);
-        if (Array.isArray(formData.tags)) {
-            formData.tags.forEach(tag => postData.append('tags[]', tag));
-        }
+        formData.tags.forEach(tag => postData.append('tags[]', tag));
         if (formData.thumbnail) {
             postData.append('thumbnail', formData.thumbnail);
         }
         postData.append('meta_title', formData.meta_title);
         postData.append('meta_description', formData.meta_description);
-        postData.append("_method", "PUT");
-
+        postData.append('_method', 'PUT');
 
         try {
             await axiosInstance.post(`/posts/${id}`, postData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                }
+                headers: { 'Content-Type': 'multipart/form-data' }
             });
             toast.success('Post updated successfully');
             navigate('/blog');
@@ -99,9 +102,7 @@ const ViewPost = () => {
         }
     };
 
-    if (!post) {
-        return <Loading />;
-    }
+    if (!post) return <Loading />;
 
     return (
         <div className="add-blog-container">
@@ -109,7 +110,6 @@ const ViewPost = () => {
                 <h2>Edit Post</h2>
                 <p className="text-muted">Update the details of the post</p>
             </div>
-
             <form onSubmit={handleSubmit} className="add-blog-form">
                 <Row>
                     <Col lg={12}>
@@ -128,7 +128,6 @@ const ViewPost = () => {
                                                 value={formData.title}
                                                 onChange={handleInputChange}
                                                 required
-                                                placeholder="Enter post title"
                                             />
                                         </Form.Group>
                                     </Col>
@@ -140,7 +139,6 @@ const ViewPost = () => {
                                                 name="meta_title"
                                                 value={formData.meta_title}
                                                 onChange={handleInputChange}
-                                                placeholder="Enter meta title"
                                             />
                                         </Form.Group>
                                     </Col>
@@ -153,29 +151,32 @@ const ViewPost = () => {
                                         name="meta_description"
                                         value={formData.meta_description}
                                         onChange={handleInputChange}
-                                        placeholder="Enter a brief meta description..."
                                     />
                                 </Form.Group>
                                 <Form.Group className="mb-3">
                                     <Form.Label>Tags (comma separated)</Form.Label>
                                     <Form.Control
-                                    type="text"
-                                    name="tags"
-                                    value={formData.tags}
-                                    onChange={(e) => setFormData(prev => ({...prev, tags: e.target.value.split(',')}))}
-                                    placeholder="Enter tags"
+                                        type="text"
+                                        name="tags"
+                                        value={formData.tags.join(',')}
+                                        onChange={(e) =>
+                                            setFormData(prev => ({
+                                                ...prev,
+                                                tags: e.target.value.split(',').map(tag => tag.trim())
+                                            }))
+                                        }
                                     />
                                 </Form.Group>
                                 <Form.Group className="mb-3">
                                     <Form.Label>Thumbnail</Form.Label>
                                     <Form.Control
-                                    type="file"
-                                    name="thumbnail"
-                                    onChange={handleFileChange}
+                                        type="file"
+                                        name="thumbnail"
+                                        onChange={handleFileChange}
                                     />
-                                    {post.thumbnail && (
+                                    {post.thumbnail_url && (
                                         <div className="mt-3">
-                                            <Image src={post.thumbnail_url} thumbnail width={200}/>
+                                            <Image src={post.thumbnail_url} thumbnail width={200} />
                                         </div>
                                     )}
                                 </Form.Group>
@@ -185,7 +186,6 @@ const ViewPost = () => {
                                         ref={editorRef}
                                         value={formData.content}
                                         config={editorConfig}
-                                        tabIndex={1}
                                         onBlur={handleEditorChange}
                                     />
                                 </Form.Group>
@@ -193,23 +193,13 @@ const ViewPost = () => {
                         </Card>
                     </Col>
                 </Row>
-
                 <div className="form-actions">
-                    <button
-                        type="button"
-                        className="btn btn-light"
-                        onClick={() => navigate('/blog')}
-                    >
-                        <FaArrowLeft className="me-2" />
-                        Back to Posts
-                    </button>
-                    <button
-                        type="submit"
-                        className="btn btn-primary btn-with-icon"
-                        disabled={loading}
-                    >
+                    <Button variant="light" onClick={() => navigate('/blog')}>
+                        <FaArrowLeft className="me-2" /> Back to Posts
+                    </Button>
+                    <Button type="submit" variant="primary" disabled={loading}>
                         {loading ? 'Updating...' : <><FaSave /> Update Post</>}
-                    </button>
+                    </Button>
                 </div>
             </form>
         </div>
