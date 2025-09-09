@@ -7,6 +7,7 @@ import Login from "./pages/Login";
 import Profile from "./pages/Profile";
 import Products from "./pages/Products";
 import Categories from "./pages/Categories";
+import Careers from "./pages/Career"; // Import Careers
 import AddProduct from "./pages/Products/AddProduct";
 import ViewProduct from "./pages/Products/ViewProduct";
 import ProductBuyingPrice from "./pages/Products/ProductBuyingPrice";
@@ -71,6 +72,7 @@ const App = () => {
                         <Route path="/products/in-stock" element={<InStockProducts />} />
                         <Route path="/products/:id" element={<ViewProduct />} />
                         <Route path="/categories" element={<Categories />} />
+                        <Route path="/careers" element={<Careers />} />
                         <Route path="/suppliers" element={<Suppliers />} />
                         <Route path="/customers" element={<Customers />} />
                         <Route path="/customers/:id" element={<ViewCustomer />} />
