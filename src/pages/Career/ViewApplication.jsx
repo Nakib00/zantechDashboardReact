@@ -70,7 +70,7 @@ const ViewApplication = () => {
                             <p><strong>Name:</strong> {application.name}</p>
                             <p><strong>Email:</strong> {application.email}</p>
                             <p><strong>Phone:</strong> {application.phone}</p>
-                            <Button href={`${IMAGE_BASE_URL}/${application.cv}`} target="_blank" download>
+                            <Button href={`${application.cv_url}`} target="_blank" download>
                                 <FaDownload className="me-2" />
                                 Download CV
                             </Button>
