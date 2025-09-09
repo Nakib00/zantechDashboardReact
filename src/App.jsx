@@ -42,6 +42,9 @@ import { OrderProvider } from "./context/OrderContext";
 import Reports from "./pages/Reports";
 import NotFound from "./pages/NotFound";
 import LandingPage from "./pages/LandingPage";
+import Blog from "./pages/Blog";
+import AddPost from "./pages/Blog/AddPost";
+import ViewPost from "./pages/Blog/ViewPost";
 
 const PrivateRoute = ({ children }) => {
   const token = localStorage.getItem("token");
@@ -96,6 +99,9 @@ const App = () => {
                           element={<ViewApplication />}
                         />
                         <Route path="/careers" element={<Careers />} />
+                        <Route path="/blog" element={<Blog />} />
+                        <Route path="/blog/add" element={<AddPost />} />
+                        <Route path="/blog/:id" element={<ViewPost />} />
                         <Route path="/suppliers" element={<Suppliers />} />
                         <Route path="/customers" element={<Customers />} />
                         <Route

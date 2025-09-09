@@ -26,7 +26,8 @@ import {
   MdHistory,
   MdWeb,
   MdPeopleOutline,
-  MdWork, // Import MdWork
+  MdWork,
+  MdBook, // Import MdBook
 } from "react-icons/md";
 import { Nav, Badge, Collapse } from "react-bootstrap";
 import { useOrderContext } from "../../context/OrderContext";
@@ -162,14 +163,19 @@ const Sidebar = () => {
       ],
     },
     {
-      title: "Career",
-      items: [
-        {
-          path: "/careers",
-          icon: <MdWork size={22} />,
-          label: "Careers",
-        },
-      ],
+        title: "Content",
+        items: [
+            {
+                path: "/careers",
+                icon: <MdWork size={22} />,
+                label: "Careers",
+            },
+            {
+                path: "/blog",
+                icon: <MdBook size={22} />,
+                label: "Blog",
+            }
+        ]
     },
     {
       title: "Reports",
