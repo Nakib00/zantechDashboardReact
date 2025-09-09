@@ -7,6 +7,7 @@ import {
   FaSpinner,
   FaTimes,
 } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import axiosInstance from "../../config/axios";
 import {
@@ -16,7 +17,6 @@ import {
   Button,
   Row,
   Col,
-  Modal,
 } from "react-bootstrap";
 import Loading from "../../components/Loading";
 import "./Career.css";
@@ -25,23 +25,11 @@ import CommonTable from "../../components/Common/CommonTable";
 
 const Careers = () => {
   usePageTitle('Manage Careers');
+  const navigate = useNavigate();
   const [careers, setCareers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pageLoading, setPageLoading] = useState(true);
   const [tableLoading, setTableLoading] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-  const [modalMode, setModalMode] = useState("add");
-  const [selectedCareer, setSelectedCareer] = useState(null);
-  const [formData, setFormData] = useState({
-    job_title: "",
-    description: "",
-    vacancy: "",
-    job_type: "Full Time",
-    salary: "",
-    deadline: "",
-    department: "",
-    responsibilities: "",
-  });
   const [searchParams, setSearchParams] = useState({
     search: "",
   });
@@ -114,51 +102,6 @@ const Careers = () => {
     }
   };
 
-  const handleAddCareer = async (e) => {
-    e.preventDefault();
-    try {
-      await axiosInstance.post("/careers", formData);
-      fetchCareers();
-      setShowModal(false);
-      setFormData({
-        job_title: "",
-        description: "",
-        vacancy: "",
-        job_type: "Full Time",
-        salary: "",
-        deadline: "",
-        department: "",
-        responsibilities: "",
-      });
-      toast.success("Career added successfully");
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to add career");
-    }
-  };
-
-  const handleEditCareer = async (e) => {
-    e.preventDefault();
-    try {
-      await axiosInstance.put(`/careers/${selectedCareer.id}`, formData);
-      fetchCareers();
-      setShowModal(false);
-      setFormData({
-        job_title: "",
-        description: "",
-        vacancy: "",
-        job_type: "Full Time",
-        salary: "",
-        deadline: "",
-        department: "",
-        responsibilities: "",
-      });
-      setSelectedCareer(null);
-      toast.success("Career updated successfully");
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to update career");
-    }
-  };
-
   const handleDeleteCareer = async (id) => {
     if (window.confirm("Are you sure you want to delete this career?")) {
       try {
@@ -194,53 +137,6 @@ const Careers = () => {
     }));
   };
 
-  const openEditModal = (career) => {
-    setModalMode("edit");
-    setSelectedCareer(career);
-    setFormData({
-      job_title: career.job_title,
-      description: career.description,
-      vacancy: career.vacancy,
-      job_type: career.job_type,
-      salary: career.salary,
-      deadline: career.deadline,
-      department: career.department,
-      responsibilities: career.responsibilities,
-    });
-    setShowModal(true);
-  };
-
-  const openAddModal = () => {
-    setModalMode("add");
-    setSelectedCareer(null);
-    setFormData({
-      job_title: "",
-      description: "",
-      vacancy: "",
-      job_type: "Full Time",
-      salary: "",
-      deadline: "",
-      department: "",
-      responsibilities: "",
-    });
-    setShowModal(true);
-  };
-
-  const closeModal = () => {
-    setShowModal(false);
-    setFormData({
-      job_title: "",
-      description: "",
-      vacancy: "",
-      job_type: "Full Time",
-      salary: "",
-      deadline: "",
-      department: "",
-      responsibilities: "",
-    });
-    setSelectedCareer(null);
-  };
-
   const headers = [
     { key: 'id', label: 'ID' },
     { key: 'job_title', label: 'Job Title' },
@@ -267,7 +163,7 @@ const Careers = () => {
       <Button
         variant="outline-primary"
         size="sm"
-        onClick={() => openEditModal(career)}
+        onClick={() => navigate(`/careers/${career.id}`)}
         disabled={tableLoading}
         title="Edit"
         className="view-btn"
@@ -311,7 +207,7 @@ const Careers = () => {
             </div>
             <Button
               variant="primary"
-              onClick={openAddModal}
+              onClick={() => navigate('/careers/add')}
               className="create-category-btn"
             >
               <FaPlus className="me-2" /> Add Career
@@ -366,118 +262,6 @@ const Careers = () => {
             loading={loading}
             renderActions={renderActions}
           />
-          <Modal show={showModal} onHide={closeModal} centered>
-            <Modal.Header closeButton>
-              <Modal.Title>
-                {modalMode === "add" ? "Add New Career" : "Edit Career"}
-              </Modal.Title>
-            </Modal.Header>
-            <Form
-              onSubmit={
-                modalMode === "add" ? handleAddCareer : handleEditCareer
-              }
-            >
-              <Modal.Body>
-                <Form.Group className="mb-3">
-                  <Form.Label>Job Title</Form.Label>
-                  <Form.Control
-                    type="text"
-                    value={formData.job_title}
-                    onChange={(e) =>
-                      setFormData({ ...formData, job_title: e.target.value })
-                    }
-                    required
-                  />
-                </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Label>Description</Form.Label>
-                  <Form.Control
-                    as="textarea"
-                    value={formData.description}
-                    onChange={(e) =>
-                      setFormData({ ...formData, description: e.target.value })
-                    }
-                    rows={3}
-                  />
-                </Form.Group>
-                 <Form.Group className="mb-3">
-                  <Form.Label>Vacancy</Form.Label>
-                  <Form.Control
-                    type="number"
-                    value={formData.vacancy}
-                    onChange={(e) =>
-                      setFormData({ ...formData, vacancy: e.target.value })
-                    }
-                    required
-                  />
-                </Form.Group>
-                 <Form.Group className="mb-3">
-                  <Form.Label>Job Type</Form.Label>
-                  <Form.Control
-                    as="select"
-                    value={formData.job_type}
-                    onChange={(e) =>
-                      setFormData({ ...formData, job_type: e.target.value })
-                    }
-                  >
-                    <option>Full Time</option>
-                    <option>Part Time</option>
-                    <option>Contract</option>
-                    <option>Internship</option>
-                  </Form.Control>
-                </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Label>Salary</Form.Label>
-                  <Form.Control
-                    type="text"
-                    value={formData.salary}
-                    onChange={(e) =>
-                      setFormData({ ...formData, salary: e.target.value })
-                    }
-                  />
-                </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Label>Deadline</Form.Label>
-                  <Form.Control
-                    type="date"
-                    value={formData.deadline}
-                    onChange={(e) =>
-                      setFormData({ ...formData, deadline: e.target.value })
-                    }
-                  />
-                </Form.Group>
-                 <Form.Group className="mb-3">
-                  <Form.Label>Department</Form.Label>
-                  <Form.Control
-                    type="text"
-                    value={formData.department}
-                    onChange={(e) =>
-                      setFormData({ ...formData, department: e.target.value })
-                    }
-                  />
-                </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Label>Responsibilities</Form.Label>
-                  <Form.Control
-                    as="textarea"
-                    value={formData.responsibilities}
-                    onChange={(e) =>
-                      setFormData({ ...formData, responsibilities: e.target.value })
-                    }
-                    rows={3}
-                  />
-                </Form.Group>
-              </Modal.Body>
-              <Modal.Footer>
-                <Button variant="secondary" onClick={closeModal}>
-                  Cancel
-                </Button>
-                <Button type="submit" variant="primary">
-                  {modalMode === "add" ? "Add Career" : "Update Career"}
-                </Button>
-              </Modal.Footer>
-            </Form>
-          </Modal>
         </Card.Body>
       </Card>
     </div>

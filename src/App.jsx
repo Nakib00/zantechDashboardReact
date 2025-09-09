@@ -14,7 +14,7 @@ import ProductBuyingPrice from "./pages/Products/ProductBuyingPrice";
 import InStockProducts from "./pages/Products/InStockProducts";
 import Header from "./components/Header";
 import Sidebar from "./components/Sidebar";
-import { Toaster } from 'react-hot-toast';
+import { Toaster } from "react-hot-toast";
 import Suppliers from "./pages/Suppliers";
 import Challen from "./pages/Challen";
 import AddChallan from "./pages/Challen/AddChallan";
@@ -24,23 +24,25 @@ import ViewExpense from "./pages/Expenses/ViewExpense";
 import Coupons from "./pages/Coupons";
 import Ratings from "./pages/Ratings";
 import Customers from "./pages/Customers";
-import ViewCustomer from './pages/Customers/ViewCustomer';
-import Staff from './pages/Staff';
-import Transitions from './pages/Transitions';
-import Activity from './pages/Activity';
-import Orders from './pages/Orders';
-import ViewOrder from './pages/Orders/ViewOrder';
-import CreateOrder from './pages/Orders/CreateOrder';
-import CustomInvoice from './pages/Orders/CustomInvoice';
-import HeroImages from './pages/HeroImages';
-import Contact from './pages/Contact';
-import { OrderProvider } from './context/OrderContext';
-import Reports from './pages/Reports';
-import NotFound from './pages/NotFound';
+import ViewCustomer from "./pages/Customers/ViewCustomer";
+import Staff from "./pages/Staff";
+import Transitions from "./pages/Transitions";
+import Activity from "./pages/Activity";
+import AddCareer from "./pages/Career/AddCareer";
+import ViewCareer from "./pages/Career/ViewCareer";
+import Orders from "./pages/Orders";
+import ViewOrder from "./pages/Orders/ViewOrder";
+import CreateOrder from "./pages/Orders/CreateOrder";
+import CustomInvoice from "./pages/Orders/CustomInvoice";
+import HeroImages from "./pages/HeroImages";
+import Contact from "./pages/Contact";
+import { OrderProvider } from "./context/OrderContext";
+import Reports from "./pages/Reports";
+import NotFound from "./pages/NotFound";
 import LandingPage from "./pages/LandingPage";
 
 const PrivateRoute = ({ children }) => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem("token");
   return token ? children : <Navigate to="/login" />;
 };
 
@@ -63,19 +65,33 @@ const App = () => {
                     </div>
                     <div className="contentwrapper">
                       <Routes>
-                        <Route path="/" element={<Navigate to="/dashboard" />} />
+                        <Route
+                          path="/"
+                          element={<Navigate to="/dashboard" />}
+                        />
                         <Route path="/dashboard" element={<Dashboard />} />
                         <Route path="/profile" element={<Profile />} />
                         <Route path="/products" element={<Products />} />
                         <Route path="/products/add" element={<AddProduct />} />
-                        <Route path="/products/buying-price" element={<ProductBuyingPrice />} />
-                        <Route path="/products/in-stock" element={<InStockProducts />} />
+                        <Route
+                          path="/products/buying-price"
+                          element={<ProductBuyingPrice />}
+                        />
+                        <Route
+                          path="/products/in-stock"
+                          element={<InStockProducts />}
+                        />
                         <Route path="/products/:id" element={<ViewProduct />} />
                         <Route path="/categories" element={<Categories />} />
+                        <Route path="/careers/add" element={<AddCareer />} />
+                        <Route path="/careers/:id" element={<ViewCareer />} />
                         <Route path="/careers" element={<Careers />} />
                         <Route path="/suppliers" element={<Suppliers />} />
                         <Route path="/customers" element={<Customers />} />
-                        <Route path="/customers/:id" element={<ViewCustomer />} />
+                        <Route
+                          path="/customers/:id"
+                          element={<ViewCustomer />}
+                        />
                         <Route path="/staff" element={<Staff />} />
                         <Route path="/challens" element={<Challen />} />
                         <Route path="/challans" element={<Challen />} />
@@ -89,8 +105,14 @@ const App = () => {
                         <Route path="/transitions" element={<Transitions />} />
                         <Route path="/activity" element={<Activity />} />
                         <Route path="/orders" element={<Orders />} />
-                        <Route path="/orders/create" element={<CreateOrder />} />
-                        <Route path="/orders/custom-invoice" element={<CustomInvoice />} />
+                        <Route
+                          path="/orders/create"
+                          element={<CreateOrder />}
+                        />
+                        <Route
+                          path="/orders/custom-invoice"
+                          element={<CustomInvoice />}
+                        />
                         <Route path="/orders/:id" element={<ViewOrder />} />
                         <Route path="/settings/hero" element={<HeroImages />} />
                         <Route path="/reports" element={<Reports />} />
