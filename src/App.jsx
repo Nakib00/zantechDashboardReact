@@ -30,6 +30,8 @@ import Transitions from "./pages/Transitions";
 import Activity from "./pages/Activity";
 import AddCareer from "./pages/Career/AddCareer";
 import ViewCareer from "./pages/Career/ViewCareer";
+import CareerApplications from "./pages/Career/CareerApplications";
+import ViewApplication from "./pages/Career/ViewApplication";
 import Orders from "./pages/Orders";
 import ViewOrder from "./pages/Orders/ViewOrder";
 import CreateOrder from "./pages/Orders/CreateOrder";
@@ -85,6 +87,14 @@ const App = () => {
                         <Route path="/categories" element={<Categories />} />
                         <Route path="/careers/add" element={<AddCareer />} />
                         <Route path="/careers/:id" element={<ViewCareer />} />
+                        <Route
+                          path="/careers/:id/applications"
+                          element={<CareerApplications />}
+                        />
+                        <Route
+                          path="/careers/:career_id/applications/:application_id"
+                          element={<ViewApplication />}
+                        />
                         <Route path="/careers" element={<Careers />} />
                         <Route path="/suppliers" element={<Suppliers />} />
                         <Route path="/customers" element={<Customers />} />

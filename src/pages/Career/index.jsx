@@ -6,6 +6,7 @@ import {
   FaSearch,
   FaSpinner,
   FaTimes,
+  FaEye,
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
@@ -27,6 +28,7 @@ const Careers = () => {
   usePageTitle('Manage Careers');
   const navigate = useNavigate();
   const [careers, setCareers] = useState([]);
+  const [applicationCounts, setApplicationCounts] = useState({});
   const [loading, setLoading] = useState(true);
   const [pageLoading, setPageLoading] = useState(true);
   const [tableLoading, setTableLoading] = useState(false);
@@ -71,6 +73,12 @@ const Careers = () => {
     };
   }, [searchParams.search]);
 
+  useEffect(() => {
+    if (careers.length > 0) {
+      fetchApplicationCounts();
+    }
+  }, [careers]);
+
   const fetchCareers = async () => {
     setLoading(true);
     setTableLoading(true);
@@ -101,6 +109,24 @@ const Careers = () => {
       setIsSearching(false);
     }
   };
+
+  const fetchApplicationCounts = async () => {
+    const counts = {};
+    for (const career of careers) {
+      try {
+        const response = await axiosInstance.get(`/careers/forms/${career.id}`);
+        if (response.data.success) {
+          counts[career.id] = response.data.data.total_submissions;
+        } else {
+          counts[career.id] = 0;
+        }
+      } catch (error) {
+        counts[career.id] = 0;
+      }
+    }
+    setApplicationCounts(counts);
+  };
+
 
   const handleDeleteCareer = async (id) => {
     if (window.confirm("Are you sure you want to delete this career?")) {
@@ -141,8 +167,19 @@ const Careers = () => {
     { key: 'id', label: 'ID' },
     { key: 'job_title', label: 'Job Title' },
     { key: 'deadline', label: 'Deadline' },
-    { key: 'department', label: 'Department' },
-    { key: 'created_at', label: 'Created At' },
+    {
+        key: 'applications',
+        label: 'Applications',
+        render: (row) => (
+            <Button
+                variant="outline-info"
+                size="sm"
+                onClick={() => navigate(`/careers/${row.id}/applications`)}
+            >
+                <FaEye className="me-1" /> View ({applicationCounts[row.id] || 0})
+            </Button>
+        ),
+    },
     {
       key: 'status',
       label: 'Status',
