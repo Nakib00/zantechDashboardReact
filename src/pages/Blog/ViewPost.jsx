@@ -4,7 +4,7 @@ import { toast } from 'react-hot-toast';
 import { FaSave, FaArrowLeft } from 'react-icons/fa';
 import axiosInstance from '../../config/axios';
 import Loading from '../../components/Loading';
-import { Row, Col, Card, Form, Button } from 'react-bootstrap';
+import { Row, Col, Card, Form, Button, Image } from 'react-bootstrap';
 import JoditEditor from 'jodit-react';
 import usePageTitle from '../../hooks/usePageTitle';
 import './Blog.css';
@@ -170,6 +170,11 @@ const ViewPost = () => {
                                     name="thumbnail"
                                     onChange={handleFileChange}
                                     />
+                                    {post.thumbnail && (
+                                        <div className="mt-3">
+                                            <Image src={post.thumbnail_url} thumbnail width={200}/>
+                                        </div>
+                                    )}
                                 </Form.Group>
                                 <Form.Group className="mb-3">
                                     <Form.Label>Content</Form.Label>
