@@ -18,6 +18,7 @@ const ViewPost = () => {
     const [formData, setFormData] = useState({
         title: '',
         content: '',
+        category: 'Blog',
         tags: [],
         thumbnail: null,
         meta_title: '',
@@ -40,6 +41,7 @@ const ViewPost = () => {
                 setFormData({
                     title: postData.title || '',
                     content: postData.content || '',
+                    category: postData.category || 'Blog',
                     tags: postData.tags || [],
                     thumbnail: null,
                     meta_title: postData.meta_title || '',
@@ -81,6 +83,7 @@ const ViewPost = () => {
         const postData = new FormData();
         postData.append('title', formData.title);
         postData.append('content', formData.content);
+        postData.append('category', formData.category);
         formData.tags.forEach(tag => postData.append('tags[]', tag));
         if (formData.thumbnail) {
             postData.append('thumbnail', formData.thumbnail);
@@ -133,16 +136,27 @@ const ViewPost = () => {
                                     </Col>
                                     <Col md={6}>
                                         <Form.Group className="mb-3">
-                                            <Form.Label>Meta Title</Form.Label>
-                                            <Form.Control
-                                                type="text"
-                                                name="meta_title"
-                                                value={formData.meta_title}
+                                            <Form.Label>Category</Form.Label>
+                                            <Form.Select
+                                                name="category"
+                                                value={formData.category}
                                                 onChange={handleInputChange}
-                                            />
+                                            >
+                                                <option value="Blog">Blog</option>
+                                                <option value="Tutorial">Tutorial</option>
+                                            </Form.Select>
                                         </Form.Group>
                                     </Col>
                                 </Row>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Meta Title</Form.Label>
+                                    <Form.Control
+                                        type="text"
+                                        name="meta_title"
+                                        value={formData.meta_title}
+                                        onChange={handleInputChange}
+                                    />
+                                </Form.Group>
                                 <Form.Group className="mb-3">
                                     <Form.Label>Meta Description</Form.Label>
                                     <Form.Control

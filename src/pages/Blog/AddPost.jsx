@@ -16,7 +16,7 @@ const AddPost = () => {
   const [formData, setFormData] = useState({
     title: '',
     content: '',
-    category: '',
+    category: 'Blog',
     tags: [],
     thumbnail: null,
   });
@@ -111,13 +111,14 @@ const AddPost = () => {
                   <Col md={6}>
                     <Form.Group className="mb-3">
                       <Form.Label>Category</Form.Label>
-                      <Form.Control
-                        type="text"
+                      <Form.Select
                         name="category"
                         value={formData.category}
                         onChange={handleInputChange}
-                        placeholder="Enter category"
-                      />
+                      >
+                        <option value="Blog">Blog</option>
+                        <option value="Tutorial">Tutorial</option>
+                      </Form.Select>
                     </Form.Group>
                   </Col>
                 </Row>
